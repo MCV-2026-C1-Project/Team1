@@ -1,8 +1,8 @@
-from utils import (Dataset, compute_gray_histogram, compute_color_hsv_histogram, compute_color_rgb_histogram, compute_hsv_grid_histogram, compute_gradient_orientation_histogram, visualize_histograms)
+from utils import (Dataset, compute_gray_histogram, compute_color_hsv_histogram, compute_color_rgb_histogram, compute_hsv_grid_histogram, visualize_histograms)
 import cv2
 import numpy as np
 
-DESCRIPTOR_NAMES = ["Grayscale", "HSV", "RGB", "HSV grid", "Gradient orientation"]
+DESCRIPTOR_NAMES = ["Grayscale", "HSV", "RGB", "HSV grid"]
 
 def compute_descriptors(dataset):
     """ Task 1: Compute image descriptors (QSD1). One list per method, in DESCRIPTOR_NAMES order."""
@@ -16,7 +16,6 @@ def compute_descriptors(dataset):
         methods[1].append(compute_color_hsv_histogram(img_hsv))
         methods[2].append(compute_color_rgb_histogram(img))
         methods[3].append(compute_hsv_grid_histogram(img_hsv))
-        methods[4].append(compute_gradient_orientation_histogram(img_gray))
 
     return methods
 

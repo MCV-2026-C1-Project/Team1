@@ -42,7 +42,6 @@ This script randomly selects one image and computes different histogram descript
 - RGB
 - HSV (one component per histogram)
 - HSV grid (4×4 cells, 512 values)
-- Gradient orientation (4×4 cells, 16 bins per cell, 256 values)
 
 ### Task 2: Similarity Functions
 
@@ -60,7 +59,7 @@ Run:
 python .\src\k_similarity.py
 ```
 
-This script retrieves the top K museum images for each query by comparing image descriptors (Grayscale, HSV, RGB, HSV grid, Gradient orientation) using the similarity functions.
+This script retrieves the top K museum images for each query by comparing image descriptors (Grayscale, HSV, RGB, HSV grid) using the similarity functions.
 
 **Ranking order**
 - Distances are sorted in ascending order.
@@ -80,8 +79,7 @@ python src/task4.py --museum ../../datasets/BBDD --queries ../../datasets/test_s
 ```
 
 Both arguments accept relative or absolute image-folder paths. Only JPG/JPEG
-files directly inside each folder are read. ZIP archives and ground truth are
-not needed. Queries are ordered by numeric filename ID. Museum IDs come from
+files directly inside each folder are read. Queries are ordered by numeric filename ID. Museum IDs come from
 filenames: `bbdd_00007.jpg` becomes integer `7`.
 
 Each `result.pkl` contains a Python list of lists, with exactly 10 unique Python
@@ -93,23 +91,16 @@ integer museum IDs per query, ranked best first.
 | `method2/result.pkl` | HSV | L1 |
 | `method3/result.pkl` | RGB | L1 |
 | `method4/result.pkl` | HSV grid | L1 |
-| `method5/result.pkl` | Gradient orientation | Chi-square |
 
-Defaults use the best mAP@5 comparisons in the supplied `results.txt`; ties use
-L1 for color histograms and Chi-square for gradients. These validation results
-do not establish accuracy on the blind test set.
+Default comparisons come from the mAP@5 results in `results.txt`.
+When color histogram scores tie, L1 is used.
 
-To override the comparison for all five methods or change the output location:
+To override the comparison for all four methods or change the output location:
 ```bash
 python src/task4.py --museum data/BBDD --queries data/qst1_w1 --distance Hellinger --output-dir results/hellinger/week1/QST1
 ```
 
 Available comparisons: `Euclidean`, `L1`, `Chi-square`, `Histogram Intersection`,
 `Hellinger`, `Cosine`, and `Correlation`. Quote names containing spaces.
-Re-running replaces files in the selected output directory. Upload the chosen
-submission files to `Team1/week1/QST1/methodN/result.pkl` in the supplied Drive folder.
-
-Task 3 still runs with `python src/k_similarity.py`; importing its functions
-now avoids starting evaluation automatically.
 
 ---

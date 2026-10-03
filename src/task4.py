@@ -1,4 +1,5 @@
-"""Generate Week 1 QST1 submissions without ground-truth correspondences."""
+
+
 import argparse
 import pickle
 import re
@@ -11,7 +12,7 @@ from main import compute_descriptors, DESCRIPTOR_NAMES
 from k_similarity import retrieve_all_queries, DISTANCE_FUNCTIONS
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 # Best mAP@5 comparisons per descriptor in the supplied results.txt.
-DEFAULT_DISTANCES = ["Chi-square", "L1", "L1", "L1", "Chi-square"]
+DEFAULT_DISTANCES = ["Chi-square", "L1", "L1", "L1"]
 
 
 def image_id(name):

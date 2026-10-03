@@ -1,0 +1,175 @@
+{
+  "museum_images": 287,
+  "queries": 30,
+  "query_path": "/home/asingh/Desktop/uni/Master/C1/datasets/dev_set/P1/qsd1_w1",
+  "results": [
+    {
+      "descriptor": "Grayscale",
+      "comparison": "Euclidean",
+      "mAP@1": 0.2,
+      "mAP@5": 0.2333333333333333
+    },
+    {
+      "descriptor": "Grayscale",
+      "comparison": "L1",
+      "mAP@1": 0.26666666666666666,
+      "mAP@5": 0.2833333333333333
+    },
+    {
+      "descriptor": "Grayscale",
+      "comparison": "Chi-square",
+      "mAP@1": 0.26666666666666666,
+      "mAP@5": 0.2944444444444444
+    },
+    {
+      "descriptor": "Grayscale",
+      "comparison": "Histogram Intersection",
+      "mAP@1": 0.26666666666666666,
+      "mAP@5": 0.2833333333333333
+    },
+    {
+      "descriptor": "Grayscale",
+      "comparison": "Hellinger",
+      "mAP@1": 0.23333333333333334,
+      "mAP@5": 0.28444444444444444
+    },
+    {
+      "descriptor": "Grayscale",
+      "comparison": "Cosine",
+      "mAP@1": 0.2,
+      "mAP@5": 0.2594444444444444
+    },
+    {
+      "descriptor": "Grayscale",
+      "comparison": "Correlation",
+      "mAP@1": 0.2,
+      "mAP@5": 0.2511111111111111
+    },
+    {
+      "descriptor": "HSV",
+      "comparison": "Euclidean",
+      "mAP@1": 0.4,
+      "mAP@5": 0.4555555555555556
+    },
+    {
+      "descriptor": "HSV",
+      "comparison": "L1",
+      "mAP@1": 0.5333333333333333,
+      "mAP@5": 0.59
+    },
+    {
+      "descriptor": "HSV",
+      "comparison": "Chi-square",
+      "mAP@1": 0.4666666666666667,
+      "mAP@5": 0.55
+    },
+    {
+      "descriptor": "HSV",
+      "comparison": "Histogram Intersection",
+      "mAP@1": 0.5333333333333333,
+      "mAP@5": 0.59
+    },
+    {
+      "descriptor": "HSV",
+      "comparison": "Hellinger",
+      "mAP@1": 0.4666666666666667,
+      "mAP@5": 0.5538888888888889
+    },
+    {
+      "descriptor": "HSV",
+      "comparison": "Cosine",
+      "mAP@1": 0.4,
+      "mAP@5": 0.4788888888888889
+    },
+    {
+      "descriptor": "HSV",
+      "comparison": "Correlation",
+      "mAP@1": 0.4,
+      "mAP@5": 0.46499999999999997
+    },
+    {
+      "descriptor": "RGB",
+      "comparison": "Euclidean",
+      "mAP@1": 0.3,
+      "mAP@5": 0.3416666666666667
+    },
+    {
+      "descriptor": "RGB",
+      "comparison": "L1",
+      "mAP@1": 0.36666666666666664,
+      "mAP@5": 0.4027777777777778
+    },
+    {
+      "descriptor": "RGB",
+      "comparison": "Chi-square",
+      "mAP@1": 0.3333333333333333,
+      "mAP@5": 0.375
+    },
+    {
+      "descriptor": "RGB",
+      "comparison": "Histogram Intersection",
+      "mAP@1": 0.36666666666666664,
+      "mAP@5": 0.4027777777777778
+    },
+    {
+      "descriptor": "RGB",
+      "comparison": "Hellinger",
+      "mAP@1": 0.3,
+      "mAP@5": 0.35666666666666663
+    },
+    {
+      "descriptor": "RGB",
+      "comparison": "Cosine",
+      "mAP@1": 0.3,
+      "mAP@5": 0.3416666666666667
+    },
+    {
+      "descriptor": "RGB",
+      "comparison": "Correlation",
+      "mAP@1": 0.3,
+      "mAP@5": 0.33999999999999997
+    },
+    {
+      "descriptor": "HSV grid",
+      "comparison": "Euclidean",
+      "mAP@1": 0.6666666666666666,
+      "mAP@5": 0.715
+    },
+    {
+      "descriptor": "HSV grid",
+      "comparison": "L1",
+      "mAP@1": 0.7666666666666667,
+      "mAP@5": 0.8194444444444444
+    },
+    {
+      "descriptor": "HSV grid",
+      "comparison": "Chi-square",
+      "mAP@1": 0.7333333333333333,
+      "mAP@5": 0.7944444444444444
+    },
+    {
+      "descriptor": "HSV grid",
+      "comparison": "Histogram Intersection",
+      "mAP@1": 0.7666666666666667,
+      "mAP@5": 0.8194444444444444
+    },
+    {
+      "descriptor": "HSV grid",
+      "comparison": "Hellinger",
+      "mAP@1": 0.7333333333333333,
+      "mAP@5": 0.7972222222222222
+    },
+    {
+      "descriptor": "HSV grid",
+      "comparison": "Cosine",
+      "mAP@1": 0.7333333333333333,
+      "mAP@5": 0.7777777777777778
+    },
+    {
+      "descriptor": "HSV grid",
+      "comparison": "Correlation",
+      "mAP@1": 0.7,
+      "mAP@5": 0.7611111111111111
+    }
+  ]
+}

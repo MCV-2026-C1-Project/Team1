@@ -81,21 +81,6 @@ def compute_hsv_grid_histogram(img_hsv, grid=4, bins_h=16, bins_s=8, bins_v=8):
         block_descriptors.append(_l1_normalize(np.concatenate([hist_h, hist_s, hist_v])))
     return _l1_normalize(np.concatenate(block_descriptors))
 
-def compute_gradient_orientation_histogram(img_gray, grid=4, bins=16, size=128):
-    """Per-block histogram of edge orientations weighted by edge strength (HOG-like)."""
-    img = cv2.resize(img_gray, (size, size), interpolation=cv2.INTER_AREA).astype(np.float32)
-    grad_x = cv2.Sobel(img, cv2.CV_32F, 1, 0)
-    grad_y = cv2.Sobel(img, cv2.CV_32F, 0, 1)
-    magnitude, angle = cv2.cartToPolar(grad_x, grad_y, angleInDegrees=True)
-    angle = angle % 180
-
-    block_descriptors = []
-    for angle_block, magnitude_block in zip(_split_in_blocks(angle, grid, grid),
-                                            _split_in_blocks(magnitude, grid, grid)):
-        hist = np.histogram(angle_block, bins=bins, range=(0, 180), weights=magnitude_block)[0]
-        block_descriptors.append(_l1_normalize(hist))
-    return _l1_normalize(np.concatenate(block_descriptors))
-
 def visualize_histograms(dataset, idx):
     if not 0 <= idx < len(dataset.images):
         raise IndexError(f"Image index {idx} out of range for {len(dataset.images)} images")
