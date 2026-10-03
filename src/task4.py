@@ -11,7 +11,7 @@ import cv2
 from main import compute_descriptors, DESCRIPTOR_NAMES
 from k_similarity import retrieve_all_queries, DISTANCE_FUNCTIONS
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-# Best mAP@5 comparisons per descriptor in the supplied results.txt.
+
 DEFAULT_DISTANCES = ["Chi-square", "L1", "L1", "L1"]
 
 
