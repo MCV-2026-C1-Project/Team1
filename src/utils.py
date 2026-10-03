@@ -59,6 +59,43 @@ def compute_color_rgb_histogram(img_rgb, bins_r=32, bins_g=32, bins_b=32):
 
     return cv2.normalize(hist_concat, None, alpha=1, norm_type=cv2.NORM_L1).flatten()
 
+def _l1_normalize(vector):
+    vector = np.asarray(vector, dtype=np.float32).flatten()
+    return vector / (vector.sum() + 1e-12)
+
+def _split_in_blocks(img, grid_y, grid_x):
+    """Yield the grid_y x grid_x blocks of an image (row by row)."""
+    height, width = img.shape[:2]
+    for y in range(grid_y):
+        for x in range(grid_x):
+            yield img[y * height // grid_y:(y + 1) * height // grid_y,
+                      x * width // grid_x:(x + 1) * width // grid_x]
+
+def compute_hsv_grid_histogram(img_hsv, grid=4, bins_h=16, bins_s=8, bins_v=8):
+    """One HSV histogram per block, all blocks concatenated."""
+    block_descriptors = []
+    for block in _split_in_blocks(img_hsv, grid, grid):
+        hist_h = cv2.calcHist([block], [0], None, [bins_h], [0, 180])
+        hist_s = cv2.calcHist([block], [1], None, [bins_s], [0, 256])
+        hist_v = cv2.calcHist([block], [2], None, [bins_v], [0, 256])
+        block_descriptors.append(_l1_normalize(np.concatenate([hist_h, hist_s, hist_v])))
+    return _l1_normalize(np.concatenate(block_descriptors))
+
+def compute_gradient_orientation_histogram(img_gray, grid=4, bins=16, size=128):
+    """Per-block histogram of edge orientations weighted by edge strength (HOG-like)."""
+    img = cv2.resize(img_gray, (size, size), interpolation=cv2.INTER_AREA).astype(np.float32)
+    grad_x = cv2.Sobel(img, cv2.CV_32F, 1, 0)
+    grad_y = cv2.Sobel(img, cv2.CV_32F, 0, 1)
+    magnitude, angle = cv2.cartToPolar(grad_x, grad_y, angleInDegrees=True)
+    angle = angle % 180
+
+    block_descriptors = []
+    for angle_block, magnitude_block in zip(_split_in_blocks(angle, grid, grid),
+                                            _split_in_blocks(magnitude, grid, grid)):
+        hist = np.histogram(angle_block, bins=bins, range=(0, 180), weights=magnitude_block)[0]
+        block_descriptors.append(_l1_normalize(hist))
+    return _l1_normalize(np.concatenate(block_descriptors))
+
 def visualize_histograms(dataset, idx):
     if not 0 <= idx < len(dataset.images):
         raise IndexError(f"Image index {idx} out of range for {len(dataset.images)} images")

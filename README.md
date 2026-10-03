@@ -41,6 +41,8 @@ This script randomly selects one image and computes different histogram descript
 - Grayscale
 - RGB
 - HSV (one component per histogram)
+- HSV grid (4×4 cells, 512 values)
+- Gradient orientation (4×4 cells, 16 bins per cell, 256 values)
 
 ### Task 2: Similarity Functions
 
@@ -49,7 +51,7 @@ All similarity formulas are implemented in `similarity_functions.py`, and fall i
 | Type | Functions | Interpretation |
 |------|-----------|----------------|
 | Distances | Euclidean, L1, Chi-square | Lower value = more similar |
-| Similarities | Histogram Intersection, Hellinger kernel | Higher value = more similar |
+| Similarities | Histogram Intersection, Hellinger kernel, Cosine, Correlation | Higher value = more similar |
 
 ### Task 3: Retrieval and Evaluation
 
@@ -58,7 +60,7 @@ Run:
 python .\src\k_similarity.py
 ```
 
-This script retrieves the top K museum images for each query by comparing image descriptors (Grayscale, HSV, RGB) using the similarity functions.
+This script retrieves the top K museum images for each query by comparing image descriptors (Grayscale, HSV, RGB, HSV grid, Gradient orientation) using the similarity functions.
 
 **Ranking order**
 - Distances are sorted in ascending order.
@@ -70,6 +72,44 @@ Sorting a similarity in ascending order would return the least similar images fi
 - **AP@K** measures how accurately the relevant museum images are ranked within the top K results for a single query, using the ground-truth correspondences.
 - **mAP@K** averages AP@K across all queries, allowing retrieval performance to be compared across descriptor methods and distance functions for K=1 and K=5.
 
-### Task 4: 
+### Task 4: Blind QST1 submission
+
+From the project directory, give the folders containing the museum and test images:
+```bash
+python src/task4.py --museum ../../datasets/BBDD --queries ../../datasets/test_set/P1/qst1_w1
+```
+
+Both arguments accept relative or absolute image-folder paths. Only JPG/JPEG
+files directly inside each folder are read. ZIP archives and ground truth are
+not needed. Queries are ordered by numeric filename ID. Museum IDs come from
+filenames: `bbdd_00007.jpg` becomes integer `7`.
+
+Each `result.pkl` contains a Python list of lists, with exactly 10 unique Python
+integer museum IDs per query, ranked best first.
+
+| Output under `results/week1/QST1/` | Descriptor | Default comparison |
+|---|---|---|
+| `method1/result.pkl` | Grayscale | Chi-square |
+| `method2/result.pkl` | HSV | L1 |
+| `method3/result.pkl` | RGB | L1 |
+| `method4/result.pkl` | HSV grid | L1 |
+| `method5/result.pkl` | Gradient orientation | Chi-square |
+
+Defaults use the best mAP@5 comparisons in the supplied `results.txt`; ties use
+L1 for color histograms and Chi-square for gradients. These validation results
+do not establish accuracy on the blind test set.
+
+To override the comparison for all five methods or change the output location:
+```bash
+python src/task4.py --museum data/BBDD --queries data/qst1_w1 --distance Hellinger --output-dir results/hellinger/week1/QST1
+```
+
+Available comparisons: `Euclidean`, `L1`, `Chi-square`, `Histogram Intersection`,
+`Hellinger`, `Cosine`, and `Correlation`. Quote names containing spaces.
+Re-running replaces files in the selected output directory. Upload the chosen
+submission files to `Team1/week1/QST1/methodN/result.pkl` in the supplied Drive folder.
+
+Task 3 still runs with `python src/k_similarity.py`; importing its functions
+now avoids starting evaluation automatically.
 
 ---

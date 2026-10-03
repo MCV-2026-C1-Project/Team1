@@ -2,7 +2,6 @@
 
 import numpy as np
 
-
 def euclidean_distance(hist_a, hist_b):
     """Euclidean distance: lower is better."""
     hist_a = np.asarray(hist_a, dtype=float)
@@ -38,3 +37,17 @@ def hellinger_kernel(hist_a, hist_b):
     hist_a = np.asarray(hist_a, dtype=float)
     hist_b = np.asarray(hist_b, dtype=float)
     return np.sum(np.sqrt(hist_a * hist_b))
+
+def cosine_similarity(hist_a, hist_b):
+    """Cosine similarity: higher is better."""
+    hist_a = np.asarray(hist_a, dtype=float)
+    hist_b = np.asarray(hist_b, dtype=float)
+    denom = np.linalg.norm(hist_a) * np.linalg.norm(hist_b)
+    return np.dot(hist_a, hist_b) / denom if denom > 0 else 0.0
+
+
+def correlation_similarity(hist_a, hist_b):
+    """Pearson correlation: higher is better."""
+    hist_a = np.asarray(hist_a, dtype=float)
+    hist_b = np.asarray(hist_b, dtype=float)
+    return cosine_similarity(hist_a - hist_a.mean(), hist_b - hist_b.mean())

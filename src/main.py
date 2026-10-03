@@ -1,21 +1,28 @@
-from utils import Dataset, compute_gray_histogram, compute_color_hsv_histogram, compute_color_rgb_histogram, visualize_histograms
+from utils import (Dataset, compute_gray_histogram, compute_color_hsv_histogram, compute_color_rgb_histogram, compute_hsv_grid_histogram, compute_gradient_orientation_histogram, visualize_histograms)
 import cv2
 import numpy as np
 
-def compute_descriptors(dataset):
-    """ Task 1: Compute image descriptors (QSD1) (up to three methods)"""
-    method1, method2, method3 = [], [], []
-    
-    for img in dataset.images:
-        method1.append(compute_gray_histogram(cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)))
-        method2.append(compute_color_hsv_histogram(cv2.cvtColor(img, cv2.COLOR_RGB2HSV)))
-        method3.append(compute_color_rgb_histogram(img))
+DESCRIPTOR_NAMES = ["Grayscale", "HSV", "RGB", "HSV grid", "Gradient orientation"]
 
-    return method1, method2, method3
+def compute_descriptors(dataset):
+    """ Task 1: Compute image descriptors (QSD1). One list per method, in DESCRIPTOR_NAMES order."""
+    methods = [[] for _ in DESCRIPTOR_NAMES]
+
+    for img in dataset.images:
+        img_gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+        img_hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
+
+        methods[0].append(compute_gray_histogram(img_gray))
+        methods[1].append(compute_color_hsv_histogram(img_hsv))
+        methods[2].append(compute_color_rgb_histogram(img))
+        methods[3].append(compute_hsv_grid_histogram(img_hsv))
+        methods[4].append(compute_gradient_orientation_histogram(img_gray))
+
+    return methods
 
 def main():
     train = Dataset("data/BBDD")
-    descriptors_mthd1, descriptors_mthd2, descriptors_mthd3 = compute_descriptors(train)
+    descriptors = compute_descriptors(train)
 
     """ Visualize histograms """
     idx = np.random.randint(0, len(train.images))

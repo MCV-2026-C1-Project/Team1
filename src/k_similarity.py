@@ -1,13 +1,22 @@
 import numpy as np
-from similarity_functions import euclidean_distance, l1_distance, chi_square_distance, histogram_intersection, hellinger_kernel
+from similarity_functions import (euclidean_distance, l1_distance, chi_square_distance, histogram_intersection, hellinger_kernel, cosine_similarity, correlation_similarity)
 from utils import Dataset
-from main import compute_descriptors
+from main import compute_descriptors, DESCRIPTOR_NAMES
 
-SIMILARITY_FUNCTIONS = (histogram_intersection, hellinger_kernel)
+SIMILARITY_FUNCTIONS = (histogram_intersection, hellinger_kernel, cosine_similarity, correlation_similarity)
+
+DISTANCE_FUNCTIONS = {
+    "Euclidean": euclidean_distance,
+    "L1": l1_distance,
+    "Chi-square": chi_square_distance,
+    "Histogram Intersection": histogram_intersection,
+    "Hellinger": hellinger_kernel,
+    "Cosine": cosine_similarity,
+    "Correlation": correlation_similarity,
+}
 
 def rank_museum_images(query_descriptor, museum_descriptors, distance_function, top_k=None):
     distances = []
-
     for museum_idx, museum_descriptor in enumerate(museum_descriptors):
         distance = distance_function(query_descriptor, museum_descriptor)
         distances.append((museum_idx, float(distance)))
@@ -88,54 +97,45 @@ def evaluate_retrieval(rankings, ground_truth, max_k): # Calculate AP@K for each
 
     return results
 
-# Load datasets
-museum = Dataset("data/BBDD")
-queries = Dataset("data/qsd1_w1")
+def main():
+    # Load datasets
+    museum = Dataset("data/BBDD")
+    queries = Dataset("data/qsd1_w1")
 
-print("Museum images:", len(museum.images))
-print("Query images:", len(queries.images))
+    print("Museum images:", len(museum.images))
+    print("Query images:", len(queries.images))
 
 
-descriptor_names = ["Grayscale", "HSV", "RGB"]
+    descriptor_names = DESCRIPTOR_NAMES
 
-# Compute descriptors
-museum_descriptors = compute_descriptors(museum)
-query_descriptors = compute_descriptors(queries)
+    # Compute descriptors
+    museum_descriptors = compute_descriptors(museum)
+    query_descriptors = compute_descriptors(queries)
 
-ground_truth = queries.correspondances
+    ground_truth = queries.correspondances
 
-if ground_truth is None:
-    raise ValueError("Ground-truth correspondences were not loaded.")
+    if ground_truth is None:
+        raise ValueError("Ground-truth correspondences were not loaded.")
 
-print("Ground-truth queries:", len(ground_truth))
+    print("Ground-truth queries:", len(ground_truth))
 
-# Select descriptor method
-for method_idx, method_name in enumerate(descriptor_names):
-    print(f"\nEvaluating descriptor method: {method_name}")
+    max_k = 5
+    for method_idx, method_name in enumerate(descriptor_names):
+        print(f"\nEvaluating descriptor method: {method_name}")
+        museum_descriptor = museum_descriptors[method_idx]
+        query_descriptor = query_descriptors[method_idx]
 
-    museum_descriptor = museum_descriptors[method_idx]
-    query_descriptor = query_descriptors[method_idx]
+        for distance_name, distance_function in DISTANCE_FUNCTIONS.items():
+            print(f"\nEvaluating distance function: {distance_name}")
+            rankings = retrieve_all_queries(query_descriptor, museum_descriptor, distance_function, top_k=max_k)
+            ranked_indices = [[museum_idx for museum_idx, distance in ranking] for ranking in rankings]
+            evaluation_results = evaluate_retrieval(ranked_indices, ground_truth, max_k)
 
-    # Retrieve ranked museum images
-    rankings_eucdis = retrieve_all_queries(query_descriptor, museum_descriptor, euclidean_distance, top_k=5)
-    rankings_l1 = retrieve_all_queries(query_descriptor, museum_descriptor, l1_distance, top_k=5)
-    rankings_chi_square = retrieve_all_queries(query_descriptor, museum_descriptor, chi_square_distance, top_k=5)
-    rankings_histogram_intersection = retrieve_all_queries(query_descriptor, museum_descriptor, histogram_intersection, top_k=5)
-    rankings_hellinger = retrieve_all_queries(query_descriptor, museum_descriptor, hellinger_kernel, top_k=5)
+            for k in range(1, max_k + 1):
+                if k == 1 or k == max_k:
+                    print(f"mAP@{k}: {evaluation_results[k]['mAP']:.4f}")
 
-    # Evaluate retrieval performance for each distance function
-    max_k = 5   
-    rankings = [rankings_eucdis, rankings_l1, rankings_chi_square, rankings_histogram_intersection, rankings_hellinger]
-    for rankings, distance_function in zip(rankings, ["Euclidean", "L1", "Chi-square", "Histogram Intersection", "Hellinger"]):
-        print(f"\nEvaluating distance function: {distance_function}")
-        ranked_indices =  [[museum_idx for museum_idx, distance in ranking]for ranking in rankings]
-        evaluation_results = evaluate_retrieval(ranked_indices, ground_truth, max_k)
+            print("Top-1 per query:", [r[0][0] for r in rankings])
 
-        for k in range(1, max_k + 1):
-            if k == 1 or k == max_k:
-                mAP = evaluation_results[k]["mAP"]
-                print(f"mAP@{k}: {mAP:.4f}")
-            #print(f"AP@{k} for each query:")
-            #print(evaluation_results[k]["AP_per_query"])
-
-        print("Top-1 per query:", [r[0][0] for r in rankings]) # list of top-1 museum indices for each query
+if __name__ == "__main__":
+    main()
