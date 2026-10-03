@@ -92,9 +92,6 @@ integer museum IDs per query, ranked best first.
 | `method3/result.pkl` | RGB | L1 |
 | `method4/result.pkl` | HSV grid | L1 |
 
-Default comparisons come from the mAP@5 results in `results.txt`.
-When color histogram scores tie, L1 is used.
-
 To override the comparison for all four methods or change the output location:
 ```bash
 python src/task4.py --museum data/BBDD --queries data/qst1_w1 --distance Hellinger --output-dir results/hellinger/week1/QST1
