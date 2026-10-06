@@ -1,7 +1,7 @@
 import numpy as np
 from similarity_functions import (euclidean_distance, l1_distance, chi_square_distance, histogram_intersection, hellinger_kernel, cosine_similarity, correlation_similarity)
 from utils import Dataset
-from main import compute_descriptors, DESCRIPTOR_NAMES
+from main import compute_descriptors, DESCRIPTOR_NAMES, compute_descriptors_w2, METHODS_W2_NAMES
 
 SIMILARITY_FUNCTIONS = (histogram_intersection, hellinger_kernel, cosine_similarity, correlation_similarity)
 
@@ -78,6 +78,23 @@ def mean_average_precision_at_k(rankings, ground_truth, k): #Calculate mAP@K ove
 
     return float(np.mean(ap_values))
 
+def validate_ground_truth(ground_truth, n_museum, n_queries):
+    """Minimal ID check: one entry per query, each relevant ID a valid
+    museum position in [0, n_museum). Evaluation ranks by position in the
+    sorted load order; submission (task4) maps those positions to filename
+    IDs, so an out-of-range ID here means a corrupt/mismatched pkl."""
+    if len(ground_truth) != n_queries:
+        raise ValueError(
+            f"Expected {n_queries} ground-truth entries, got {len(ground_truth)}"
+        )
+    for qi, relevant in enumerate(ground_truth):
+        for museum_idx in relevant:
+            if type(museum_idx) is not int or not 0 <= museum_idx < n_museum:
+                raise ValueError(
+                    f"Query {qi}: invalid museum index {museum_idx!r} "
+                    f"(museum size {n_museum})"
+                )
+
 def evaluate_retrieval(rankings, ground_truth, max_k): # Calculate AP@K for each query and mAP@K for K=1...max_k.
     results = {}
 
@@ -117,13 +134,37 @@ def main():
     if ground_truth is None:
         raise ValueError("Ground-truth correspondences were not loaded.")
 
+    validate_ground_truth(ground_truth, len(museum.images), len(queries.images))
+
     print("Ground-truth queries:", len(ground_truth))
 
     max_k = 5
     for method_idx, method_name in enumerate(descriptor_names):
-        print(f"\nEvaluating descriptor method: {method_name}")
+        print(f"\nEvaluating descriptor method: {method_name} [W1]")
         museum_descriptor = museum_descriptors[method_idx]
         query_descriptor = query_descriptors[method_idx]
+
+        for distance_name, distance_function in DISTANCE_FUNCTIONS.items():
+            print(f"\nEvaluating distance function: {distance_name}")
+            rankings = retrieve_all_queries(query_descriptor, museum_descriptor, distance_function, top_k=max_k)
+            ranked_indices = [[museum_idx for museum_idx, distance in ranking] for ranking in rankings]
+            evaluation_results = evaluate_retrieval(ranked_indices, ground_truth, max_k)
+
+            for k in range(1, max_k + 1):
+                if k == 1 or k == max_k:
+                    print(f"mAP@{k}: {evaluation_results[k]['mAP']:.4f}")
+
+            print("Top-1 per query:", [r[0][0] for r in rankings])
+
+    # Week 2: mismos queries (QSD1-W2 == QSD1-W1), descriptores HSV W2.
+    # Comparar directamente contra el mejor W1 (HSV grid + L1, mAP@5 0.82).
+    print("\n--- Methods_W2 (HSV 3D/2D/bloque/piramide) ---")
+    museum_descriptors_w2 = compute_descriptors_w2(museum)
+    query_descriptors_w2 = compute_descriptors_w2(queries)
+    for method_idx, method_name in enumerate(METHODS_W2_NAMES):
+        print(f"\nEvaluating descriptor method: {method_name} [W2]")
+        museum_descriptor = museum_descriptors_w2[method_idx]
+        query_descriptor = query_descriptors_w2[method_idx]
 
         for distance_name, distance_function in DISTANCE_FUNCTIONS.items():
             print(f"\nEvaluating distance function: {distance_name}")

@@ -1,23 +1,27 @@
-from utils import (Dataset, compute_gray_histogram, compute_color_hsv_histogram, compute_color_rgb_histogram, compute_hsv_grid_histogram, visualize_histograms)
+"""Entry point W1 (+ compatibilidad W2).
+
+Separacion Week 2:
+    - Methods_W1 (methods_w1.py): Grayscale, HSV, RGB, HSV grid. Congelados.
+    - Methods_W2 (methods_w2.py): HSV 3D / 2D / bloque / piramide. En prueba.
+
+DESCRIPTOR_NAMES y compute_descriptors() se conservan como alias de W1
+para no romper k_similarity.py, task4.py ni los tests de Week 1.
+El codigo nuevo debe importar explicitamente desde methods_w1 / methods_w2.
+"""
+
+from methods_w1 import METHODS_W1, METHODS_W1_NAMES, compute_descriptors_w1
+from methods_w2 import METHODS_W2, METHODS_W2_NAMES, compute_descriptors_w2
+from utils import Dataset, visualize_histograms
 import cv2
 import numpy as np
 
-DESCRIPTOR_NAMES = ["Grayscale", "HSV", "RGB", "HSV grid"]
+# Alias de compatibilidad W1.
+DESCRIPTOR_NAMES = METHODS_W1_NAMES
+
 
 def compute_descriptors(dataset):
-    """ Task 1: Compute image descriptors (QSD1). One list per method, in DESCRIPTOR_NAMES order."""
-    methods = [[] for _ in DESCRIPTOR_NAMES]
-
-    for img in dataset.images:
-        img_gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-        img_hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
-
-        methods[0].append(compute_gray_histogram(img_gray))
-        methods[1].append(compute_color_hsv_histogram(img_hsv))
-        methods[2].append(compute_color_rgb_histogram(img))
-        methods[3].append(compute_hsv_grid_histogram(img_hsv))
-
-    return methods
+    """ Task 1 (W1): alias de compute_descriptors_w1. """
+    return compute_descriptors_w1(dataset)
 
 def main():
     train = Dataset("data/BBDD")
