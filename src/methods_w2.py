@@ -1,30 +1,37 @@
-"""Methods_W2: HSV descriptors to test in Week 2 (Task 1).
+"""Methods_W2: color descriptors to test in Week 2 (Task 1).
 
-All operate in HSV and accept an optional foreground mask (Task 3/5):
+Functions take images in their own color space (HSV or Lab) and accept
+an optional foreground mask (Task 3/5):
 if ``mask`` is None the full image is used; if given, only foreground
 pixels contribute to the histogram.
 
-Two families, same combinations (all HSV, all L1):
+HSV families (all L1 normalized):
 - Globals (no spatial subdivision).
 - Pyramids: levels (1, 2, 4) = 21 cells; each cell carries the same
   global combination, L1-normalized per cell, L1-renormalized on
   concatenation (no level weights, as in ``spatial_pyramid.py``).
 
-Proposed METHODS_W2 registry (all HSV, all L1).
+HSV entries in METHODS_W2:
 Globals validated on QSD1 with L1 only (see results/week2/color_sweep_l1.txt;
 W1 baselines: marginal HSV mAP@5 0.59, HSV grid mAP@5 0.82):
     - "HSV 3D 4x4x4" (64): best 3D (0.5389); finer bins scatter under L1.
     - "HSV 2D HS 30x32" (960): best single 2D (0.5067).
     - "HSV 2D HV 8x8" (64): best HV (0.4883); SV discarded alone (<=0.41).
     - "HSV 2D HS+HV 16x16" (512): best W2 global (mAP@5 0.6167, mAP@1
-      0.5667); beats the W1 marginal at equal dimension. HS+HV+SV (0.5528)
-      confirms the third pair is redundant: not registered.
+      0.5667); beats the W1 marginal. HS+HV+SV (0.5528) performs worse
+      in this comparison and is not registered.
 Pyramids mirror those 4 combinations (21 cells), validated on QSD1-W2,
 L1 only (see results/week2/qsd1w2_registry_l1.txt):
     - "HSV pyramid 3D 4x4x4" (1344): mAP@5 0.7067.
     - "HSV pyramid HS 30x32" (20160): mAP@5 0.6233.
     - "HSV pyramid HV 8x8" (1344): mAP@5 0.6167.
-    - "HSV pyramid HS+HV 16x16" (10752): mAP@5 0.7722, best W2.
+    - "HSV pyramid HS+HV 16x16" (10752): mAP@5 0.7722, best HSV W2.
+
+Lab entries use three marginal 1D histograms (32 bins per channel):
+    - "Lab block 4x4 1D 32" (1536): mAP@1 0.8333, mAP@5 0.8722.
+    - "Lab block 6x6 1D 32" (3456): mAP@1 0.8667, mAP@5 0.9000.
+    - "Lab pyramid 1D 32" (2016): mAP@1 0.8333, mAP@5 0.8694.
+These are QSD1 development results with L1 distance, not blind test scores.
 
 Masked variants (QSD2/QST2) reuse these same functions by passing
 ``mask``; they are not separate registry entries until the Task 1
@@ -90,11 +97,6 @@ def compute_hsv_2d_concat_histogram(img_hsv, parts=(((0, 1), (16, 16)),), mask=N
     return _l1_normalize(np.concatenate(normed_parts))
 
 
-# --- W2 registry: name -> function(img_hsv, mask=None) ---
-# All take HSV (convert from RGB first) so the comparison
-# with W1 is direct. Lambda wrappers pin the hyperparameters
-# validated in the L1-only sweep: 4 globals + their 4 pyramids
-# (same HSV combinations, levels (1, 2, 4), no level weights).
 def _concat_fn(*parts):
     """Build fn(hsv, mask) for a 2D concat with equal weight per pair."""
     spec = list(parts)
@@ -103,15 +105,24 @@ def _concat_fn(*parts):
     )
 
 
-def _split_with_mask(img_hsv, mask, grid_y, grid_x):
+def _split_with_mask(image, mask, grid_y, grid_x):
     """Yield (block, block_mask) pairs; block_mask is None if mask is None."""
-    height, width = img_hsv.shape[:2]
+    height, width = image.shape[:2]
     for y in range(grid_y):
         for x in range(grid_x):
             y0, y1 = y * height // grid_y, (y + 1) * height // grid_y
             x0, x1 = x * width // grid_x, (x + 1) * width // grid_x
             m = None if mask is None else mask[y0:y1, x0:x1]
-            yield img_hsv[y0:y1, x0:x1], m
+            yield image[y0:y1, x0:x1], m
+
+
+def _compute_spatial_histogram(image, levels, block_fn, mask):
+    parts = [
+        _l1_normalize(block_fn(block, m))
+        for grid in levels
+        for block, m in _split_with_mask(image, mask, grid, grid)
+    ]
+    return _l1_normalize(np.concatenate(parts))
 
 
 def compute_hsv_pyramid_histogram(img_hsv, levels=(1, 2, 4),
@@ -129,12 +140,31 @@ def compute_hsv_pyramid_histogram(img_hsv, levels=(1, 2, 4),
         block_fn = lambda b, m: compute_hsv_2d_histogram(
             b, channels=(0, 1), bins=(8, 8), mask=m
         )
+    return _compute_spatial_histogram(img_hsv, levels, block_fn, mask)
+
+
+def compute_lab_histogram(img_lab, bins=(32, 32, 32), mask=None):
+    """Marginal L, a and b histograms for uint8 OpenCV Lab, L1 normalized."""
+    assert len(img_lab.shape) == 3, "Expected Lab image"
     parts = [
-        _l1_normalize(block_fn(block, m))
-        for grid in levels
-        for block, m in _split_with_mask(img_hsv, mask, grid, grid)
+        cv2.calcHist([img_lab], [ch], mask, [b], [0, 256]).flatten()
+        for ch, b in enumerate(bins)
     ]
     return _l1_normalize(np.concatenate(parts))
+
+
+def compute_lab_pyramid_histogram(img_lab, levels=(1, 2, 4),
+                                  bins=(32, 32, 32), mask=None):
+    """Lab marginals per cell, with the same normalization as HSV pyramids."""
+    block_fn = lambda b, m: compute_lab_histogram(b, bins=bins, mask=m)
+    return _compute_spatial_histogram(img_lab, levels, block_fn, mask)
+
+
+def compute_lab_block_histogram(img_lab, grid=4, bins=(32, 32, 32), mask=None):
+    """Single grid of Lab marginals, concatenated in row-major order."""
+    return compute_lab_pyramid_histogram(
+        img_lab, levels=(grid,), bins=bins, mask=mask
+    )
 
 
 METHODS_W2 = {
@@ -171,9 +201,24 @@ METHODS_W2 = {
             b, parts=[((0, 1), (16, 16)), ((0, 2), (16, 16))], mask=m),
         mask=mask,
     ),
+    "Lab block 4x4 1D 32": lambda lab, mask=None: compute_lab_block_histogram(
+        lab, grid=4, mask=mask
+    ),
+    "Lab block 6x6 1D 32": lambda lab, mask=None: compute_lab_block_histogram(
+        lab, grid=6, mask=mask
+    ),
+    "Lab pyramid 1D 32": lambda lab, mask=None: compute_lab_pyramid_histogram(
+        lab, mask=mask
+    ),
 }
 
 METHODS_W2_NAMES = list(METHODS_W2.keys())
+METHODS_W2_COLOR_SPACES = dict.fromkeys(METHODS_W2, "HSV")
+METHODS_W2_COLOR_SPACES.update({
+    "Lab block 4x4 1D 32": "Lab",
+    "Lab block 6x6 1D 32": "Lab",
+    "Lab pyramid 1D 32": "Lab",
+})
 
 
 def compute_descriptors_w2(dataset, masks=None):
@@ -182,15 +227,17 @@ def compute_descriptors_w2(dataset, masks=None):
     dataset.images in RGB (like Dataset); masks list of HxW uint8 or None.
     Returns one list per W2 method, in METHODS_W2_NAMES order.
     """
-    import cv2 as _cv2
-
     methods = [[] for _ in METHODS_W2_NAMES]
     n = len(dataset.images)
     if masks is not None and len(masks) != n:
         raise ValueError(f"Expected {n} masks, got {len(masks)}")
     for i, img in enumerate(dataset.images):
-        hsv = _cv2.cvtColor(img, _cv2.COLOR_RGB2HSV)
+        sources = {
+            "HSV": cv2.cvtColor(img, cv2.COLOR_RGB2HSV),
+            "Lab": cv2.cvtColor(img, cv2.COLOR_RGB2LAB),
+        }
         mask = None if masks is None else masks[i]
         for j, name in enumerate(METHODS_W2_NAMES):
-            methods[j].append(METHODS_W2[name](hsv, mask))
+            source = sources[METHODS_W2_COLOR_SPACES[name]]
+            methods[j].append(METHODS_W2[name](source, mask=mask))
     return methods

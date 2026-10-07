@@ -2,7 +2,7 @@
 
 Week 2 split:
     - Methods_W1 (methods_w1.py): Grayscale, HSV, RGB, HSV grid. Frozen.
-    - Methods_W2 (methods_w2.py): global + pyramid HSV 3D / 2D. Under test.
+    - Methods_W2 (methods_w2.py): HSV 3D / 2D and spatial Lab marginals.
 
 DESCRIPTOR_NAMES and compute_descriptors() are kept as W1 aliases
 so k_similarity.py, task4.py and the Week 1 tests keep working.

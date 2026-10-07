@@ -1,0 +1,10 @@
+template,Lab_weight,distance,dimension,mAP@1,mAP@5
+Lab blocks + W1 HSV grid,0.75,weighted L1,2048,0.8666666666666667,0.8916666666666667
+Lab blocks + W1 HSV grid,0.5,weighted L1,2048,0.8666666666666667,0.8833333333333333
+Lab blocks + Andreu HSV pyramid,0.75,weighted L1,12288,0.8333333333333334,0.875
+Lab pyramid + W1 HSV grid,0.75,weighted L1,2528,0.8333333333333334,0.8733333333333333
+Lab pyramid + W1 HSV grid,0.5,weighted L1,2528,0.8333333333333334,0.8666666666666667
+Lab blocks + Andreu HSV pyramid,0.5,weighted L1,12288,0.8,0.8388888888888889
+Lab blocks + W1 HSV grid,0.25,weighted L1,2048,0.8,0.8388888888888888
+Lab pyramid + W1 HSV grid,0.25,weighted L1,2528,0.8,0.8388888888888888
+Lab blocks + Andreu HSV pyramid,0.25,weighted L1,12288,0.7666666666666667,0.8083333333333333

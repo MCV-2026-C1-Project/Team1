@@ -1,22 +1,22 @@
-"""Global HSV comparison, L1 distance only (QSD1 = QSD1-W2).
+"""Color histogram comparison, L1 distance only (QSD1 = QSD1-W2).
 
 Sections:
   A. Baselines: gray, marginal RGB and marginal HSV with 32, 64 and Max bins
      per channel (Max = 1 bin per value: gray/RGB 256; HSV H 180, S/V 256),
-     plus the historic Week 1 HSV 30+32+32 reference.
+     plus Week 1 HSV 30+32+32 and HSV grid references.
   B. Global HSV 3D (bins per axis). 3D-Max (180x256x256 = 11.8M dims) is
      skipped as infeasible when dense.
   C. Single HSV 2D: HS, HV, SV.
   D. 2D concatenations: HS+HV, HS+SV, HV+SV and HS+HV+SV. Each part is
      L1-normalized and the concat is L1-renormalized (equal weight per pair).
   E. HSV pyramids (registry combos, levels (1, 2, 4) = 21 cells, L1).
-
-No other color space: HSV only, same combinations as METHODS_W2.
+  F. Lab marginals: global, single grids and the (1, 2, 4) pyramid.
 
 All with L1, top-5, mAP@1/mAP@5.
 
 Usage from the project root:
     python src/eval_w2_color.py
+    python src/eval_w2_color.py --sections A E F
     python src/eval_w2_color.py --queries data/qsd1_w2 --save results/week2/color_sweep_l1.txt
 """
 
@@ -33,9 +33,11 @@ from k_similarity import (
 )
 from methods_w2 import (
     METHODS_W2,
+    METHODS_W2_COLOR_SPACES,
     compute_hsv_2d_concat_histogram,
     compute_hsv_2d_histogram,
     compute_hsv_3d_histogram,
+    compute_lab_histogram,
 )
 from similarity_functions import l1_distance
 from utils import (
@@ -43,6 +45,7 @@ from utils import (
     compute_color_hsv_histogram,
     compute_color_rgb_histogram,
     compute_gray_histogram,
+    compute_hsv_grid_histogram,
 )
 
 HS, HV, SV = (0, 1), (0, 2), (1, 2)
@@ -75,7 +78,7 @@ def _tags(pairs_bins):
 
 
 def build_sections():
-    """[(title, [(name, fn, source)])]; source: hsv/gray/rgb."""
+    """[(title, [(name, fn, source)])]; source: hsv/gray/rgb/lab."""
     # A. Baselines (gray: 256 bins hardcoded in the W1 code).
     base = [
         ("Gray 256", lambda g: compute_gray_histogram(g), "gray"),
@@ -87,6 +90,9 @@ def build_sections():
          lambda im: compute_color_rgb_histogram(im, 256, 256, 256), "rgb"),
         ("HSV 30+32+32 / W1 ref (94)",
          lambda hsv: compute_color_hsv_histogram(hsv), "hsv"),
+        ("HSV grid 4x4 / W1 ref (512)", compute_hsv_grid_histogram, "hsv"),
+        ("HSV grid 6x6 (1152)",
+         lambda hsv: compute_hsv_grid_histogram(hsv, grid=6), "hsv"),
         ("HSV 32+32+32 (96)",
          lambda hsv: compute_color_hsv_histogram(hsv, 32, 32, 32), "hsv"),
         ("HSV 64+64+64 (192)",
@@ -131,12 +137,16 @@ def build_sections():
         ("Pyramid HS+HV 16x16 (10752)",
          METHODS_W2["HSV pyramid HS+HV 16x16"], "hsv"),
     ]
+    lab = [("Lab global 1D 32 (96)", compute_lab_histogram, "lab")]
+    lab.extend((name, fn, "lab") for name, fn in METHODS_W2.items()
+               if METHODS_W2_COLOR_SPACES[name] == "Lab")
     return [
         ("A. Baselines (grayscale / RGB / 1D HSV)", base),
         ("B. Global HSV 3D", three),
         ("C. Single HSV 2D (HS, HV, SV)", solo),
         ("D. 2D concatenations (equal weight per pair)", concat),
         ("E. HSV pyramids (registry combos, 1+2+4, L1)", pyramids),
+        ("F. Lab marginal histograms (32 bins/channel, L1)", lab),
     ]
 
 
@@ -145,6 +155,8 @@ def main():
     parser.add_argument("--museum", default="data/BBDD")
     parser.add_argument("--queries", default="data/qsd1_w1")
     parser.add_argument("--save", type=Path, default=None)
+    parser.add_argument("--sections", nargs="+", choices=list("ABCDEF"),
+                        help="Run only these sections (default: all)")
     args = parser.parse_args()
 
     museum = Dataset(args.museum)
@@ -153,19 +165,23 @@ def main():
     validate_ground_truth(queries.correspondances, len(museum.images),
                            len(queries.images))
 
+    sections = [s for s in build_sections()
+                if args.sections is None or s[0][0] in args.sections]
+    needed = {src for _, exps in sections for _, _, src in exps}
+    conversions = {"hsv": cv2.COLOR_RGB2HSV, "gray": cv2.COLOR_RGB2GRAY,
+                   "lab": cv2.COLOR_RGB2LAB}
     t0 = time.time()
-    museum_hsv = [cv2.cvtColor(im, cv2.COLOR_RGB2HSV) for im in museum.images]
-    queries_hsv = [cv2.cvtColor(im, cv2.COLOR_RGB2HSV) for im in queries.images]
-    museum_gray = [cv2.cvtColor(im, cv2.COLOR_RGB2GRAY) for im in museum.images]
-    queries_gray = [cv2.cvtColor(im, cv2.COLOR_RGB2GRAY) for im in queries.images]
-    print(f"HSV/gray conversion: {time.time()-t0:.1f}s")
-
-    sources = {"hsv": (museum_hsv, queries_hsv),
-               "gray": (museum_gray, queries_gray),
-               "rgb": (museum.images, queries.images)}
+    sources = {"rgb": (museum.images, queries.images)}
+    for src, conversion in conversions.items():
+        if src in needed:
+            sources[src] = (
+                [cv2.cvtColor(im, conversion) for im in museum.images],
+                [cv2.cvtColor(im, conversion) for im in queries.images],
+            )
+    print(f"Color conversion: {time.time()-t0:.1f}s")
     width = 44
     lines = []
-    for title, exps in build_sections():
+    for title, exps in sections:
         lines.append("")
         lines.append(title)
         lines.append(f"{'Method':{width}s} {'dims':>7s} "

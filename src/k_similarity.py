@@ -156,9 +156,9 @@ def main():
 
             print("Top-1 per query:", [r[0][0] for r in rankings])
 
-    # Week 2: same queries (QSD1-W2 == QSD1-W1), W2 HSV descriptors.
+    # Week 2: same queries (QSD1-W2 == QSD1-W1), HSV and Lab descriptors.
     # Compare directly against the best W1 (HSV grid + L1, mAP@5 0.82).
-    print("\n--- Methods_W2 (global + pyramid HSV 3D/2D) ---")
+    print("\n--- Methods_W2 (HSV 3D/2D and spatial Lab) ---")
     museum_descriptors_w2 = compute_descriptors_w2(museum)
     query_descriptors_w2 = compute_descriptors_w2(queries)
     for method_idx, method_name in enumerate(METHODS_W2_NAMES):

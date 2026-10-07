@@ -8,7 +8,7 @@ Create a virtual environment to encapsulate the required installations.
 ```powershell
    python -m venv .venv
 ```
-2. Upgrade pip, in case the versions do not coincide:
+2. Upgrade pip, in case the versions do not coincide:ara
 ```powershell
    .\.venv\Scripts\python.exe -m pip install --upgrade pip
 ```
@@ -17,7 +17,7 @@ Create a virtual environment to encapsulate the required installations.
    .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 4. Activate the environment (Windows):
-```powershell
+```powershellque 
    .\.venv\Scripts\Activate.ps1
 ```
 
@@ -101,3 +101,39 @@ Available comparisons: `Euclidean`, `L1`, `Chi-square`, `Histogram Intersection`
 `Hellinger`, `Cosine`, and `Correlation`. Quote names containing spaces.
 
 ---
+
+## Week 2
+
+### Task 1: Color Histograms
+
+`methods_w2.py` contains the HSV 2D/3D histograms and their pyramids, plus:
+- Lab blocks (4×4 and 6×6 grids)
+- Lab pyramid (1×1, 2×2 and 4×4 grids)
+
+The Lab descriptors use a separate 1D histogram for each channel, with
+32 bins per channel. All W2 methods accept an optional foreground mask.
+
+### Task 2: Retrieval Comparison
+
+Run:
+```powershell
+python .\src\eval_w2_color.py --sections A E F
+```
+
+This compares the W1 baselines, HSV pyramids and Lab methods using L1 on
+the 30 QSD1 development queries. Omit `--sections A E F` to run the full
+comparison, or use `--save results/week2/color_comparison.txt` to save it.
+
+| Descriptor | mAP@1 | mAP@5 |
+|---|---:|---:|
+| W1 HSV grid 4×4 | 0.7667 | 0.8194 |
+| HSV grid 6×6 | 0.8000 | 0.8500 |
+| Lab pyramid (1, 2, 4) | 0.8333 | 0.8694 |
+| Lab blocks 4×4 | 0.8333 | 0.8722 |
+| Lab blocks 6×6 | 0.8667 | 0.9000 |
+
+Lab 6×6 gives the best result on this set, with 26 of 30 queries correct
+at rank 1. Evaluation with segmentation and blind queries is still pending.
+
+The extra experiments and their results are in
+[results/week2/color_experiments](results/week2/color_experiments).
