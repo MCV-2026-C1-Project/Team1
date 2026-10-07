@@ -9,7 +9,7 @@ from types import SimpleNamespace
 import cv2
 
 from main import compute_descriptors, DESCRIPTOR_NAMES
-from main import METHODS_W1_NAMES  # entrega QST1 congelada en W1; QST1/QST2-W2 ira en task4_w2.py
+from main import METHODS_W1_NAMES  # Frozen QST1 submission in W1; QST1/QST2-W2 will go in task4_w2.py
 from k_similarity import retrieve_all_queries, DISTANCE_FUNCTIONS
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
