@@ -1,4 +1,10 @@
-"""Tests Methods_W2 (methods_w2.py): formas, normalizacion L1 y mascaras."""
+"""Tests for Methods_W2 (methods_w2.py): HSV globals + pyramids and Lab
+spatial entries, L1, masks.
+
+HSV pyramids mirror the 4 global combinations (levels (1, 2, 4)).
+Generic multi-space pyramids live in ``spatial_pyramid.py`` (see
+``tests/test_spatial_pyramid*.py``).
+"""
 import os
 import sys
 import unittest
@@ -14,6 +20,7 @@ from methods_w2 import (  # noqa: E402
     METHODS_W2_NAMES,
     METHODS_W2_COLOR_SPACES,
     compute_descriptors_w2,
+    compute_hsv_2d_concat_histogram,
     compute_hsv_2d_histogram,
     compute_hsv_3d_histogram,
     compute_hsv_pyramid_histogram,
@@ -43,10 +50,10 @@ class TestW2Shapes(unittest.TestCase):
             "HSV 2D HS 30x32": (960,),
             "HSV 2D HV 8x8": (64,),
             "HSV 2D HS+HV 16x16": (512,),
-            "HSV pyramid 3D 4x4x4": (1344,),
-            "HSV pyramid HS 30x32": (20160,),
-            "HSV pyramid HV 8x8": (1344,),
-            "HSV pyramid HS+HV 16x16": (10752,),
+            "HSV pyramid 3D 4x4x4": (21 * 64,),
+            "HSV pyramid HS 30x32": (21 * 960,),
+            "HSV pyramid HV 8x8": (21 * 64,),
+            "HSV pyramid HS+HV 16x16": (21 * 512,),
             "Lab block 4x4 1D 32": (1536,),
             "Lab block 6x6 1D 32": (3456,),
             "Lab pyramid 1D 32": (2016,),
@@ -67,27 +74,52 @@ class TestW2Shapes(unittest.TestCase):
         self.assertEqual(v.shape, (64,))
         self.assertAlmostEqual(float(v.sum()), 1.0, places=5)
 
+    def test_2d_concat_shape_and_l1(self):
+        hsv = _red_hsv()
+        v = compute_hsv_2d_concat_histogram(
+            hsv, parts=[((0, 1), (16, 16)), ((0, 2), (16, 16))]
+        )
+        self.assertEqual(v.shape, (512,))
+        self.assertAlmostEqual(float(v.sum()), 1.0, places=5)
+
+    def test_pyramid_levels_and_l1(self):
+        hsv = _red_hsv(h=32, w=32)
+        full = compute_hsv_pyramid_histogram(hsv)
+        self.assertEqual(full.shape, (21 * 64,))
+        self.assertAlmostEqual(float(full.sum()), 1.0, places=5)
+        single = compute_hsv_pyramid_histogram(hsv, levels=(1,))
+        self.assertEqual(single.shape, (64,))
+        np.testing.assert_allclose(
+            single, compute_hsv_2d_histogram(hsv, channels=(0, 1), bins=(8, 8)),
+            atol=1e-6)
+
     def test_mask_keeps_shape_and_l1(self):
         hsv = _red_hsv()
         mask = np.zeros((32, 32), dtype=np.uint8)
         mask[8:24, 8:24] = 255
+        concat = lambda im, mask=mask: compute_hsv_2d_concat_histogram(
+            im, parts=[((0, 1), (16, 16)), ((0, 2), (16, 16))],
+            mask=mask,
+        )
         for fn in (
             compute_hsv_3d_histogram,
             compute_hsv_2d_histogram,
+            concat,
             compute_hsv_pyramid_histogram,
         ):
             full = fn(hsv)
             masked = fn(hsv, mask=mask)
             self.assertEqual(full.shape, masked.shape)
             self.assertAlmostEqual(float(masked.sum()), 1.0, places=5)
-        # La mascara parcial debe cambiar el descriptor global en imagen bicolor
-        # (en imagen uniforme el histograma no cambia: test anterior usaba rojo plano).
+        # A partial mask must change the global descriptor on a two-color
+        # image (on a flat image the histogram does not change: the test
+        # above used flat red).
         bicolor = np.zeros((32, 32, 3), dtype=np.uint8)
         bicolor[:, :16] = (255, 0, 0)
         bicolor[:, 16:] = (0, 0, 255)
         bicolor_hsv = cv2.cvtColor(bicolor, cv2.COLOR_RGB2HSV)
         half_mask = np.zeros((32, 32), dtype=np.uint8)
-        half_mask[:, :16] = 255  # solo mitad roja
+        half_mask[:, :16] = 255  # red half only
         self.assertGreater(
             float(np.abs(
                 compute_hsv_3d_histogram(bicolor_hsv)

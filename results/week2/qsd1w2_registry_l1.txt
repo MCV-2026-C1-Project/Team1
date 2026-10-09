@@ -1,0 +1,8 @@
+HSV 3D 4x4x4                 dims=    64 mAP@1=0.5000 mAP@5=0.5389
+HSV 2D HS 30x32              dims=   960 mAP@1=0.4667 mAP@5=0.5067
+HSV 2D HV 8x8                dims=    64 mAP@1=0.4333 mAP@5=0.4883
+HSV 2D HS+HV 16x16           dims=   512 mAP@1=0.5667 mAP@5=0.6167
+HSV pyramid 3D 4x4x4         dims=  1344 mAP@1=0.6333 mAP@5=0.7067
+HSV pyramid HS 30x32         dims= 20160 mAP@1=0.5333 mAP@5=0.6233
+HSV pyramid HV 8x8           dims=  1344 mAP@1=0.6000 mAP@5=0.6167
+HSV pyramid HS+HV 16x16      dims= 10752 mAP@1=0.7333 mAP@5=0.7722
