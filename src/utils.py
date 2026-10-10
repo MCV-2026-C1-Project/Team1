@@ -26,6 +26,22 @@ def load_image(img_path):
     """ Loads and image in RGB. """
     return cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB)
 
+def compute_segmentation_metrics(predicted_mask, ground_truth_mask):
+    """Compare masks of the same size; nonzero pixels are foreground."""
+    predicted = np.asarray(predicted_mask)
+    truth = np.asarray(ground_truth_mask)
+    if predicted.ndim != 2 or truth.ndim != 2 or predicted.shape != truth.shape:
+        raise ValueError("Masks must be 2D arrays with the same shape")
+    predicted = predicted != 0
+    truth = truth != 0
+    tp = int(np.count_nonzero(np.logical_and(predicted, truth)))
+    fp = int(np.count_nonzero(predicted)) - tp
+    fn = int(np.count_nonzero(truth)) - tp
+    precision = tp / (tp + fp) if tp + fp else 0.0
+    recall = tp / (tp + fn) if tp + fn else 0.0
+    f1 = 2 * precision * recall / (precision + recall) if precision + recall else 0.0
+    return {"precision": precision, "recall": recall, "F1": f1}
+
 def compute_gray_histogram(img_gray):
     assert len(img_gray.shape) == 2, "Not a gray image"
     

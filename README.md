@@ -137,3 +137,17 @@ at rank 1. Evaluation with segmentation and blind queries is still pending.
 
 The extra experiments and their results are in
 [results/week2/color_experiments](results/week2/color_experiments).
+
+### Task 4: Segmentation Evaluation
+
+Run after generating the masks from Task 3:
+```powershell
+python .\src\eval_w2_masks.py --predicted results/week2/masks --ground-truth data/qsd2_w2 --save results/week2/mask_metrics.txt
+```
+
+The script matches PNG masks by numeric filename ID and computes foreground
+precision, recall and F1 for each query. Masks must have the same dimensions
+as their reference, with 0 for background and nonzero pixels for foreground.
+
+The table shows the scores for each query and their mean. Use `--save` to
+write it to a text file.
