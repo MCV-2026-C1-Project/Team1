@@ -29,6 +29,8 @@ from methods_w2 import (  # noqa: E402
     compute_lab_1d_histogram,
     compute_lab_2d_histogram,
     compute_lab_3d_histogram,
+    compute_lab_block_2d_histogram,
+    compute_lab_block_3d_histogram,
     compute_lab_block_histogram,
     compute_lab_histogram,
     compute_lab_mixed_concat_histogram,
@@ -63,10 +65,10 @@ class TestW2Shapes(unittest.TestCase):
     def test_shapes_and_l1(self):
         lab = _red_lab()
         expected = {
-            "Lab blocks 1D": (DEFAULT_BLOCKS * 96,),        # total cells
-            "Lab 2D": (32 + 32 * 32,),                      # L + ab
-            "Lab 3D": (32 ** 3,),
-            "Lab pyramid": ((1 + 2 + 4) * 96,),             # 3 levels
+            "Lab blocks 1D": (DEFAULT_BLOCKS * 96,),         # total cells
+            "Lab 2D": (DEFAULT_BLOCKS * (32 + 32 * 32),),    # cells x (L+ab)
+            "Lab 3D": (DEFAULT_BLOCKS * 32 ** 3,),           # cells x 3D
+            "Lab pyramid": ((1 + 2 + 4) * 96,),              # 3 levels
         }
         for name, shape in expected.items():
             v = METHODS_W2[name](lab)
@@ -76,10 +78,40 @@ class TestW2Shapes(unittest.TestCase):
 
     def test_blocks_parameter(self):
         lab = _red_lab()
-        for cells in (1, 4, 9, 16, 25):
-            v = build_method("Lab blocks 1D", blocks=cells)(lab)
-            self.assertEqual(v.shape, (cells * 96,))
-            self.assertAlmostEqual(float(v.sum()), 1.0, places=5)
+        per_cell = {
+            "Lab blocks 1D": 96,
+            "Lab 2D": 32 + 32 * 32,
+            "Lab 3D": 32 ** 3,
+        }
+        for name, dim in per_cell.items():
+            for cells in (1, 4, 9, 16, 25):
+                v = build_method(name, blocks=cells)(lab)
+                self.assertEqual(v.shape, (cells * dim,), f"{name} {cells}")
+                self.assertAlmostEqual(float(v.sum()), 1.0, places=5)
+
+    def test_block_2d_3d_grid_one_matches_global(self):
+        lab = cv2.cvtColor(
+            np.random.default_rng(7).integers(
+                0, 256, (9, 11, 3), dtype=np.uint8),
+            cv2.COLOR_RGB2LAB)
+        np.testing.assert_allclose(
+            compute_lab_block_2d_histogram(lab, grid=1),
+            compute_lab_mixed_concat_histogram(lab), atol=1e-7)
+        np.testing.assert_allclose(
+            compute_lab_block_3d_histogram(lab, grid=1),
+            compute_lab_3d_histogram(lab), atol=1e-7)
+
+    def test_block_2d_3d_spatial_sensitivity(self):
+        left = np.zeros((32, 32, 3), dtype=np.uint8)
+        left[:, :16] = (255, 0, 0)
+        left[:, 16:] = (0, 0, 255)
+        lab = cv2.cvtColor(left, cv2.COLOR_RGB2LAB)
+        swapped_lab = cv2.cvtColor(left[:, ::-1].copy(), cv2.COLOR_RGB2LAB)
+        for fn in (compute_lab_block_2d_histogram,
+                   compute_lab_block_3d_histogram):
+            np.testing.assert_allclose(fn(lab, grid=1), fn(swapped_lab, grid=1))
+            self.assertGreater(float(np.abs(
+                fn(lab, grid=2) - fn(swapped_lab, grid=2)).sum()), 0.1)
 
     def test_blocks_grid_perfect_squares(self):
         self.assertEqual(blocks_grid(1), (1, 1))

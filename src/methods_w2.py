@@ -21,11 +21,13 @@ concatenation is L1-renormalized, so each part carries equal weight):
       cells (a perfect square, so n x n); each cell carries a marginal 1D
       histogram per channel (32 bins), and all cells are concatenated
       row-major.  Parameter: --blocks (total cells, default 25 -> 5x5).
-    - "Lab 2D"         the L channel as a 1D marginal (32 bins) plus the
-      (a, b) pair as a joint 2D histogram (32 bins per axis), concatenated.
-      No specific parameter.
-    - "Lab 3D"         joint 3D L-a-b histogram (32 bins per axis). No
-      specific parameter.
+    - "Lab 2D"         the image is split into the same `blocks` grid; each
+      cell carries the L channel as a 1D marginal (32 bins) plus the (a, b)
+      pair as a joint 2D histogram (32 bins per axis); all cells are
+      concatenated row-major.  Parameter: --blocks (same as 1D).
+    - "Lab 3D"         the image is split into the same `blocks` grid; each
+      cell carries a joint 3D L-a-b histogram (32 bins per axis); all cells
+      are concatenated row-major.  Parameter: --blocks (same as 1D).
     - "Lab pyramid"    hierarchy of 1D-block levels: level 1 is a single
       block (whole image, like "Lab blocks 1D" with 1 block) and every extra
       level doubles the number of blocks, arranged as square as possible
@@ -191,6 +193,38 @@ def compute_lab_block_histogram(img_lab, grid=4, bins=32, mask=None):
     )
 
 
+LAB_2D_PARTS = (((0,), 32), ((1, 2), 32))
+LAB_3D_BINS = 32
+
+
+def compute_lab_block_2d_histogram(img_lab, grid=4, parts=LAB_2D_PARTS,
+                                   mask=None):
+    """Grid of mixed 1D+2D Lab parts (L + ab), concatenated row-major.
+
+    Same grid convention as compute_lab_block_histogram; each cell carries
+    the per-part mixed histogram and every cell is L1-renormalized on
+    concatenation (equal weight per cell).
+    """
+    _grid_size(grid)
+    block_fn = (lambda block, m:
+                compute_lab_mixed_concat_histogram(block, parts=parts, mask=m))
+    return _compute_spatial_histogram(img_lab, (grid,), block_fn, mask)
+
+
+def compute_lab_block_3d_histogram(img_lab, grid=4, bins=LAB_3D_BINS,
+                                   mask=None):
+    """Grid of joint 3D L-a-b histograms, concatenated in row-major order.
+
+    Same grid convention as compute_lab_block_histogram; each cell carries
+    the joint 3D histogram and every cell is L1-renormalized on
+    concatenation (equal weight per cell).
+    """
+    _grid_size(grid)
+    block_fn = (lambda block, m:
+                compute_lab_3d_histogram(block, bins=bins, mask=m))
+    return _compute_spatial_histogram(img_lab, (grid,), block_fn, mask)
+
+
 DEFAULT_BLOCKS = 25
 DEFAULT_PYRAMID_LEVELS = 3
 
@@ -223,18 +257,19 @@ def pyramid_grids(divisions):
 def build_method(name, blocks=DEFAULT_BLOCKS, levels=DEFAULT_PYRAMID_LEVELS):
     """Return fn(lab, mask) for a W2 method built with explicit parameters.
 
-    blocks: grid side for "Lab blocks 1D" (blocks x blocks cells).
+    blocks: total cells (a perfect square -> n x n) for "Lab blocks 1D",
+        "Lab 2D" and "Lab 3D".
     levels: number of hierarchy levels for "Lab pyramid".
     """
     if name == "Lab blocks 1D":
         return lambda lab, mask=None: compute_lab_block_histogram(
             lab, grid=blocks_grid(blocks), mask=mask)
     if name == "Lab 2D":
-        return lambda lab, mask=None: compute_lab_mixed_concat_histogram(
-            lab, parts=[((0,), 32), ((1, 2), 32)], mask=mask)
+        return lambda lab, mask=None: compute_lab_block_2d_histogram(
+            lab, grid=blocks_grid(blocks), mask=mask)
     if name == "Lab 3D":
-        return lambda lab, mask=None: compute_lab_3d_histogram(
-            lab, bins=32, mask=mask)
+        return lambda lab, mask=None: compute_lab_block_3d_histogram(
+            lab, grid=blocks_grid(blocks), mask=mask)
     if name == "Lab pyramid":
         return lambda lab, mask=None: compute_lab_pyramid_histogram(
             lab, levels=pyramid_grids(levels), mask=mask)
@@ -487,8 +522,9 @@ def build_parser():
                              "retrieval)")
     parser.add_argument("--blocks", type=_perfect_square,
                         default=DEFAULT_BLOCKS,
-                        help="Total cells for 'Lab blocks 1D' (a perfect "
-                             "square, default 25 -> 5x5)")
+                        help="Total spatial cells (a perfect square, default "
+                             "25 -> 5x5) for 'Lab blocks 1D', 'Lab 2D' and "
+                             "'Lab 3D'")
     parser.add_argument("--levels", type=int, default=DEFAULT_PYRAMID_LEVELS,
                         help="Number of hierarchy levels for 'Lab pyramid'")
     parser.add_argument("--museum", type=Path, help="Museum image folder")

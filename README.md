@@ -114,8 +114,8 @@ optional foreground mask):
 | Method | Description | Parameter |
 |---|---|---|
 | `Lab blocks 1D` | grid of marginal 1D histograms (32 bins per channel), concatenated in row-major order | `--blocks T` total cells, a perfect square (default 25 → 5×5) |
-| `Lab 2D` | L as a 1D marginal (32 bins) plus the (a, b) pair as a joint 2D histogram (32 bins per axis), concatenated | — |
-| `Lab 3D` | joint 3D L-a-b histogram (32 bins per axis) | — |
+| `Lab 2D` | same grid of cells; each cell is L as a 1D marginal (32 bins) plus the (a, b) pair as a joint 2D histogram (32 bins per axis), concatenated row-major | `--blocks T` (default 25 → 5×5) |
+| `Lab 3D` | same grid of cells; each cell is a joint 3D L-a-b histogram (32 bins per axis), concatenated row-major | `--blocks T` (default 25 → 5×5) |
 | `Lab pyramid` | hierarchy of 1D-block levels: level 1 is one block, each extra level doubles the number of blocks (1, 2, 4, 8 …) | `--levels K` (default 3) |
 
 Run `python .\src\methods_w2.py --list` to list them.
@@ -147,8 +147,10 @@ mAP on the 30 QSD1-W2 queries against the BBDD (L1):
 | `Lab blocks 1D` | `--blocks 36` | 0.8667 | 0.9000 |
 | `Lab pyramid` | `--levels 3` | 0.6333 | 0.6744 |
 | `Lab pyramid` | `--levels 4` | 0.7333 | 0.7778 |
-| `Lab 2D` | — | 0.5333 | 0.6028 |
-| `Lab 3D` | — | 0.4000 | 0.4833 |
+| `Lab 2D` | `--blocks 1` (1×1) | 0.5333 | 0.6028 |
+| `Lab 2D` | `--blocks 25` (default) | 0.8667 | 0.8917 |
+| `Lab 3D` | `--blocks 1` (1×1) | 0.4000 | 0.4833 |
+| `Lab 3D` | `--blocks 25` (default) | 0.7000 | 0.7472 |
 
 `Lab blocks 1D --blocks 36` gives the best mAP@5 on this set (tied with the
 default `--blocks 25` at rank 1). Evaluation with segmentation and blind
