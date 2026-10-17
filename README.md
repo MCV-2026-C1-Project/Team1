@@ -157,6 +157,27 @@ queries is still pending.
 The extra experiments and their results are in
 [results/week2/color_experiments](results/week2/color_experiments).
 
+### Task 3: Background Removal
+
+Method:
+1. The outer 4% of the image is used as a sample of the wall.
+2. A smooth color model of the wall is fitted in CIE-Lab (a polynomial surface,
+   so uneven lighting is handled; frame corners or labels in the strip are
+   down-weighted).
+3. Each pixel's Mahalanobis distance to that wall model is computed; pixels far
+   from the wall are foreground. The threshold is chosen per image (Otsu,
+   clipped to 3-12).
+4. Cleanup: morphology, keep the largest connected blob, fill holes, and replace
+   the blob by its bounding box (paintings are rectangles). Use
+   `BGParams(use_bbox=False)` for the pure color mask.
+
+No edge, contour or object detector is used. Masks are saved with the same name
+as the image and a `.png` extension (`00001.jpg` -> `00001.png`), values 0
+(background) / 255 (painting). `--viz` saves one overlay per image plus
+`overview.jpg` (dimmed = removed background, red = our mask, green =
+ground truth, F1 on every tile). If the ground-truth masks sit next to the
+images (QSD2), the mean P/R/F1 is printed.
+
 ### Task 4: Segmentation Evaluation
 
 Run after generating the masks from Task 3:
