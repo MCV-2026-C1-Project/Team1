@@ -18,6 +18,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 from methods_w2 import (  # noqa: E402
     DEFAULT_BLOCKS,
     DEFAULT_PYRAMID_LEVELS,
+    METHOD_ALL,
+    METHOD_CHOICES,
     METHODS_W2,
     METHODS_W2_COLOR_SPACES,
     METHODS_W2_NAMES,
@@ -47,6 +49,13 @@ class TestW2Registry(unittest.TestCase):
         self.assertEqual(list(METHODS_W2), list(METHODS_W2_NAMES))
         self.assertEqual(set(METHODS_W2_COLOR_SPACES), set(METHODS_W2))
         self.assertEqual(set(METHODS_W2_COLOR_SPACES.values()), {"Lab"})
+
+    def test_method_all_choice(self):
+        self.assertEqual(METHOD_ALL, "all")
+        self.assertEqual(METHOD_CHOICES, METHODS_W2_NAMES + (METHOD_ALL,))
+        self.assertNotIn(METHOD_ALL, METHODS_W2)
+        with self.assertRaises(ValueError):
+            build_method(METHOD_ALL)
 
 
 class TestW2Shapes(unittest.TestCase):

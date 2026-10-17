@@ -2,9 +2,13 @@
 
 Run as a script (argparse selects the action):
     python methods_w2.py --list
-    python methods_w2.py --museum <dir> --queries <dir> [--method NAME]
-    python methods_w2.py --museum <dir> --queries <dir> --ground-truth <pkl>
+    python methods_w2.py --museum <dir> --queries <dir> --method NAME
+    python methods_w2.py --museum <dir> --queries <dir> --method all
+    python methods_w2.py --museum <dir> --queries <dir> --method NAME --ground-truth <pkl>
     python methods_w2.py --segmentation <pred_dir> <gt_dir> [--save FILE]
+
+Retrieval requires --method explicitly: a single descriptor name, or "all"
+to evaluate every method in a single pass over the images.
 
 Functions take uint8 OpenCV Lab images (all channels span [0, 256)) and
 accept an optional foreground mask (Task 3/5): if ``mask`` is None the full
@@ -228,6 +232,9 @@ METHODS_W2_NAMES = ("Lab blocks 1D", "Lab 2D", "Lab 3D", "Lab pyramid")
 METHODS_W2 = {name: build_method(name) for name in METHODS_W2_NAMES}
 METHODS_W2_COLOR_SPACES = dict.fromkeys(METHODS_W2_NAMES, "Lab")
 
+METHOD_ALL = "all"
+METHOD_CHOICES = METHODS_W2_NAMES + (METHOD_ALL,)
+
 
 def compute_descriptors_w2(dataset, masks=None, blocks=DEFAULT_BLOCKS,
                            levels=DEFAULT_PYRAMID_LEVELS):
@@ -317,40 +324,78 @@ def load_descriptors_w2(path, mask_folder=None, method=None,
     return ids, descriptors
 
 
+def _load_ground_truth(ground_truth_path, query_ids):
+    """Load the trusted correspondences and check the query count."""
+    if ground_truth_path is None:
+        return None
+    with Path(ground_truth_path).open("rb") as stream:
+        ground_truth = pickle.load(stream)
+    if len(ground_truth) != len(query_ids):
+        raise ValueError("Ground-truth count must match numeric query order")
+    return ground_truth
+
+
+def _report_rankings(method, distance_name, museum_ids, query_ids, dim,
+                     rankings, top_k, ground_truth):
+    """Print the header plus ranked IDs (or mAP); return the ranked IDs."""
+    from k_similarity import mean_average_precision_at_k
+
+    ranked_ids = [[museum_ids[idx] for idx, _ in row] for row in rankings]
+    print(f"{method} + {distance_name}: "
+          f"{len(museum_ids)} museum, {len(query_ids)} queries, dim {dim}")
+    if ground_truth is None:
+        for qid, row in zip(query_ids, ranked_ids):
+            print(f"Query {qid}: {row}")
+        return ranked_ids
+    for k in (1, top_k) if top_k != 5 else (1, 5):
+        print(f"mAP@{k}: "
+              f"{mean_average_precision_at_k(ranked_ids, ground_truth, k):.4f}")
+    return ranked_ids
+
+
 def evaluate_folders_w2(museum_path, queries_path, method, distance_name,
                         top_k, ground_truth_path=None, museum_masks=None,
                         query_masks=None, blocks=DEFAULT_BLOCKS,
                         levels=DEFAULT_PYRAMID_LEVELS):
     """Retrieve top-k museum IDs per query; print mAP if ground truth given."""
     # Local import: k_similarity imports METHODS_W2 at module level.
-    from k_similarity import (
-        DISTANCE_FUNCTIONS,
-        mean_average_precision_at_k,
-        retrieve_all_queries,
-    )
+    from k_similarity import DISTANCE_FUNCTIONS, retrieve_all_queries
 
     museum_ids, museum = load_descriptors_w2(
         museum_path, museum_masks, method=method, blocks=blocks, levels=levels)
     query_ids, queries = load_descriptors_w2(
         queries_path, query_masks, method=method, blocks=blocks, levels=levels)
+    ground_truth = _load_ground_truth(ground_truth_path, query_ids)
     rankings = retrieve_all_queries(
         queries, museum, DISTANCE_FUNCTIONS[distance_name], top_k=top_k)
-    ranked_ids = [[museum_ids[idx] for idx, _ in row] for row in rankings]
-    print(f"{method} + {distance_name}: "
-          f"{len(museum_ids)} museum, {len(query_ids)} queries, "
-          f"dim {len(museum[0])}")
-    if ground_truth_path is None:
-        for qid, row in zip(query_ids, ranked_ids):
-            print(f"Query {qid}: {row}")
-        return ranked_ids
-    with Path(ground_truth_path).open("rb") as stream:
-        ground_truth = pickle.load(stream)
-    if len(ground_truth) != len(query_ids):
-        raise ValueError("Ground-truth count must match numeric query order")
-    for k in (1, top_k) if top_k != 5 else (1, 5):
-        print(f"mAP@{k}: "
-              f"{mean_average_precision_at_k(ranked_ids, ground_truth, k):.4f}")
-    return ranked_ids
+    return _report_rankings(method, distance_name, museum_ids, query_ids,
+                            len(museum[0]), rankings, top_k, ground_truth)
+
+
+def evaluate_all_folders_w2(museum_path, queries_path, distance_name, top_k,
+                            ground_truth_path=None, museum_masks=None,
+                            query_masks=None, blocks=DEFAULT_BLOCKS,
+                            levels=DEFAULT_PYRAMID_LEVELS):
+    """Run every W2 method in one pass; print mAP if ground truth given.
+
+    Returns a dict mapping each method name to its ranked IDs.
+    """
+    from k_similarity import DISTANCE_FUNCTIONS, retrieve_all_queries
+
+    museum_ids, museum = load_descriptors_w2(
+        museum_path, museum_masks, method=None, blocks=blocks, levels=levels)
+    query_ids, queries = load_descriptors_w2(
+        queries_path, query_masks, method=None, blocks=blocks, levels=levels)
+    ground_truth = _load_ground_truth(ground_truth_path, query_ids)
+    results = {}
+    for j, name in enumerate(METHODS_W2_NAMES):
+        rankings = retrieve_all_queries(
+            queries[j], museum[j], DISTANCE_FUNCTIONS[distance_name],
+            top_k=top_k)
+        results[name] = _report_rankings(
+            name, distance_name, museum_ids, query_ids, len(museum[j][0]),
+            rankings, top_k, ground_truth)
+    return results
 
 
 def _mask_paths(folder):
@@ -410,9 +455,10 @@ def build_parser():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--list", action="store_true",
                         help="List available W2 methods and exit")
-    parser.add_argument("--method", choices=METHODS_W2_NAMES,
-                        default="Lab blocks 1D",
-                        help="Descriptor for retrieval evaluation")
+    parser.add_argument("--method", choices=METHOD_CHOICES, default=None,
+                        help="Descriptor for retrieval evaluation, or 'all' "
+                             "to evaluate every method (required for "
+                             "retrieval)")
     parser.add_argument("--blocks", type=int, default=DEFAULT_BLOCKS,
                         help="Grid side for 'Lab blocks 1D' (N -> NxN cells)")
     parser.add_argument("--levels", type=int, default=DEFAULT_PYRAMID_LEVELS,
@@ -449,6 +495,15 @@ def main(args=None):
     if not opts.museum or not opts.queries:
         parser.error("--museum and --queries are required "
                      "(or use --list / --segmentation)")
+    if opts.method is None:
+        parser.error("--method is required: one of "
+                     + ", ".join(METHOD_CHOICES))
+    if opts.method == METHOD_ALL:
+        evaluate_all_folders_w2(opts.museum, opts.queries, opts.distance,
+                                opts.top_k, opts.ground_truth,
+                                opts.museum_masks, opts.query_masks,
+                                opts.blocks, opts.levels)
+        return
     evaluate_folders_w2(opts.museum, opts.queries, opts.method,
                         opts.distance, opts.top_k, opts.ground_truth,
                         opts.museum_masks, opts.query_masks,

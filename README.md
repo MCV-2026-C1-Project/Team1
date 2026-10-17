@@ -122,13 +122,19 @@ Run `python .\src\methods_w2.py --list` to list them.
 
 ### Task 2: Retrieval Comparison
 
-Run any W2 method on a museum/query pair (add `--ground-truth` to print mAP):
+Run a W2 method on a museum/query pair (add `--ground-truth` to print mAP):
 ```powershell
 python .\src\methods_w2.py --museum ..\..\datasets\BBDD --queries ..\..\datasets\qsd1_w2 --method "Lab blocks 1D" --blocks 6
 ```
 
-Use `--blocks`/`--levels` for the parametrized methods and `--distance` for the
-comparison (default L1). Omit `--method` to evaluate all four.
+`--method` is required: a descriptor name or `all` (evaluates the four methods
+in one pass). Use `--blocks`/`--levels` for the parametrized methods and
+`--distance` for the comparison (default L1).
+
+For example, on QSD1-W2:
+```powershell
+python .\src\methods_w2.py --museum data\BBDD --queries data\qsd1_w2 --ground-truth data\qsd1_w2\gt_corresps.pkl --method all
+```
 
 mAP on the 30 QSD1-W2 queries against the BBDD (L1):
 
