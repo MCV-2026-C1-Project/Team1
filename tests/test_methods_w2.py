@@ -24,6 +24,7 @@ from methods_w2 import (  # noqa: E402
     METHODS_W2_COLOR_SPACES,
     METHODS_W2_NAMES,
     build_method,
+    blocks_grid,
     compute_descriptors_w2,
     compute_lab_1d_histogram,
     compute_lab_2d_histogram,
@@ -62,7 +63,7 @@ class TestW2Shapes(unittest.TestCase):
     def test_shapes_and_l1(self):
         lab = _red_lab()
         expected = {
-            "Lab blocks 1D": (DEFAULT_BLOCKS ** 2 * 96,),  # 4x4 cells
+            "Lab blocks 1D": (DEFAULT_BLOCKS * 96,),        # total cells
             "Lab 2D": (32 + 32 * 32,),                      # L + ab
             "Lab 3D": (32 ** 3,),
             "Lab pyramid": ((1 + 2 + 4) * 96,),             # 3 levels
@@ -75,10 +76,19 @@ class TestW2Shapes(unittest.TestCase):
 
     def test_blocks_parameter(self):
         lab = _red_lab()
-        for blocks, cells in ((2, 4), (4, 16), (6, 36)):
-            v = build_method("Lab blocks 1D", blocks=blocks)(lab)
+        for cells in (1, 4, 9, 16, 25):
+            v = build_method("Lab blocks 1D", blocks=cells)(lab)
             self.assertEqual(v.shape, (cells * 96,))
             self.assertAlmostEqual(float(v.sum()), 1.0, places=5)
+
+    def test_blocks_grid_perfect_squares(self):
+        self.assertEqual(blocks_grid(1), (1, 1))
+        self.assertEqual(blocks_grid(4), (2, 2))
+        self.assertEqual(blocks_grid(16), (4, 4))
+        self.assertEqual(blocks_grid(25), (5, 5))
+        for bad in (0, 2, 3, 6, 24):
+            with self.assertRaises(AssertionError):
+                blocks_grid(bad)
 
     def test_pyramid_levels_parameter(self):
         lab = _red_lab()
@@ -142,8 +152,10 @@ class TestW2Shapes(unittest.TestCase):
 
     def test_build_method_exposes_params(self):
         lab = _red_lab()
-        fn = build_method("Lab blocks 1D", blocks=2)
-        self.assertEqual(fn(lab).shape, (4 * 96,))
+        fn = build_method("Lab blocks 1D", blocks=9)
+        self.assertEqual(fn(lab).shape, (9 * 96,))
+        with self.assertRaises(AssertionError):
+            build_method("Lab blocks 1D", blocks=6)(lab)
         with self.assertRaises(ValueError):
             build_method("Lab nope")
 

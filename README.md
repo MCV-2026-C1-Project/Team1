@@ -113,7 +113,7 @@ optional foreground mask):
 
 | Method | Description | Parameter |
 |---|---|---|
-| `Lab blocks 1D` | N×N grid of marginal 1D histograms (32 bins per channel), concatenated in row-major order | `--blocks N` (default 4 → 4×4) |
+| `Lab blocks 1D` | grid of marginal 1D histograms (32 bins per channel), concatenated in row-major order | `--blocks T` total cells, a perfect square (default 25 → 5×5) |
 | `Lab 2D` | L as a 1D marginal (32 bins) plus the (a, b) pair as a joint 2D histogram (32 bins per axis), concatenated | — |
 | `Lab 3D` | joint 3D L-a-b histogram (32 bins per axis) | — |
 | `Lab pyramid` | hierarchy of 1D-block levels: level 1 is one block, each extra level doubles the number of blocks (1, 2, 4, 8 …) | `--levels K` (default 3) |
@@ -124,7 +124,7 @@ Run `python .\src\methods_w2.py --list` to list them.
 
 Run a W2 method on a museum/query pair (add `--ground-truth` to print mAP):
 ```powershell
-python .\src\methods_w2.py --museum ..\..\datasets\BBDD --queries ..\..\datasets\qsd1_w2 --method "Lab blocks 1D" --blocks 6
+python .\src\methods_w2.py --museum ..\..\datasets\BBDD --queries ..\..\datasets\qsd1_w2 --method "Lab blocks 1D" --blocks 25
 ```
 
 `--method` is required: a descriptor name or `all` (evaluates the four methods
@@ -142,16 +142,17 @@ mAP on the 30 QSD1-W2 queries against the BBDD (L1):
 |---|---|---:|---:|
 | W1 HSV grid | 4×4 | 0.7667 | 0.8194 |
 | W1 HSV grid | 6×6 | 0.8000 | 0.8500 |
-| `Lab blocks 1D` | `--blocks 4` | 0.8333 | 0.8722 |
-| `Lab blocks 1D` | `--blocks 6` | 0.8667 | 0.9000 |
+| `Lab blocks 1D` | `--blocks 16` | 0.8333 | 0.8722 |
+| `Lab blocks 1D` | `--blocks 25` (default) | 0.8667 | 0.8944 |
+| `Lab blocks 1D` | `--blocks 36` | 0.8667 | 0.9000 |
 | `Lab pyramid` | `--levels 3` | 0.6333 | 0.6744 |
 | `Lab pyramid` | `--levels 4` | 0.7333 | 0.7778 |
 | `Lab 2D` | — | 0.5333 | 0.6028 |
 | `Lab 3D` | — | 0.4000 | 0.4833 |
 
-`Lab blocks 1D --blocks 6` gives the best result on this set, with 26 of 30
-queries correct at rank 1. Evaluation with segmentation and blind queries is
-still pending.
+`Lab blocks 1D --blocks 36` gives the best mAP@5 on this set (tied with the
+default `--blocks 25` at rank 1). Evaluation with segmentation and blind
+queries is still pending.
 
 The extra experiments and their results are in
 [results/week2/color_experiments](results/week2/color_experiments).

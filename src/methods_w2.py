@@ -17,10 +17,10 @@ image is used; if given, only foreground pixels contribute to the histogram.
 Only four W2 methods are kept (every part is L1-normalized and the
 concatenation is L1-renormalized, so each part carries equal weight):
 
-    - "Lab blocks 1D"  the image is split into blocks x blocks cells; each
-      cell carries a marginal 1D histogram per channel (32 bins), and all
-      cells are concatenated row-major.  Parameter: --blocks (grid side,
-      default 4 -> 4x4 = 16 cells).
+    - "Lab blocks 1D"  the image is split into a grid of `blocks` total
+      cells (a perfect square, so n x n); each cell carries a marginal 1D
+      histogram per channel (32 bins), and all cells are concatenated
+      row-major.  Parameter: --blocks (total cells, default 25 -> 5x5).
     - "Lab 2D"         the L channel as a 1D marginal (32 bins) plus the
       (a, b) pair as a joint 2D histogram (32 bins per axis), concatenated.
       No specific parameter.
@@ -37,6 +37,7 @@ Masked variants (QSD2/QST2) reuse these same functions by passing ``mask``.
 """
 
 import argparse
+import math
 import pickle
 from pathlib import Path
 
@@ -190,8 +191,20 @@ def compute_lab_block_histogram(img_lab, grid=4, bins=32, mask=None):
     )
 
 
-DEFAULT_BLOCKS = 4
+DEFAULT_BLOCKS = 25
 DEFAULT_PYRAMID_LEVELS = 3
+
+
+def blocks_grid(total):
+    """Grid (n, n) for `total` cells, which must be a perfect square.
+
+    1 -> (1, 1), 4 -> (2, 2), 9 -> (3, 3), 16 -> (4, 4), 25 -> (5, 5).
+    """
+    assert (isinstance(total, int) and not isinstance(total, bool)
+            and total >= 1), f"blocks must be a positive integer, got {total!r}"
+    n = math.isqrt(total)
+    assert n * n == total, f"blocks must be a perfect square, got {total!r}"
+    return (n, n)
 
 
 def pyramid_grids(divisions):
@@ -215,7 +228,7 @@ def build_method(name, blocks=DEFAULT_BLOCKS, levels=DEFAULT_PYRAMID_LEVELS):
     """
     if name == "Lab blocks 1D":
         return lambda lab, mask=None: compute_lab_block_histogram(
-            lab, grid=blocks, mask=mask)
+            lab, grid=blocks_grid(blocks), mask=mask)
     if name == "Lab 2D":
         return lambda lab, mask=None: compute_lab_mixed_concat_histogram(
             lab, parts=[((0,), 32), ((1, 2), 32)], mask=mask)
@@ -446,6 +459,19 @@ def evaluate_segmentation(pred_dir, gt_dir, save_path=None):
     return {"per_image": per_image, "mean": mean}
 
 
+def _perfect_square(value):
+    """argparse type: a positive perfect square (total number of cells)."""
+    try:
+        total = int(value)
+    except ValueError as error:
+        raise argparse.ArgumentTypeError(
+            f"blocks must be an integer, got {value!r}") from error
+    if total < 1 or math.isqrt(total) ** 2 != total:
+        raise argparse.ArgumentTypeError(
+            "blocks must be a positive perfect square (e.g. 1, 4, 9, 16, 25)")
+    return total
+
+
 def build_parser():
     try:
         from k_similarity import DISTANCE_FUNCTIONS
@@ -459,8 +485,10 @@ def build_parser():
                         help="Descriptor for retrieval evaluation, or 'all' "
                              "to evaluate every method (required for "
                              "retrieval)")
-    parser.add_argument("--blocks", type=int, default=DEFAULT_BLOCKS,
-                        help="Grid side for 'Lab blocks 1D' (N -> NxN cells)")
+    parser.add_argument("--blocks", type=_perfect_square,
+                        default=DEFAULT_BLOCKS,
+                        help="Total cells for 'Lab blocks 1D' (a perfect "
+                             "square, default 25 -> 5x5)")
     parser.add_argument("--levels", type=int, default=DEFAULT_PYRAMID_LEVELS,
                         help="Number of hierarchy levels for 'Lab pyramid'")
     parser.add_argument("--museum", type=Path, help="Museum image folder")
