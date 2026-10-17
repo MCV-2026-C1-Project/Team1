@@ -225,10 +225,10 @@ this off.
 
 mAP@1 / mAP@5 on QSD2 (L1):
 
-| `Lab blocks 1D` | No mask | Mask, no crop (`--no-crop`) | **Mask + crop** | Ground-truth mask + crop |
+| `Lab blocks 1D` | **Mask + crop** | Ground-truth mask + crop |
 |---|---:|---:|---:|---:|
-| `--blocks 36` | 0.3667 / 0.4094 | 0.5333 / 0.6139 | **0.7667 / 0.8139** | 0.8667 / 0.8844 |
-| `--blocks 16` | 0.3333 / 0.4080 | 0.5667 / 0.6470 | **0.7000 / 0.7556** | 0.7333 / 0.7890 |
+| `--blocks 36` | **0.7667 / 0.8139** | 0.8667 / 0.8844 |
+| `--blocks 16` | **0.7000 / 0.7556** | 0.7333 / 0.7890 |
 
 The last column uses the ground-truth masks (`--query-masks data\qsd2_w1`) and is
 the upper bound for a perfect segmentation. `--background-removal` and
