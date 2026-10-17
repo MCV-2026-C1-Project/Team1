@@ -5,8 +5,7 @@ from pathlib import Path
 
 import cv2
 
-from task4 import image_id
-from utils import compute_segmentation_metrics
+from utils import compute_segmentation_metrics, image_id
 
 
 def _mask_paths(folder):

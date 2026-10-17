@@ -1,6 +1,7 @@
 import cv2
 import os
 import pickle
+import re
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -41,6 +42,14 @@ def compute_segmentation_metrics(predicted_mask, ground_truth_mask):
     recall = tp / (tp + fn) if tp + fn else 0.0
     f1 = 2 * precision * recall / (precision + recall) if precision + recall else 0.0
     return {"precision": precision, "recall": recall, "F1": f1}
+
+def image_id(name):
+    """Read the numeric suffix in 00007.jpg or bbdd_00007.jpg."""
+    from pathlib import Path
+    match = re.search(r"(\d+)$", Path(name).stem)
+    if match is None:
+        raise ValueError(f"Image filename has no numeric ID: {name}")
+    return int(match.group(1))
 
 def compute_gray_histogram(img_gray):
     assert len(img_gray.shape) == 2, "Not a gray image"

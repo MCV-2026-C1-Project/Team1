@@ -1,8 +1,26 @@
-HSV 3D 4x4x4                 dims=    64 mAP@1=0.5000 mAP@5=0.5389
-HSV 2D HS 30x32              dims=   960 mAP@1=0.4667 mAP@5=0.5067
-HSV 2D HV 8x8                dims=    64 mAP@1=0.4333 mAP@5=0.4883
-HSV 2D HS+HV 16x16           dims=   512 mAP@1=0.5667 mAP@5=0.6167
-HSV pyramid 3D 4x4x4         dims=  1344 mAP@1=0.6333 mAP@5=0.7067
-HSV pyramid HS 30x32         dims= 20160 mAP@1=0.5333 mAP@5=0.6233
-HSV pyramid HV 8x8           dims=  1344 mAP@1=0.6000 mAP@5=0.6167
-HSV pyramid HS+HV 16x16      dims= 10752 mAP@1=0.7333 mAP@5=0.7722
+HSV 3D 4                     dims=    64 mAP@1=0.5000 mAP@5=0.5389
+HSV 2D HS 32                 dims=  1024 mAP@1=0.4333 mAP@5=0.4744
+HSV 2D HV 8                  dims=    64 mAP@1=0.4333 mAP@5=0.4883
+HSV 2D HS+HV 16              dims=   512 mAP@1=0.5667 mAP@5=0.6167
+HSV pyramid 3D 4             dims=  1344 mAP@1=0.6333 mAP@5=0.7067
+HSV pyramid HS 32            dims= 21504 mAP@1=0.5000 mAP@5=0.5783
+HSV pyramid HV 8             dims=  1344 mAP@1=0.6000 mAP@5=0.6167
+HSV pyramid HS+HV 16         dims= 10752 mAP@1=0.7333 mAP@5=0.7722
+Lab block 4x4 1D 32          dims=  1536 mAP@1=0.8333 mAP@5=0.8722
+Lab block 6x6 1D 32          dims=  3456 mAP@1=0.8667 mAP@5=0.9000
+Lab block 2x2 1D 32          dims=   384 mAP@1=0.6333 mAP@5=0.7106
+Lab block 2x4 1D 32          dims=   768 mAP@1=0.8000 mAP@5=0.8278
+Lab pyramid 1D 32            dims=  2016 mAP@1=0.8333 mAP@5=0.8694
+Lab 1D 32                    dims=    96 mAP@1=0.5000 mAP@5=0.5861
+Lab 3D 4                     dims=    64 mAP@1=0.4000 mAP@5=0.4733
+Lab 2D La 32                 dims=  1024 mAP@1=0.4333 mAP@5=0.4806
+Lab 2D Lb 8                  dims=    64 mAP@1=0.3667 mAP@5=0.4428
+Lab 2D ab 16                 dims=   256 mAP@1=0.4667 mAP@5=0.5150
+Lab 2D La+Lb 16              dims=   512 mAP@1=0.4333 mAP@5=0.5167
+Lab L+ab 16                  dims=   272 mAP@1=0.4333 mAP@5=0.5111
+Lab pyramid 3D 4             dims=  1344 mAP@1=0.7333 mAP@5=0.7417
+Lab pyramid La 32            dims= 21504 mAP@1=0.6333 mAP@5=0.6678
+Lab pyramid Lb 8             dims=  1344 mAP@1=0.6667 mAP@5=0.6733
+Lab pyramid ab 16            dims=  5376 mAP@1=0.6333 mAP@5=0.6733
+Lab pyramid La+Lb 16         dims= 10752 mAP@1=0.6000 mAP@5=0.6444
+Lab block 4x4 L+ab 16        dims=  4352 mAP@1=0.7000 mAP@5=0.7583

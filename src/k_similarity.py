@@ -1,7 +1,16 @@
 import numpy as np
 from similarity_functions import (euclidean_distance, l1_distance, chi_square_distance, histogram_intersection, hellinger_kernel, cosine_similarity, correlation_similarity)
 from utils import Dataset
-from main import compute_descriptors, DESCRIPTOR_NAMES, compute_descriptors_w2, METHODS_W2_NAMES
+from methods_w1 import METHODS_W1, METHODS_W1_NAMES, compute_descriptors_w1
+from methods_w2 import METHODS_W2, METHODS_W2_NAMES, compute_descriptors_w2
+
+# W1 compatibility aliases (ex main.py).
+DESCRIPTOR_NAMES = METHODS_W1_NAMES
+
+
+def compute_descriptors(dataset):
+    """Task 1 (W1): alias for compute_descriptors_w1."""
+    return compute_descriptors_w1(dataset)
 
 SIMILARITY_FUNCTIONS = (histogram_intersection, hellinger_kernel, cosine_similarity, correlation_similarity)
 
@@ -158,7 +167,7 @@ def main():
 
     # Week 2: same queries (QSD1-W2 == QSD1-W1), HSV and Lab descriptors.
     # Compare directly against the best W1 (HSV grid + L1, mAP@5 0.82).
-    print("\n--- Methods_W2 (HSV 3D/2D and spatial Lab) ---")
+    print("\n--- Methods_W2 (HSV + Lab) ---")
     museum_descriptors_w2 = compute_descriptors_w2(museum)
     query_descriptors_w2 = compute_descriptors_w2(queries)
     for method_idx, method_name in enumerate(METHODS_W2_NAMES):
