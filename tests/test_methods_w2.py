@@ -1,7 +1,6 @@
-"""Tests for Methods_W2 (methods_w2.py): HSV + Lab globals, pyramids and
-Lab spatial entries, L1, masks.
+"""Tests for Methods_W2 (methods_w2.py): Lab globals, blocks, pyramids,
+concats, L1 normalization and masks.
 
-Lab mirrors every HSV combination 1:1 (same channel indices, same bins).
 Spatial pyramids/blocks are the canonical W2 spatial layout (see
 compute_lab_pyramid_histogram / compute_lab_block_histogram).
 """
@@ -20,10 +19,6 @@ from methods_w2 import (  # noqa: E402
     METHODS_W2_NAMES,
     METHODS_W2_COLOR_SPACES,
     compute_descriptors_w2,
-    compute_hsv_2d_concat_histogram,
-    compute_hsv_2d_histogram,
-    compute_hsv_3d_histogram,
-    compute_hsv_pyramid_histogram,
     compute_lab_1d_histogram,
     compute_lab_2d_concat_histogram,
     compute_lab_2d_histogram,
@@ -35,11 +30,6 @@ from methods_w2 import (  # noqa: E402
 )
 
 
-def _red_hsv(h=32, w=32):
-    rgb = np.full((h, w, 3), (255, 0, 0), dtype=np.uint8)
-    return cv2.cvtColor(rgb, cv2.COLOR_RGB2HSV)
-
-
 def _red_lab(h=32, w=32):
     rgb = np.full((h, w, 3), (255, 0, 0), dtype=np.uint8)
     return cv2.cvtColor(rgb, cv2.COLOR_RGB2LAB)
@@ -47,28 +37,19 @@ def _red_lab(h=32, w=32):
 
 class TestW2Shapes(unittest.TestCase):
     def test_registry_color_spaces(self):
-        self.assertEqual(len(METHODS_W2_NAMES), 26)
+        self.assertEqual(len(METHODS_W2_NAMES), 18)
         self.assertEqual(list(METHODS_W2), METHODS_W2_NAMES)
         self.assertEqual(set(METHODS_W2_COLOR_SPACES), set(METHODS_W2))
+        self.assertEqual(set(METHODS_W2_COLOR_SPACES.values()), {"Lab"})
 
     def test_shapes_and_l1(self):
-        hsv = _red_hsv()
-        rgb = cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB)
-        sources = {"HSV": hsv, "Lab": cv2.cvtColor(rgb, cv2.COLOR_RGB2LAB)}
+        lab = _red_lab()
         expected = {
-            "HSV 3D 4": (64,),
-            "HSV 2D HS 32": (1024,),
-            "HSV 2D HV 8": (64,),
-            "HSV 2D HS+HV 16": (512,),
-            "HSV pyramid 3D 4": (21 * 64,),
-            "HSV pyramid HS 32": (21 * 1024,),
-            "HSV pyramid HV 8": (21 * 64,),
-            "HSV pyramid HS+HV 16": (21 * 512,),
             "Lab block 4x4 1D 32": (1536,),
             "Lab block 6x6 1D 32": (3456,),
-            "Lab pyramid 1D 32": (2016,),
             "Lab block 2x2 1D 32": (384,),
             "Lab block 2x4 1D 32": (768,),
+            "Lab pyramid 1D 32": (2016,),
             "Lab 1D 32": (96,),
             "Lab 3D 4": (64,),
             "Lab 2D La 32": (1024,),
@@ -76,32 +57,18 @@ class TestW2Shapes(unittest.TestCase):
             "Lab 2D ab 16": (256,),
             "Lab 2D La+Lb 16": (512,),
             "Lab L+ab 16": (272,),
-            "Lab block 4x4 L+ab 16": (16 * 272,),
             "Lab pyramid 3D 4": (21 * 64,),
             "Lab pyramid La 32": (21 * 1024,),
             "Lab pyramid Lb 8": (21 * 64,),
             "Lab pyramid ab 16": (21 * 256,),
             "Lab pyramid La+Lb 16": (21 * 512,),
+            "Lab block 4x4 L+ab 16": (16 * 272,),
         }
         for name, shape in expected.items():
-            v = METHODS_W2[name](sources[METHODS_W2_COLOR_SPACES[name]])
+            v = METHODS_W2[name](lab)
             self.assertEqual(v.shape, shape, name)
             self.assertAlmostEqual(float(v.sum()), 1.0, places=5, msg=name)
             self.assertTrue(np.all(v >= 0))
-
-    def test_3d_custom_bins(self):
-        v = compute_hsv_3d_histogram(_red_hsv(), bins=4)
-        self.assertEqual(v.shape, (64,))
-
-    def test_2d_custom_channels(self):
-        hsv = _red_hsv()
-        v = compute_hsv_2d_histogram(hsv, channels=(1, 2), bins=8)
-        self.assertEqual(v.shape, (64,))
-        self.assertAlmostEqual(float(v.sum()), 1.0, places=5)
-
-    def test_uniform_bins_rejected_tuples(self):
-        with self.assertRaises(AssertionError):
-            compute_hsv_2d_histogram(_red_hsv(), bins=(8, 8))
 
     def test_rectangular_grid(self):
         lab = _red_lab(h=32, w=32)
@@ -112,14 +79,6 @@ class TestW2Shapes(unittest.TestCase):
             compute_lab_block_histogram(lab, grid=0)
         with self.assertRaises(AssertionError):
             compute_lab_block_histogram(lab, grid=(2, 0))
-
-    def test_2d_concat_shape_and_l1(self):
-        hsv = _red_hsv()
-        v = compute_hsv_2d_concat_histogram(
-            hsv, parts=[((0, 1), 16), ((0, 2), 16)]
-        )
-        self.assertEqual(v.shape, (512,))
-        self.assertAlmostEqual(float(v.sum()), 1.0, places=5)
 
     def test_lab_3d_2d_concat_shapes_and_l1(self):
         lab = _red_lab()
@@ -156,33 +115,22 @@ class TestW2Shapes(unittest.TestCase):
         with self.assertRaises(AssertionError):
             compute_lab_mixed_concat_histogram(lab, parts=[((0, 1, 2), 16)])
 
-    def test_pyramid_levels_and_l1(self):
-        hsv = _red_hsv(h=32, w=32)
-        full = compute_hsv_pyramid_histogram(hsv)
-        self.assertEqual(full.shape, (21 * 32 * 32,))
-        self.assertAlmostEqual(float(full.sum()), 1.0, places=5)
-        single = compute_hsv_pyramid_histogram(hsv, levels=(1,))
-        self.assertEqual(single.shape, (32 * 32,))
-        np.testing.assert_allclose(
-            single, compute_hsv_2d_histogram(hsv, channels=(0, 1), bins=32),
-            atol=1e-6)
-
     def test_mask_keeps_shape_and_l1(self):
-        hsv = _red_hsv()
+        lab = _red_lab()
         mask = np.zeros((32, 32), dtype=np.uint8)
         mask[8:24, 8:24] = 255
-        concat = lambda im, mask=mask: compute_hsv_2d_concat_histogram(
+        concat = lambda im, mask=mask: compute_lab_2d_concat_histogram(
             im, parts=[((0, 1), 16), ((0, 2), 16)],
             mask=mask,
         )
         for fn in (
-            compute_hsv_3d_histogram,
-            compute_hsv_2d_histogram,
+            compute_lab_3d_histogram,
+            compute_lab_2d_histogram,
             concat,
-            compute_hsv_pyramid_histogram,
+            compute_lab_pyramid_histogram,
         ):
-            full = fn(hsv)
-            masked = fn(hsv, mask=mask)
+            full = fn(lab)
+            masked = fn(lab, mask=mask)
             self.assertEqual(full.shape, masked.shape)
             self.assertAlmostEqual(float(masked.sum()), 1.0, places=5)
         # A partial mask must change the global descriptor on a two-color
@@ -191,26 +139,19 @@ class TestW2Shapes(unittest.TestCase):
         bicolor = np.zeros((32, 32, 3), dtype=np.uint8)
         bicolor[:, :16] = (255, 0, 0)
         bicolor[:, 16:] = (0, 0, 255)
-        bicolor_hsv = cv2.cvtColor(bicolor, cv2.COLOR_RGB2HSV)
+        bicolor_lab = cv2.cvtColor(bicolor, cv2.COLOR_RGB2LAB)
         half_mask = np.zeros((32, 32), dtype=np.uint8)
         half_mask[:, :16] = 255  # red half only
         self.assertGreater(
             float(np.abs(
-                compute_hsv_3d_histogram(bicolor_hsv)
-                - compute_hsv_3d_histogram(bicolor_hsv, mask=half_mask)
+                compute_lab_3d_histogram(bicolor_lab)
+                - compute_lab_3d_histogram(bicolor_lab, mask=half_mask)
             ).sum()), 0.0)
 
     def test_spatial_sensitivity(self):
         left = np.zeros((32, 32, 3), dtype=np.uint8)
         left[:, :16] = (255, 0, 0)
         left[:, 16:] = (0, 0, 255)
-        hl = cv2.cvtColor(left, cv2.COLOR_RGB2HSV)
-        swapped = cv2.cvtColor(left[:, ::-1].copy(), cv2.COLOR_RGB2HSV)
-        np.testing.assert_allclose(
-            compute_hsv_2d_histogram(hl), compute_hsv_2d_histogram(swapped))
-        self.assertGreater(float(np.abs(
-            compute_hsv_pyramid_histogram(hl)
-            - compute_hsv_pyramid_histogram(swapped)).sum()), 0.1)
         lab = cv2.cvtColor(left, cv2.COLOR_RGB2LAB)
         swapped_lab = cv2.cvtColor(left[:, ::-1].copy(), cv2.COLOR_RGB2LAB)
         np.testing.assert_allclose(
@@ -309,8 +250,6 @@ class TestW2Shapes(unittest.TestCase):
         lab = cv2.cvtColor(image, cv2.COLOR_RGB2LAB)
         other = cv2.cvtColor(changed, cv2.COLOR_RGB2LAB)
         for name, fn in METHODS_W2.items():
-            if METHODS_W2_COLOR_SPACES[name] != "Lab":
-                continue
             np.testing.assert_array_equal(fn(lab, mask), fn(other, mask))
             self.assertGreater(float(np.abs(fn(lab) - fn(other)).sum()), 0.0)
             empty = fn(lab, np.zeros_like(mask))

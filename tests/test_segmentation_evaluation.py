@@ -9,7 +9,7 @@ import cv2
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-from eval_w2_masks import evaluate_mask_folders
+from methods_w2 import evaluate_segmentation as evaluate_mask_folders
 from utils import compute_segmentation_metrics
 
 

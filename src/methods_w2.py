@@ -1,74 +1,50 @@
-"""Methods_W2: color descriptors to test in Week 2 (Task 1).
+"""Methods_W2: Lab color descriptors to test in Week 2 (Task 1).
 
 Run as a script (argparse selects the action):
     python methods_w2.py --list
     python methods_w2.py --museum <dir> --queries <dir> [--method NAME]
     python methods_w2.py --museum <dir> --queries <dir> --ground-truth <pkl>
-    python methods_w2.py --segmentation <pred_dir> <gt_dir>
+    python methods_w2.py --segmentation <pred_dir> <gt_dir> [--save FILE]
 
-Functions take images in their own color space (HSV or Lab) and accept
-an optional foreground mask (Task 3/5):
-if ``mask`` is None the full image is used; if given, only foreground
-pixels contribute to the histogram.
-
-HSV families (all L1 normalized):
-- Globals (no spatial subdivision).
-- Pyramids: levels (1, 2, 4) = 21 cells; each cell carries the same
-  global combination, L1-normalized per cell, L1-renormalized on
-  concatenation (no level weights: each cell carries equal mass).
+Functions take uint8 OpenCV Lab images (all channels span [0, 256)) and
+accept an optional foreground mask (Task 3/5): if ``mask`` is None the full
+image is used; if given, only foreground pixels contribute to the histogram.
 
 One rule everywhere in W2: a single uniform bin count shared by every
-channel (no per-channel bins, no Max variants). Dims are therefore
-``bins`` (marginal 1D per channel x3), ``bins**2`` (2D), ``bins**3``
-(3D), times 21 cells for pyramids.
+channel (no per-channel bins, no Max variants). Dims are therefore ``bins``
+(marginal 1D per channel x3), ``bins**2`` (2D), ``bins**3`` (3D), times the
+number of cells for blocks/pyramids.
 
-Proposed METHODS_W2 registry (all L1).
-Globals validated on QSD1 with L1 only (see results/week2/color_sweep_l1.txt;
-W1 baselines: marginal HSV mAP@5 0.59, HSV grid mAP@5 0.82):
-    - "HSV 3D 4" (64): best 3D; finer bins scatter under L1.
-    - "HSV 2D HS 32" (1024): best single 2D.
-    - "HSV 2D HV 8" (64).
-    - "HSV 2D HS+HV 16" (512): best W2 global.
-Pyramids mirror those 4 combinations (21 cells), validated on QSD1-W2,
-L1 only (see results/week2/qsd1w2_registry_l1.txt):
-    - "HSV pyramid 3D 4" (1344).
-    - "HSV pyramid HS 32" (21504).
-    - "HSV pyramid HV 8" (1344).
-    - "HSV pyramid HS+HV 16" (10752), best HSV W2.
+METHODS_W2 registry (all L1), validated on QSD1-W2 with L1 only
+(see results/week2/qsd1w2_registry_l1.txt), in three families:
 
-Lab entries use three marginal 1D histograms (32 bins per channel):
-one histogram per channel, concatenated (96 dims per block), validated
-on QSD1-W2, L1 (see results/week2/lab_blocks_1d32_bars.png):
+Marginal 1D (three per-channel histograms of `bins`, concatenated):
     - "Lab 1D 32" global (96, mAP@5 0.5861): 1 block.
     - "Lab block 2x2 1D 32" (384, mAP@5 0.7106): 4 blocks.
     - "Lab block 2x4 1D 32" (768, mAP@5 0.8278): 8 blocks.
     - "Lab block 4x4 1D 32" (1536, mAP@5 0.8722): 16 blocks.
     - "Lab block 6x6 1D 32" (3456).
     - "Lab pyramid 1D 32" (2016).
-These are QSD1 development results with L1 distance, not blind test scores.
 
-Lab also mirrors every HSV combination 1:1 (same channel indices, same
-uniform bins; all uint8 Lab channels span [0, 256)), validated on QSD1-W2,
-L1 (see results/week2/qsd1w2_registry_l1.txt):
-    - "Lab 1D 32" (96, mAP@5 0.5861): marginal global.
-    - "Lab 3D 4" (64, 0.4733), "Lab 2D La 32" (1024, 0.4806),
+Joint/mixed (2D and 3D histograms, global or per cell):
+    - Globals: "Lab 3D 4" (64, 0.4733), "Lab 2D La 32" (1024, 0.4806),
       "Lab 2D Lb 8" (64, 0.4428), "Lab 2D ab 16" (256, 0.5150),
       "Lab 2D La+Lb 16" (512, 0.5167).
-    - "Lab pyramid 3D 4" (1344, 0.7417),
-      "Lab pyramid La 32" (21504, 0.6678),
-      "Lab pyramid Lb 8" (1344, 0.6733),
+    - Partitioned (1D marginal + 2D joint, equal weight per part):
+      "Lab L+ab 16" (272, mAP@5 0.5111) = L 16 + ab 16x16, global;
+      "Lab block 4x4 L+ab 16" (4352, mAP@5 0.7583), the same split in
+      16 blocks; best Lab joint result after the marginal family.
+    - Pyramids (levels (1, 2, 4) = 21 cells; each cell carries the same
+      combination, L1-normalized per cell and L1-renormalized on
+      concatenation, no level weights): "Lab pyramid 3D 4" (1344, 0.7417),
+      "Lab pyramid La 32" (21504, 0.6678), "Lab pyramid Lb 8" (1344, 0.6733),
       "Lab pyramid ab 16" (5376, 0.6733),
       "Lab pyramid La+Lb 16" (10752, 0.6444).
-Partitioned coverage (1D marginal + 2D joint, equal weight per part),
-validated on QSD1-W2, L1:
-    - "Lab L+ab 16" (272, mAP@5 0.5111): L 16 + ab 16x16, global.
-    - "Lab block 4x4 L+ab 16" (4352, mAP@5 0.7583): same split in
-      16 blocks; best Lab joint result after the marginal family.
-Uniform bins cost ~3 points on HS (32: 0.4744 vs old 30x32: 0.5067).
-Channel note: HSV pairs are (H,S) and (H,V); the Lab mirror keeps the
-indices, i.e. (L,a) and (L,b), plus the chromaticity-only pair (a,b)
-at 16 bins (remote sweep: ab-16 pyramid 0.6733 vs ab-32 0.7011 at 4x
-the dims, so 16 is the registered tier).
+
+Channel pairs keep the Lab indices, i.e. (L,a) and (L,b), plus the
+chromaticity-only pair (a,b) at 16 bins (remote sweep: ab-16 pyramid 0.6733
+vs ab-32 0.7011 at 4x the dims, so 16 is the registered tier).
+These are QSD1 development results with L1 distance, not blind test scores.
 
 Masked variants (QSD2/QST2) reuse these same functions by passing
 ``mask``; they are not separate registry entries until the Task 1
@@ -82,10 +58,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from utils import _l1_normalize, image_id
-
-# OpenCV ranges for HSV (H: 0-180, S/V: 0-256).
-_HSV_RANGES = {0: (0, 180), 1: (0, 256), 2: (0, 256)}
+from utils import _l1_normalize, compute_segmentation_metrics, image_id
 
 
 def _check_bins(bins):
@@ -93,69 +66,6 @@ def _check_bins(bins):
     assert isinstance(bins, int) and not isinstance(bins, bool) and bins > 0, (
         f"bins must be a positive integer, got {bins!r}")
     return bins
-
-
-def _ranges_for(channels):
-    ranges = []
-    for ch in channels:
-        lo, hi = _HSV_RANGES[ch]
-        ranges.extend([lo, hi])
-    return ranges
-
-
-def compute_hsv_3d_histogram(img_hsv, bins=32, mask=None):
-    """Joint 3D H-S-V histogram with `bins` per axis, L1 normalized."""
-    assert len(img_hsv.shape) == 3, "Expected HSV image"
-    _check_bins(bins)
-    hist = cv2.calcHist(
-        [img_hsv], [0, 1, 2], mask, [bins, bins, bins],
-        [0, 180, 0, 256, 0, 256],
-    ).flatten()
-    return _l1_normalize(hist)
-
-
-def compute_hsv_2d_histogram(img_hsv, channels=(0, 1), bins=32, mask=None):
-    """Joint 2D histogram (H-S by default) with `bins` per axis, L1 normalized."""
-    assert len(img_hsv.shape) == 3, "Expected HSV image"
-    assert len(channels) == 2
-    _check_bins(bins)
-    hist = cv2.calcHist(
-        [img_hsv], list(channels), mask, [bins, bins],
-        _ranges_for(channels),
-    ).flatten()
-    return _l1_normalize(hist)
-
-
-def compute_hsv_2d_concat_histogram(img_hsv, parts=(((0, 1), 32),), mask=None):
-    """Concatenate several 2D histograms (e.g. HS+HV), L1 normalized.
-
-    parts: sequence of (channels, bins), e.g. [((0,1),16),
-        ((0,2),16)] for HS+HV 16. Every part shares one uniform bin
-    count rule (no per-channel bins anywhere in W2).
-    Each part is L1-normalized before concatenation and the final vector is
-    L1-renormalized: each 2D pair carries equal weight (1/N), just as each
-    channel carries 1/3 in the W1 marginal and each block carries equal
-    weight in the W1 grid.
-    """
-    assert len(img_hsv.shape) == 3, "Expected HSV image"
-    assert len(parts) >= 1
-    for _, b in parts:
-        _check_bins(b)
-    normed_parts = [
-        _l1_normalize(compute_hsv_2d_histogram(
-            img_hsv, channels=ch, bins=b, mask=mask
-        ))
-        for ch, b in parts
-    ]
-    return _l1_normalize(np.concatenate(normed_parts))
-
-
-def _concat_fn(*parts):
-    """Build fn(hsv, mask) for a 2D concat with equal weight per pair."""
-    spec = list(parts)
-    return lambda hsv, mask=None: compute_hsv_2d_concat_histogram(
-        hsv, parts=spec, mask=mask
-    )
 
 
 def _split_with_mask(image, mask, grid_y, grid_x):
@@ -187,24 +97,6 @@ def _compute_spatial_histogram(image, levels, block_fn, mask):
         for block, m in _split_with_mask(image, mask, *_grid_size(grid))
     ]
     return _l1_normalize(np.concatenate(parts))
-
-
-def compute_hsv_pyramid_histogram(img_hsv, levels=(1, 2, 4),
-                                  block_fn=None, mask=None):
-    """Spatial pyramid of one HSV combination, L1 normalized.
-
-    levels: grid per level, e.g. (1, 2, 4) -> 1 + 4 + 16 = 21 cells.
-    block_fn(block_hsv, block_mask) -> 1D vector; defaults to HS 8x8.
-    Each cell is L1-normalized and the concatenation is L1-renormalized,
-    so each cell carries equal mass (finer levels weigh more in total,
-    as in the W1 grid).
-    """
-    assert len(img_hsv.shape) == 3, "Expected HSV image"
-    if block_fn is None:
-        block_fn = lambda b, m: compute_hsv_2d_histogram(
-            b, channels=(0, 1), bins=32, mask=m
-        )
-    return _compute_spatial_histogram(img_hsv, levels, block_fn, mask)
 
 
 def compute_lab_histogram(img_lab, bins=32, mask=None):
@@ -256,8 +148,8 @@ def compute_lab_2d_histogram(img_lab, channels=(0, 1), bins=32, mask=None):
 def compute_lab_2d_concat_histogram(img_lab, parts=(((0, 1), 32),), mask=None):
     """Concatenate several Lab 2D histograms (e.g. La+Lb), L1 normalized.
 
-    Same equal-weight-per-pair rule as the HSV concat, with the same
-    uniform-bins rule (no per-channel bins anywhere in W2).
+    Equal-weight-per-pair rule, with the same uniform-bins rule
+    (no per-channel bins anywhere in W2).
     """
     assert len(img_lab.shape) == 3, "Expected Lab image"
     assert len(parts) >= 1
@@ -324,7 +216,8 @@ def _lab_mixed_concat_fn(*parts):
 
 def compute_lab_pyramid_histogram(img_lab, levels=(1, 2, 4),
                                   bins=32, block_fn=None, mask=None):
-    """Lab histograms per cell, with the same normalization as HSV pyramids.
+    """Lab histograms per cell, L1-normalized per cell and renormalized
+    on concatenation.
 
     block_fn(block_lab, block_mask) -> 1D vector; defaults to the marginal
     1D histogram with `bins` per channel.
@@ -348,39 +241,6 @@ def compute_lab_block_histogram(img_lab, grid=4, bins=32, mask=None):
 
 
 METHODS_W2 = {
-    "HSV 3D 4": lambda hsv, mask=None: compute_hsv_3d_histogram(
-        hsv, bins=4, mask=mask
-    ),
-    "HSV 2D HS 32": lambda hsv, mask=None: compute_hsv_2d_histogram(
-        hsv, channels=(0, 1), bins=32, mask=mask
-    ),
-    "HSV 2D HV 8": lambda hsv, mask=None: compute_hsv_2d_histogram(
-        hsv, channels=(0, 2), bins=8, mask=mask
-    ),
-    "HSV 2D HS+HV 16": _concat_fn(((0, 1), 16), ((0, 2), 16)),
-    "HSV pyramid 3D 4": lambda hsv, mask=None: compute_hsv_pyramid_histogram(
-        hsv, levels=(1, 2, 4),
-        block_fn=lambda b, m: compute_hsv_3d_histogram(b, bins=4, mask=m),
-        mask=mask,
-    ),
-    "HSV pyramid HS 32": lambda hsv, mask=None: compute_hsv_pyramid_histogram(
-        hsv, levels=(1, 2, 4),
-        block_fn=lambda b, m: compute_hsv_2d_histogram(
-            b, channels=(0, 1), bins=32, mask=m),
-        mask=mask,
-    ),
-    "HSV pyramid HV 8": lambda hsv, mask=None: compute_hsv_pyramid_histogram(
-        hsv, levels=(1, 2, 4),
-        block_fn=lambda b, m: compute_hsv_2d_histogram(
-            b, channels=(0, 2), bins=8, mask=m),
-        mask=mask,
-    ),
-    "HSV pyramid HS+HV 16": lambda hsv, mask=None: compute_hsv_pyramid_histogram(
-        hsv, levels=(1, 2, 4),
-        block_fn=lambda b, m: compute_hsv_2d_concat_histogram(
-            b, parts=[((0, 1), 16), ((0, 2), 16)], mask=m),
-        mask=mask,
-    ),
     "Lab block 4x4 1D 32": lambda lab, mask=None: compute_lab_block_histogram(
         lab, grid=4, mask=mask
     ),
@@ -451,27 +311,7 @@ METHODS_W2 = {
 }
 
 METHODS_W2_NAMES = list(METHODS_W2.keys())
-METHODS_W2_COLOR_SPACES = dict.fromkeys(METHODS_W2, "HSV")
-METHODS_W2_COLOR_SPACES.update({
-    "Lab block 4x4 1D 32": "Lab",
-    "Lab block 6x6 1D 32": "Lab",
-    "Lab block 2x2 1D 32": "Lab",
-    "Lab block 2x4 1D 32": "Lab",
-    "Lab pyramid 1D 32": "Lab",
-    "Lab 1D 32": "Lab",
-    "Lab 3D 4": "Lab",
-    "Lab 2D La 32": "Lab",
-    "Lab 2D Lb 8": "Lab",
-    "Lab 2D ab 16": "Lab",
-    "Lab 2D La+Lb 16": "Lab",
-    "Lab L+ab 16": "Lab",
-    "Lab block 4x4 L+ab 16": "Lab",
-    "Lab pyramid 3D 4": "Lab",
-    "Lab pyramid La 32": "Lab",
-    "Lab pyramid Lb 8": "Lab",
-    "Lab pyramid ab 16": "Lab",
-    "Lab pyramid La+Lb 16": "Lab",
-})
+METHODS_W2_COLOR_SPACES = dict.fromkeys(METHODS_W2, "Lab")
 
 
 def compute_descriptors_w2(dataset, masks=None):
@@ -485,14 +325,10 @@ def compute_descriptors_w2(dataset, masks=None):
     if masks is not None and len(masks) != n:
         raise ValueError(f"Expected {n} masks, got {len(masks)}")
     for i, img in enumerate(dataset.images):
-        sources = {
-            "HSV": cv2.cvtColor(img, cv2.COLOR_RGB2HSV),
-            "Lab": cv2.cvtColor(img, cv2.COLOR_RGB2LAB),
-        }
+        lab = cv2.cvtColor(img, cv2.COLOR_RGB2LAB)
         mask = None if masks is None else masks[i]
         for j, name in enumerate(METHODS_W2_NAMES):
-            source = sources[METHODS_W2_COLOR_SPACES[name]]
-            methods[j].append(METHODS_W2[name](source, mask=mask))
+            methods[j].append(METHODS_W2[name](lab, mask=mask))
     return methods
 
 
@@ -552,15 +388,10 @@ def load_descriptors_w2(path, mask_folder=None, method=None):
         if img is None:
             raise ValueError(f"Cannot decode image: {p}")
         rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        sources = {
-            "HSV": cv2.cvtColor(rgb, cv2.COLOR_RGB2HSV),
-            "Lab": cv2.cvtColor(rgb, cv2.COLOR_RGB2LAB),
-        }
+        lab = cv2.cvtColor(rgb, cv2.COLOR_RGB2LAB)
         mask = None if masks is None else masks[i]
         for j, name in enumerate(names):
-            descriptors[j].append(
-                METHODS_W2[name](sources[METHODS_W2_COLOR_SPACES[name]],
-                                 mask=mask))
+            descriptors[j].append(METHODS_W2[name](lab, mask=mask))
     if method is not None:
         return ids, descriptors[0]
     return ids, descriptors
@@ -601,22 +432,52 @@ def evaluate_folders_w2(museum_path, queries_path, method, distance_name,
     return ranked_ids
 
 
-def evaluate_segmentation(pred_dir, gt_dir):
+def _mask_paths(folder):
+    """Map numeric mask ID -> PNG path in `folder`."""
+    paths = {}
+    for path in Path(folder).iterdir():
+        if not path.is_file() or path.suffix.lower() != ".png":
+            continue
+        index = image_id(path.name)
+        if index in paths:
+            raise ValueError(f"Duplicate mask ID {index} in {folder}")
+        paths[index] = path
+    return paths
+
+
+def evaluate_segmentation(pred_dir, gt_dir, save_path=None):
     """Precision/recall/F1 of predicted masks vs trusted masks (by ID).
 
-    Delegates to eval_w2_masks (shared Task 4 metric) and prints a table.
+    Both folders hold binary PNG masks, paired by the numeric ID in the
+    filename. Returns {"per_image": [...], "mean": {...}}, prints a table
+    and optionally writes it to `save_path`. Task 4 (QSD2 segmentation).
     """
-    from eval_w2_masks import evaluate_mask_folders
-
-    result = evaluate_mask_folders(pred_dir, gt_dir)
-    for row in result["per_image"]:
-        print(f"ID {row['id']}: precision {row['precision']:.4f} "
-              f"recall {row['recall']:.4f} F1 {row['F1']:.4f}")
-    mean = result["mean"]
-    print(f"mean over {len(result['per_image'])} masks: "
-          f"precision {mean['precision']:.4f} recall {mean['recall']:.4f} "
-          f"F1 {mean['F1']:.4f}")
-    return result
+    predicted = _mask_paths(pred_dir)
+    truth = _mask_paths(gt_dir)
+    if not truth or predicted.keys() != truth.keys():
+        raise ValueError("Both folders must contain the same mask IDs")
+    per_image = []
+    for index in sorted(truth):
+        predicted_mask = cv2.imread(str(predicted[index]), cv2.IMREAD_GRAYSCALE)
+        truth_mask = cv2.imread(str(truth[index]), cv2.IMREAD_GRAYSCALE)
+        if predicted_mask is None or truth_mask is None:
+            raise ValueError(f"Cannot read mask {index}")
+        scores = compute_segmentation_metrics(predicted_mask, truth_mask)
+        per_image.append({"id": index, **scores})
+    mean = {key: sum(row[key] for row in per_image) / len(per_image)
+            for key in ("precision", "recall", "F1")}
+    lines = [f"{'Image':>10s} {'Precision':>10s} {'Recall':>10s} {'F1':>10s}"]
+    for row in per_image:
+        lines.append(f"{row['id']:10d} {row['precision']:10.4f} "
+                     f"{row['recall']:10.4f} {row['F1']:10.4f}")
+    lines.append(f"{'Mean':>10s} {mean['precision']:10.4f} "
+                 f"{mean['recall']:10.4f} {mean['F1']:10.4f}")
+    print("\n".join(lines))
+    if save_path is not None:
+        save_path.parent.mkdir(parents=True, exist_ok=True)
+        save_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        print(f"Saved to {save_path}")
+    return {"per_image": per_image, "mean": mean}
 
 
 def build_parser():
@@ -645,6 +506,8 @@ def build_parser():
                         metavar=("PRED_DIR", "GT_DIR"),
                         help="Evaluate predicted masks vs trusted masks "
                              "(precision/recall/F1) and exit")
+    parser.add_argument("--save", type=Path, default=None,
+                        help="Write the segmentation table to this file")
     return parser
 
 
@@ -656,7 +519,7 @@ def main(args=None):
             print(name)
         return
     if opts.segmentation:
-        evaluate_segmentation(*opts.segmentation)
+        evaluate_segmentation(*opts.segmentation, save_path=opts.save)
         return
     if not opts.museum or not opts.queries:
         parser.error("--museum and --queries are required "
