@@ -1,8 +1,63 @@
 import numpy as np
-from similarity_functions import (euclidean_distance, l1_distance, chi_square_distance, histogram_intersection, hellinger_kernel, cosine_similarity, correlation_similarity)
 from utils import Dataset
 from methods_w1 import METHODS_W1, METHODS_W1_NAMES, compute_descriptors_w1
 from methods_w2 import METHODS_W2, METHODS_W2_NAMES, compute_descriptors_w2
+
+# Task 2: similarity measures between 1D histograms.
+# Distances (lower is better) and similarities (higher is better).
+
+
+def euclidean_distance(hist_a, hist_b):
+    """Euclidean distance: lower is better."""
+    hist_a = np.asarray(hist_a, dtype=float)
+    hist_b = np.asarray(hist_b, dtype=float)
+    return np.sqrt(np.sum((hist_a - hist_b) ** 2))
+
+
+def l1_distance(hist_a, hist_b):
+    """L1 distance: lower is better."""
+    hist_a = np.asarray(hist_a, dtype=float)
+    hist_b = np.asarray(hist_b, dtype=float)
+    return np.sum(np.abs(hist_a - hist_b))
+
+
+def chi_square_distance(hist_a, hist_b):
+    """Chi-square distance: lower is better."""
+    hist_a = np.asarray(hist_a, dtype=float)
+    hist_b = np.asarray(hist_b, dtype=float)
+    total = hist_a + hist_b
+    mask = total > 0
+    return np.sum((hist_a[mask] - hist_b[mask]) ** 2 / total[mask])
+
+
+def histogram_intersection(hist_a, hist_b):
+    """Histogram intersection: higher is better."""
+    hist_a = np.asarray(hist_a, dtype=float)
+    hist_b = np.asarray(hist_b, dtype=float)
+    return np.sum(np.minimum(hist_a, hist_b))
+
+
+def hellinger_kernel(hist_a, hist_b):
+    """Hellinger kernel: higher is better."""
+    hist_a = np.asarray(hist_a, dtype=float)
+    hist_b = np.asarray(hist_b, dtype=float)
+    return np.sum(np.sqrt(hist_a * hist_b))
+
+
+def cosine_similarity(hist_a, hist_b):
+    """Cosine similarity: higher is better."""
+    hist_a = np.asarray(hist_a, dtype=float)
+    hist_b = np.asarray(hist_b, dtype=float)
+    denom = np.linalg.norm(hist_a) * np.linalg.norm(hist_b)
+    return np.dot(hist_a, hist_b) / denom if denom > 0 else 0.0
+
+
+def correlation_similarity(hist_a, hist_b):
+    """Pearson correlation: higher is better."""
+    hist_a = np.asarray(hist_a, dtype=float)
+    hist_b = np.asarray(hist_b, dtype=float)
+    return cosine_similarity(hist_a - hist_a.mean(), hist_b - hist_b.mean())
+
 
 # W1 compatibility aliases (ex main.py).
 DESCRIPTOR_NAMES = METHODS_W1_NAMES

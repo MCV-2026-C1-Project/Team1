@@ -34,10 +34,11 @@ Create a virtual environment to encapsulate the required installations.
 
 Run:
 ```powershell
-python .\src\main.py
+python .\src\methods_w1.py --list
 ```
 
-This script randomly selects one image and computes different histogram descriptors:
+The W1 descriptors live in `methods_w1.py` (`METHODS_W1`), with the histogram
+implementations in `utils.py`:
 - Grayscale
 - RGB
 - HSV (one component per histogram)
@@ -45,7 +46,7 @@ This script randomly selects one image and computes different histogram descript
 
 ### Task 2: Similarity Functions
 
-All similarity formulas are implemented in `similarity_functions.py`, and fall into two groups:
+All similarity formulas are implemented in `k_similarity.py`, and fall into two groups:
 
 | Type | Functions | Interpretation |
 |------|-----------|----------------|
