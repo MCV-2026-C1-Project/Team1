@@ -76,7 +76,7 @@ Sorting a similarity in ascending order would return the least similar images fi
 
 From the project directory, give the folders containing the museum and test images:
 ```bash
-python src/methods_w1.py --museum ../../datasets/BBDD --queries ../../datasets/test_set/P1/qst1_w1 --output-dir results/week1/QST1
+python .\src\methods_w2.py --museum .\data\BBDD --queries .\data\qsd1_w2 --method "Lab blocks 1D" --blocks 25 
 ```
 
 Both arguments accept relative or absolute image-folder paths. Only JPG/JPEG
@@ -133,7 +133,7 @@ in one pass). Use `--blocks`/`--levels` for the parametrized methods and
 
 For example, on QSD1-W2:
 ```powershell
-python .\src\methods_w2.py --museum data\BBDD --queries data\qsd1_w2 --ground-truth data\qsd1_w2\gt_corresps.pkl --method all
+python .\src\methods_w2.py --museum data\BBDD --queries data\qsd1_w2 --ground-truth data\qsd1_w2\qsd1_w1\gt_corresps.pkl --method all
 ```
 
 mAP on the 30 QSD1-W2 queries against the BBDD (L1):
@@ -161,7 +161,7 @@ The extra experiments and their results are in
 
 Run after generating the masks from Task 3:
 ```powershell
-python .\src\methods_w2.py --segmentation results/week2/masks data/qsd2_w2 --save results/week2/mask_metrics.txt
+python src\methods_w2.py --segment data\qsd2_w2 --out results\week2\QSD2\masks --viz results\week2\QSD2\viz 
 ```
 
 The script matches PNG masks by numeric filename ID and computes foreground
@@ -170,3 +170,68 @@ as their reference, with 0 for background and nonzero pixels for foreground.
 
 The table shows the scores for each query and their mean. Use `--save` to
 write it to a text file.
+
+Add `--viz` to also draw the masks over the images (`--images` if the `.jpg`
+files are not in the ground-truth folder):
+```powershell
+python src\methods_w2.py --segmentation results\week2\QSD2\masks data\qsd2_w2 --viz results\week2\QSD2\viz --save results\week2\QSD2\mask_metrics.txt
+```
+
+Result of Task 3 on the 30 QSD2 images:
+
+| | Precision | Recall | F1 |
+|---|---:|---:|---:|
+| Mean over the 30 images | 0.9370 | 0.9827 | **0.9569** |
+
+19 of 30 masks have F1 >= 0.95. The weakest are 00020 (white painting on a
+light wall, 0.84), 00026, 00014, 00000 and 00013. Most of the lost precision is
+the shadow or lighter strip of wall just below a painting.
+
+### Task 5: Retrieval on QSD2 with Background Removal
+
+Add `--background-removal` to the retrieval command: each query is segmented
+with Task 3 and the descriptor only counts the painting pixels.
+```powershell
+python src\methods_w2.py --museum data\BBDD --queries data\qsd2_w2 --ground-truth data\qsd2_w2\qsd2_w1\gt_corresps.pkl --method "Lab blocks 1D" --blocks 36 --background-removal
+```
+
+Museum images contain only the painting, but a query has wall around it. The
+block grid is laid over the image, so cell (i, j) of the query would cover a
+different part of the painting than cell (i, j) of the museum image, even when
+the wall pixels are masked out. The query is therefore **cropped to the
+bounding box of its mask** before the descriptor is computed. `--no-crop` turns
+this off.
+
+mAP@1 / mAP@5 on QSD2 (L1):
+
+| `Lab blocks 1D` | No mask | Mask, no crop (`--no-crop`) | **Mask + crop** | Ground-truth mask + crop |
+|---|---:|---:|---:|---:|
+| `--blocks 36` | 0.3667 / 0.4094 | 0.5333 / 0.6139 | **0.7667 / 0.8139** | 0.8667 / 0.8844 |
+| `--blocks 16` | 0.3333 / 0.4080 | 0.5667 / 0.6470 | **0.7000 / 0.7556** | 0.7333 / 0.7890 |
+
+The last column uses the ground-truth masks (`--query-masks data\qsd2_w1`) and is
+the upper bound for a perfect segmentation. `--background-removal` and
+`--query-masks` cannot be used together.
+
+### Task 6: Blind Submission (QST1 and QST2)
+
+```powershell
+python src\methods_w2.py --museum data\BBDD --qst1 data\qst_w2\qst1_w2 --qst2 data\qst_w2\qst2_w2
+```
+
+Give `--qst1` and/or `--qst2` (the folders must contain the `.jpg` files
+directly). Use `--submit-out` to change the output folder (default
+`results/week2`) and `--distance` to change the comparison.
+
+| Output under `results/week2/` | Content |
+|---|---|
+| `QST1/method1/result.pkl` | `Lab blocks 1D`, 6x6 cells (`--blocks 36`), L1, whole image |
+| `QST1/method2/result.pkl` | `Lab blocks 1D`, 4x4 cells (`--blocks 16`), L1, whole image |
+| `QST2/method1/result.pkl`, `QST2/method2/result.pkl` | same methods on the painting only (Task 3 mask + crop) |
+| `QST2/method1/*.png`, `QST2/method2/*.png` | background masks, same name as the query, 0/255 |
+
+Each `result.pkl` is a Python list of lists with exactly 10 unique integer
+museum IDs per query, best first. After writing, the script reads every file
+back and checks the IDs, and that each mask exists, has the size of its query
+and contains only 0 and 255. The methods are defined in `SUBMISSION_METHODS`
+in `methods_w2.py`.
