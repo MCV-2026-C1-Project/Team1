@@ -8,7 +8,7 @@ Create a virtual environment to encapsulate the required installations.
 ```powershell
    python -m venv .venv
 ```
-2. Upgrade pip, in case the versions do not coincide:ara
+2. Upgrade pip, in case the versions do not coincide:
 ```powershell
    .\.venv\Scripts\python.exe -m pip install --upgrade pip
 ```
@@ -17,7 +17,7 @@ Create a virtual environment to encapsulate the required installations.
    .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 4. Activate the environment (Windows):
-```powershellque 
+```powershell
    .\.venv\Scripts\Activate.ps1
 ```
 
@@ -76,7 +76,7 @@ Sorting a similarity in ascending order would return the least similar images fi
 
 From the project directory, give the folders containing the museum and test images:
 ```bash
-python src/task4.py --museum ../../datasets/BBDD --queries ../../datasets/test_set/P1/qst1_w1
+python src/methods_w1.py --museum ../../datasets/BBDD --queries ../../datasets/test_set/P1/qst1_w1 --output-dir results/week1/QST1
 ```
 
 Both arguments accept relative or absolute image-folder paths. Only JPG/JPEG
@@ -88,14 +88,15 @@ integer museum IDs per query, ranked best first.
 
 | Output under `results/week1/QST1/` | Descriptor | Default comparison |
 |---|---|---|
-| `method1/result.pkl` | Grayscale | Chi-square |
-| `method2/result.pkl` | HSV | L1 |
-| `method3/result.pkl` | RGB | L1 |
-| `method4/result.pkl` | HSV grid | L1 |
+| `method1/result.pkl` | HSV | L1 |
+| `method2/result.pkl` | HSV grid | L1 |
 
-To override the comparison for all four methods or change the output location:
+At most two methods are allowed (statement), so only HSV and HSV grid are
+submitted; Grayscale and RGB remain in `METHODS_W1` for validation only.
+
+To override the comparison for both methods or change the output location:
 ```bash
-python src/task4.py --museum data/BBDD --queries data/qst1_w1 --distance Hellinger --output-dir results/hellinger/week1/QST1
+python src/methods_w1.py --museum data/BBDD --queries data/qst1_w1 --distance Hellinger --output-dir results/hellinger/week1/QST1
 ```
 
 Available comparisons: `Euclidean`, `L1`, `Chi-square`, `Histogram Intersection`,
@@ -107,34 +108,44 @@ Available comparisons: `Euclidean`, `L1`, `Chi-square`, `Histogram Intersection`
 
 ### Task 1: Color Histograms
 
-`methods_w2.py` contains the HSV 2D/3D histograms and their pyramids, plus:
-- Lab blocks (4×4 and 6×6 grids)
-- Lab pyramid (1×1, 2×2 and 4×4 grids)
+`methods_w2.py` keeps four Lab descriptors (all L1-normalized, with an
+optional foreground mask):
 
-The Lab descriptors use a separate 1D histogram for each channel, with
-32 bins per channel. All W2 methods accept an optional foreground mask.
+| Method | Description | Parameter |
+|---|---|---|
+| `Lab blocks 1D` | N×N grid of marginal 1D histograms (32 bins per channel), concatenated in row-major order | `--blocks N` (default 4 → 4×4) |
+| `Lab 2D` | L as a 1D marginal (32 bins) plus the (a, b) pair as a joint 2D histogram (32 bins per axis), concatenated | — |
+| `Lab 3D` | joint 3D L-a-b histogram (32 bins per axis) | — |
+| `Lab pyramid` | hierarchy of 1D-block levels: level 1 is one block, each extra level doubles the number of blocks (1, 2, 4, 8 …) | `--levels K` (default 3) |
+
+Run `python .\src\methods_w2.py --list` to list them.
 
 ### Task 2: Retrieval Comparison
 
-Run:
+Run any W2 method on a museum/query pair (add `--ground-truth` to print mAP):
 ```powershell
-python .\src\eval_w2_color.py --sections A E F
+python .\src\methods_w2.py --museum ..\..\datasets\BBDD --queries ..\..\datasets\qsd1_w2 --method "Lab blocks 1D" --blocks 6
 ```
 
-This compares the W1 baselines, HSV pyramids and Lab methods using L1 on
-the 30 QSD1 development queries. Omit `--sections A E F` to run the full
-comparison, or use `--save results/week2/color_comparison.txt` to save it.
+Use `--blocks`/`--levels` for the parametrized methods and `--distance` for the
+comparison (default L1). Omit `--method` to evaluate all four.
 
-| Descriptor | mAP@1 | mAP@5 |
-|---|---:|---:|
-| W1 HSV grid 4×4 | 0.7667 | 0.8194 |
-| HSV grid 6×6 | 0.8000 | 0.8500 |
-| Lab pyramid (1, 2, 4) | 0.8333 | 0.8694 |
-| Lab blocks 4×4 | 0.8333 | 0.8722 |
-| Lab blocks 6×6 | 0.8667 | 0.9000 |
+mAP on the 30 QSD1-W2 queries against the BBDD (L1):
 
-Lab 6×6 gives the best result on this set, with 26 of 30 queries correct
-at rank 1. Evaluation with segmentation and blind queries is still pending.
+| Descriptor | Config | mAP@1 | mAP@5 |
+|---|---|---:|---:|
+| W1 HSV grid | 4×4 | 0.7667 | 0.8194 |
+| W1 HSV grid | 6×6 | 0.8000 | 0.8500 |
+| `Lab blocks 1D` | `--blocks 4` | 0.8333 | 0.8722 |
+| `Lab blocks 1D` | `--blocks 6` | 0.8667 | 0.9000 |
+| `Lab pyramid` | `--levels 3` | 0.6333 | 0.6744 |
+| `Lab pyramid` | `--levels 4` | 0.7333 | 0.7778 |
+| `Lab 2D` | — | 0.5333 | 0.6028 |
+| `Lab 3D` | — | 0.4000 | 0.4833 |
+
+`Lab blocks 1D --blocks 6` gives the best result on this set, with 26 of 30
+queries correct at rank 1. Evaluation with segmentation and blind queries is
+still pending.
 
 The extra experiments and their results are in
 [results/week2/color_experiments](results/week2/color_experiments).
@@ -143,7 +154,7 @@ The extra experiments and their results are in
 
 Run after generating the masks from Task 3:
 ```powershell
-python .\src\eval_w2_masks.py --predicted results/week2/masks --ground-truth data/qsd2_w2 --save results/week2/mask_metrics.txt
+python .\src\methods_w2.py --segmentation results/week2/masks data/qsd2_w2 --save results/week2/mask_metrics.txt
 ```
 
 The script matches PNG masks by numeric filename ID and computes foreground

@@ -1,4 +1,4 @@
-"""Methods_W2: Lab color descriptors to test in Week 2 (Task 1).
+"""Methods_W2: Lab color descriptors for Week 2 (Task 1).
 
 Run as a script (argparse selects the action):
     python methods_w2.py --list
@@ -10,45 +10,26 @@ Functions take uint8 OpenCV Lab images (all channels span [0, 256)) and
 accept an optional foreground mask (Task 3/5): if ``mask`` is None the full
 image is used; if given, only foreground pixels contribute to the histogram.
 
-One rule everywhere in W2: a single uniform bin count shared by every
-channel (no per-channel bins, no Max variants). Dims are therefore ``bins``
-(marginal 1D per channel x3), ``bins**2`` (2D), ``bins**3`` (3D), times the
-number of cells for blocks/pyramids.
+Only four W2 methods are kept (every part is L1-normalized and the
+concatenation is L1-renormalized, so each part carries equal weight):
 
-METHODS_W2 registry (all L1), validated on QSD1-W2 with L1 only
-(see results/week2/qsd1w2_registry_l1.txt), in three families:
+    - "Lab blocks 1D"  the image is split into blocks x blocks cells; each
+      cell carries a marginal 1D histogram per channel (32 bins), and all
+      cells are concatenated row-major.  Parameter: --blocks (grid side,
+      default 4 -> 4x4 = 16 cells).
+    - "Lab 2D"         the L channel as a 1D marginal (32 bins) plus the
+      (a, b) pair as a joint 2D histogram (32 bins per axis), concatenated.
+      No specific parameter.
+    - "Lab 3D"         joint 3D L-a-b histogram (32 bins per axis). No
+      specific parameter.
+    - "Lab pyramid"    hierarchy of 1D-block levels: level 1 is a single
+      block (whole image, like "Lab blocks 1D" with 1 block) and every extra
+      level doubles the number of blocks, arranged as square as possible
+      (1, 2, 4, 8 ... -> grids (1,1), (1,2), (2,2), (2,4) ...); the 1D
+      histograms of every cell and level are concatenated.  Parameter:
+      --levels (number of hierarchy levels, default 3).
 
-Marginal 1D (three per-channel histograms of `bins`, concatenated):
-    - "Lab 1D 32" global (96, mAP@5 0.5861): 1 block.
-    - "Lab block 2x2 1D 32" (384, mAP@5 0.7106): 4 blocks.
-    - "Lab block 2x4 1D 32" (768, mAP@5 0.8278): 8 blocks.
-    - "Lab block 4x4 1D 32" (1536, mAP@5 0.8722): 16 blocks.
-    - "Lab block 6x6 1D 32" (3456).
-    - "Lab pyramid 1D 32" (2016).
-
-Joint/mixed (2D and 3D histograms, global or per cell):
-    - Globals: "Lab 3D 4" (64, 0.4733), "Lab 2D La 32" (1024, 0.4806),
-      "Lab 2D Lb 8" (64, 0.4428), "Lab 2D ab 16" (256, 0.5150),
-      "Lab 2D La+Lb 16" (512, 0.5167).
-    - Partitioned (1D marginal + 2D joint, equal weight per part):
-      "Lab L+ab 16" (272, mAP@5 0.5111) = L 16 + ab 16x16, global;
-      "Lab block 4x4 L+ab 16" (4352, mAP@5 0.7583), the same split in
-      16 blocks; best Lab joint result after the marginal family.
-    - Pyramids (levels (1, 2, 4) = 21 cells; each cell carries the same
-      combination, L1-normalized per cell and L1-renormalized on
-      concatenation, no level weights): "Lab pyramid 3D 4" (1344, 0.7417),
-      "Lab pyramid La 32" (21504, 0.6678), "Lab pyramid Lb 8" (1344, 0.6733),
-      "Lab pyramid ab 16" (5376, 0.6733),
-      "Lab pyramid La+Lb 16" (10752, 0.6444).
-
-Channel pairs keep the Lab indices, i.e. (L,a) and (L,b), plus the
-chromaticity-only pair (a,b) at 16 bins (remote sweep: ab-16 pyramid 0.6733
-vs ab-32 0.7011 at 4x the dims, so 16 is the registered tier).
-These are QSD1 development results with L1 distance, not blind test scores.
-
-Masked variants (QSD2/QST2) reuse these same functions by passing
-``mask``; they are not separate registry entries until the Task 1
-ablation is closed on QSD1-W2 (same dev set as W1, direct comparison).
+Masked variants (QSD2/QST2) reuse these same functions by passing ``mask``.
 """
 
 import argparse
@@ -145,25 +126,6 @@ def compute_lab_2d_histogram(img_lab, channels=(0, 1), bins=32, mask=None):
     return _l1_normalize(hist)
 
 
-def compute_lab_2d_concat_histogram(img_lab, parts=(((0, 1), 32),), mask=None):
-    """Concatenate several Lab 2D histograms (e.g. La+Lb), L1 normalized.
-
-    Equal-weight-per-pair rule, with the same uniform-bins rule
-    (no per-channel bins anywhere in W2).
-    """
-    assert len(img_lab.shape) == 3, "Expected Lab image"
-    assert len(parts) >= 1
-    for _, b in parts:
-        _check_bins(b)
-    normed_parts = [
-        _l1_normalize(compute_lab_2d_histogram(
-            img_lab, channels=ch, bins=b, mask=mask
-        ))
-        for ch, b in parts
-    ]
-    return _l1_normalize(np.concatenate(normed_parts))
-
-
 def compute_lab_1d_histogram(img_lab, channel=0, bins=16, mask=None):
     """Single-channel Lab marginal (L by default), L1 normalized."""
     assert len(img_lab.shape) == 3, "Expected Lab image"
@@ -198,22 +160,6 @@ def compute_lab_mixed_concat_histogram(img_lab, parts=(((0,), 32), ((1, 2), 32))
     return _l1_normalize(np.concatenate(normed_parts))
 
 
-def _lab_concat_fn(*parts):
-    """Build fn(lab, mask) for a Lab 2D concat with equal weight per pair."""
-    spec = list(parts)
-    return lambda lab, mask=None: compute_lab_2d_concat_histogram(
-        lab, parts=spec, mask=mask
-    )
-
-
-def _lab_mixed_concat_fn(*parts):
-    """Build fn(lab, mask) for a mixed Lab concat."""
-    spec = list(parts)
-    return lambda lab, mask=None: compute_lab_mixed_concat_histogram(
-        lab, parts=spec, mask=mask
-    )
-
-
 def compute_lab_pyramid_histogram(img_lab, levels=(1, 2, 4),
                                   bins=32, block_fn=None, mask=None):
     """Lab histograms per cell, L1-normalized per cell and renormalized
@@ -240,87 +186,59 @@ def compute_lab_block_histogram(img_lab, grid=4, bins=32, mask=None):
     )
 
 
-METHODS_W2 = {
-    "Lab block 4x4 1D 32": lambda lab, mask=None: compute_lab_block_histogram(
-        lab, grid=4, mask=mask
-    ),
-    "Lab block 6x6 1D 32": lambda lab, mask=None: compute_lab_block_histogram(
-        lab, grid=6, mask=mask
-    ),
-    "Lab block 2x2 1D 32": lambda lab, mask=None: compute_lab_block_histogram(
-        lab, grid=2, mask=mask
-    ),
-    "Lab block 2x4 1D 32": lambda lab, mask=None: compute_lab_block_histogram(
-        lab, grid=(2, 4), mask=mask
-    ),
-    "Lab pyramid 1D 32": lambda lab, mask=None: compute_lab_pyramid_histogram(
-        lab, mask=mask
-    ),
-    "Lab 1D 32": lambda lab, mask=None: compute_lab_histogram(
-        lab, bins=32, mask=mask
-    ),
-    "Lab 3D 4": lambda lab, mask=None: compute_lab_3d_histogram(
-        lab, bins=4, mask=mask
-    ),
-    "Lab 2D La 32": lambda lab, mask=None: compute_lab_2d_histogram(
-        lab, channels=(0, 1), bins=32, mask=mask
-    ),
-    "Lab 2D Lb 8": lambda lab, mask=None: compute_lab_2d_histogram(
-        lab, channels=(0, 2), bins=8, mask=mask
-    ),
-    "Lab 2D ab 16": lambda lab, mask=None: compute_lab_2d_histogram(
-        lab, channels=(1, 2), bins=16, mask=mask
-    ),
-    "Lab 2D La+Lb 16": _lab_concat_fn(((0, 1), 16), ((0, 2), 16)),
-    "Lab L+ab 16": _lab_mixed_concat_fn(((0,), 16), ((1, 2), 16)),
-    "Lab pyramid 3D 4": lambda lab, mask=None: compute_lab_pyramid_histogram(
-        lab, levels=(1, 2, 4),
-        block_fn=lambda b, m: compute_lab_3d_histogram(b, bins=4, mask=m),
-        mask=mask,
-    ),
-    "Lab pyramid La 32": lambda lab, mask=None: compute_lab_pyramid_histogram(
-        lab, levels=(1, 2, 4),
-        block_fn=lambda b, m: compute_lab_2d_histogram(
-            b, channels=(0, 1), bins=32, mask=m),
-        mask=mask,
-    ),
-    "Lab pyramid Lb 8": lambda lab, mask=None: compute_lab_pyramid_histogram(
-        lab, levels=(1, 2, 4),
-        block_fn=lambda b, m: compute_lab_2d_histogram(
-            b, channels=(0, 2), bins=8, mask=m),
-        mask=mask,
-    ),
-    "Lab pyramid ab 16": lambda lab, mask=None: compute_lab_pyramid_histogram(
-        lab, levels=(1, 2, 4),
-        block_fn=lambda b, m: compute_lab_2d_histogram(
-            b, channels=(1, 2), bins=16, mask=m),
-        mask=mask,
-    ),
-    "Lab pyramid La+Lb 16": lambda lab, mask=None: compute_lab_pyramid_histogram(
-        lab, levels=(1, 2, 4),
-        block_fn=lambda b, m: compute_lab_2d_concat_histogram(
-            b, parts=[((0, 1), 16), ((0, 2), 16)], mask=m),
-        mask=mask,
-    ),
-    "Lab block 4x4 L+ab 16": lambda lab, mask=None: compute_lab_pyramid_histogram(
-        lab, levels=(4,),
-        block_fn=lambda b, m: compute_lab_mixed_concat_histogram(
-            b, parts=[((0,), 16), ((1, 2), 16)], mask=m),
-        mask=mask,
-    ),
-}
-
-METHODS_W2_NAMES = list(METHODS_W2.keys())
-METHODS_W2_COLOR_SPACES = dict.fromkeys(METHODS_W2, "Lab")
+DEFAULT_BLOCKS = 4
+DEFAULT_PYRAMID_LEVELS = 3
 
 
-def compute_descriptors_w2(dataset, masks=None):
+def pyramid_grids(divisions):
+    """Grids for `divisions` pyramid levels, block count doubling per level.
+
+    Level 1 is a single block (whole image); each extra level doubles the
+    number of blocks, arranged as square as possible:
+    1, 2, 4, 8, ... -> (1, 1), (1, 2), (2, 2), (2, 4), ...
+    """
+    assert (isinstance(divisions, int) and not isinstance(divisions, bool)
+            and divisions >= 1), (
+        f"divisions must be a positive integer, got {divisions!r}")
+    return tuple((2 ** (i // 2), 2 ** (i - i // 2)) for i in range(divisions))
+
+
+def build_method(name, blocks=DEFAULT_BLOCKS, levels=DEFAULT_PYRAMID_LEVELS):
+    """Return fn(lab, mask) for a W2 method built with explicit parameters.
+
+    blocks: grid side for "Lab blocks 1D" (blocks x blocks cells).
+    levels: number of hierarchy levels for "Lab pyramid".
+    """
+    if name == "Lab blocks 1D":
+        return lambda lab, mask=None: compute_lab_block_histogram(
+            lab, grid=blocks, mask=mask)
+    if name == "Lab 2D":
+        return lambda lab, mask=None: compute_lab_mixed_concat_histogram(
+            lab, parts=[((0,), 32), ((1, 2), 32)], mask=mask)
+    if name == "Lab 3D":
+        return lambda lab, mask=None: compute_lab_3d_histogram(
+            lab, bins=32, mask=mask)
+    if name == "Lab pyramid":
+        return lambda lab, mask=None: compute_lab_pyramid_histogram(
+            lab, levels=pyramid_grids(levels), mask=mask)
+    raise ValueError(f"Unknown W2 method: {name!r}")
+
+
+METHODS_W2_NAMES = ("Lab blocks 1D", "Lab 2D", "Lab 3D", "Lab pyramid")
+METHODS_W2 = {name: build_method(name) for name in METHODS_W2_NAMES}
+METHODS_W2_COLOR_SPACES = dict.fromkeys(METHODS_W2_NAMES, "Lab")
+
+
+def compute_descriptors_w2(dataset, masks=None, blocks=DEFAULT_BLOCKS,
+                           levels=DEFAULT_PYRAMID_LEVELS):
     """W2 descriptors for a dataset; masks optional (QSD2 foreground).
 
     dataset.images in RGB (like Dataset); masks list of HxW uint8 or None.
     Returns one list per W2 method, in METHODS_W2_NAMES order.
     """
     methods = [[] for _ in METHODS_W2_NAMES]
+    fns = {name: build_method(name, blocks, levels)
+           for name in METHODS_W2_NAMES}
     n = len(dataset.images)
     if masks is not None and len(masks) != n:
         raise ValueError(f"Expected {n} masks, got {len(masks)}")
@@ -328,7 +246,7 @@ def compute_descriptors_w2(dataset, masks=None):
         lab = cv2.cvtColor(img, cv2.COLOR_RGB2LAB)
         mask = None if masks is None else masks[i]
         for j, name in enumerate(METHODS_W2_NAMES):
-            methods[j].append(METHODS_W2[name](lab, mask=mask))
+            methods[j].append(fns[name](lab, mask=mask))
     return methods
 
 
@@ -370,7 +288,8 @@ def _ordered_masks(folder, ids):
     return masks
 
 
-def load_descriptors_w2(path, mask_folder=None, method=None):
+def load_descriptors_w2(path, mask_folder=None, method=None,
+                        blocks=DEFAULT_BLOCKS, levels=DEFAULT_PYRAMID_LEVELS):
     """Descriptors per W2 method for a folder (numeric order + optional masks).
 
     method: a single registry name (computed alone, fast) or None for all.
@@ -382,6 +301,7 @@ def load_descriptors_w2(path, mask_folder=None, method=None):
     names = [method] if method is not None else list(METHODS_W2_NAMES)
     if method is not None and method not in METHODS_W2:
         raise ValueError(f"Unknown W2 method: {method!r}")
+    fns = {name: build_method(name, blocks, levels) for name in names}
     descriptors = [[] for _ in names]
     for i, p in enumerate(paths):
         img = cv2.imread(str(p), cv2.IMREAD_COLOR)
@@ -391,7 +311,7 @@ def load_descriptors_w2(path, mask_folder=None, method=None):
         lab = cv2.cvtColor(rgb, cv2.COLOR_RGB2LAB)
         mask = None if masks is None else masks[i]
         for j, name in enumerate(names):
-            descriptors[j].append(METHODS_W2[name](lab, mask=mask))
+            descriptors[j].append(fns[name](lab, mask=mask))
     if method is not None:
         return ids, descriptors[0]
     return ids, descriptors
@@ -399,7 +319,8 @@ def load_descriptors_w2(path, mask_folder=None, method=None):
 
 def evaluate_folders_w2(museum_path, queries_path, method, distance_name,
                         top_k, ground_truth_path=None, museum_masks=None,
-                        query_masks=None):
+                        query_masks=None, blocks=DEFAULT_BLOCKS,
+                        levels=DEFAULT_PYRAMID_LEVELS):
     """Retrieve top-k museum IDs per query; print mAP if ground truth given."""
     # Local import: k_similarity imports METHODS_W2 at module level.
     from k_similarity import (
@@ -409,9 +330,9 @@ def evaluate_folders_w2(museum_path, queries_path, method, distance_name,
     )
 
     museum_ids, museum = load_descriptors_w2(
-        museum_path, museum_masks, method=method)
+        museum_path, museum_masks, method=method, blocks=blocks, levels=levels)
     query_ids, queries = load_descriptors_w2(
-        queries_path, query_masks, method=method)
+        queries_path, query_masks, method=method, blocks=blocks, levels=levels)
     rankings = retrieve_all_queries(
         queries, museum, DISTANCE_FUNCTIONS[distance_name], top_k=top_k)
     ranked_ids = [[museum_ids[idx] for idx, _ in row] for row in rankings]
@@ -490,8 +411,12 @@ def build_parser():
     parser.add_argument("--list", action="store_true",
                         help="List available W2 methods and exit")
     parser.add_argument("--method", choices=METHODS_W2_NAMES,
-                        default="Lab block 4x4 1D 32",
+                        default="Lab blocks 1D",
                         help="Descriptor for retrieval evaluation")
+    parser.add_argument("--blocks", type=int, default=DEFAULT_BLOCKS,
+                        help="Grid side for 'Lab blocks 1D' (N -> NxN cells)")
+    parser.add_argument("--levels", type=int, default=DEFAULT_PYRAMID_LEVELS,
+                        help="Number of hierarchy levels for 'Lab pyramid'")
     parser.add_argument("--museum", type=Path, help="Museum image folder")
     parser.add_argument("--queries", type=Path, help="Query image folder")
     parser.add_argument("--museum-masks", type=Path, default=None,
@@ -526,7 +451,8 @@ def main(args=None):
                      "(or use --list / --segmentation)")
     evaluate_folders_w2(opts.museum, opts.queries, opts.method,
                         opts.distance, opts.top_k, opts.ground_truth,
-                        opts.museum_masks, opts.query_masks)
+                        opts.museum_masks, opts.query_masks,
+                        opts.blocks, opts.levels)
 
 
 if __name__ == "__main__":

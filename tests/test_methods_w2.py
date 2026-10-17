@@ -1,5 +1,6 @@
-"""Tests for Methods_W2 (methods_w2.py): Lab globals, blocks, pyramids,
-concats, L1 normalization and masks.
+"""Tests for Methods_W2 (methods_w2.py): the four Lab descriptors
+(blocks 1D, 2D, 3D, spatial pyramid), their per-method parameters,
+L1 normalization and masks.
 
 Spatial pyramids/blocks are the canonical W2 spatial layout (see
 compute_lab_pyramid_histogram / compute_lab_block_histogram).
@@ -15,18 +16,21 @@ import numpy as np
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from methods_w2 import (  # noqa: E402
+    DEFAULT_BLOCKS,
+    DEFAULT_PYRAMID_LEVELS,
     METHODS_W2,
-    METHODS_W2_NAMES,
     METHODS_W2_COLOR_SPACES,
+    METHODS_W2_NAMES,
+    build_method,
     compute_descriptors_w2,
     compute_lab_1d_histogram,
-    compute_lab_2d_concat_histogram,
     compute_lab_2d_histogram,
     compute_lab_3d_histogram,
-    compute_lab_histogram,
     compute_lab_block_histogram,
+    compute_lab_histogram,
     compute_lab_mixed_concat_histogram,
     compute_lab_pyramid_histogram,
+    pyramid_grids,
 )
 
 
@@ -35,34 +39,24 @@ def _red_lab(h=32, w=32):
     return cv2.cvtColor(rgb, cv2.COLOR_RGB2LAB)
 
 
-class TestW2Shapes(unittest.TestCase):
+class TestW2Registry(unittest.TestCase):
     def test_registry_color_spaces(self):
-        self.assertEqual(len(METHODS_W2_NAMES), 18)
-        self.assertEqual(list(METHODS_W2), METHODS_W2_NAMES)
+        self.assertEqual(len(METHODS_W2_NAMES), 4)
+        self.assertEqual(
+            METHODS_W2_NAMES, ("Lab blocks 1D", "Lab 2D", "Lab 3D", "Lab pyramid"))
+        self.assertEqual(list(METHODS_W2), list(METHODS_W2_NAMES))
         self.assertEqual(set(METHODS_W2_COLOR_SPACES), set(METHODS_W2))
         self.assertEqual(set(METHODS_W2_COLOR_SPACES.values()), {"Lab"})
 
+
+class TestW2Shapes(unittest.TestCase):
     def test_shapes_and_l1(self):
         lab = _red_lab()
         expected = {
-            "Lab block 4x4 1D 32": (1536,),
-            "Lab block 6x6 1D 32": (3456,),
-            "Lab block 2x2 1D 32": (384,),
-            "Lab block 2x4 1D 32": (768,),
-            "Lab pyramid 1D 32": (2016,),
-            "Lab 1D 32": (96,),
-            "Lab 3D 4": (64,),
-            "Lab 2D La 32": (1024,),
-            "Lab 2D Lb 8": (64,),
-            "Lab 2D ab 16": (256,),
-            "Lab 2D La+Lb 16": (512,),
-            "Lab L+ab 16": (272,),
-            "Lab pyramid 3D 4": (21 * 64,),
-            "Lab pyramid La 32": (21 * 1024,),
-            "Lab pyramid Lb 8": (21 * 64,),
-            "Lab pyramid ab 16": (21 * 256,),
-            "Lab pyramid La+Lb 16": (21 * 512,),
-            "Lab block 4x4 L+ab 16": (16 * 272,),
+            "Lab blocks 1D": (DEFAULT_BLOCKS ** 2 * 96,),  # 4x4 cells
+            "Lab 2D": (32 + 32 * 32,),                      # L + ab
+            "Lab 3D": (32 ** 3,),
+            "Lab pyramid": ((1 + 2 + 4) * 96,),             # 3 levels
         }
         for name, shape in expected.items():
             v = METHODS_W2[name](lab)
@@ -70,9 +64,34 @@ class TestW2Shapes(unittest.TestCase):
             self.assertAlmostEqual(float(v.sum()), 1.0, places=5, msg=name)
             self.assertTrue(np.all(v >= 0))
 
+    def test_blocks_parameter(self):
+        lab = _red_lab()
+        for blocks, cells in ((2, 4), (4, 16), (6, 36)):
+            v = build_method("Lab blocks 1D", blocks=blocks)(lab)
+            self.assertEqual(v.shape, (cells * 96,))
+            self.assertAlmostEqual(float(v.sum()), 1.0, places=5)
+
+    def test_pyramid_levels_parameter(self):
+        lab = _red_lab()
+        for levels, cells in ((1, 1), (2, 3), (3, 7), (4, 15)):
+            v = build_method("Lab pyramid", levels=levels)(lab)
+            self.assertEqual(v.shape, (cells * 96,))
+            self.assertAlmostEqual(float(v.sum()), 1.0, places=5)
+        self.assertEqual(DEFAULT_PYRAMID_LEVELS, 3)
+
+    def test_pyramid_grids_double_blocks(self):
+        self.assertEqual(pyramid_grids(1), ((1, 1),))
+        self.assertEqual(pyramid_grids(2), ((1, 1), (1, 2)))
+        self.assertEqual(pyramid_grids(3), ((1, 1), (1, 2), (2, 2)))
+        self.assertEqual(pyramid_grids(4), ((1, 1), (1, 2), (2, 2), (2, 4)))
+        blocks = [gy * gx for gy, gx in pyramid_grids(6)]
+        self.assertEqual(blocks, [1, 2, 4, 8, 16, 32])
+        with self.assertRaises(AssertionError):
+            pyramid_grids(0)
+
     def test_rectangular_grid(self):
-        lab = _red_lab(h=32, w=32)
-        v = METHODS_W2["Lab block 2x4 1D 32"](lab)
+        lab = _red_lab()
+        v = compute_lab_block_histogram(lab, grid=(2, 4))
         self.assertEqual(v.shape, (8 * 96,))
         self.assertAlmostEqual(float(v.sum()), 1.0, places=5)
         with self.assertRaises(AssertionError):
@@ -80,7 +99,7 @@ class TestW2Shapes(unittest.TestCase):
         with self.assertRaises(AssertionError):
             compute_lab_block_histogram(lab, grid=(2, 0))
 
-    def test_lab_3d_2d_concat_shapes_and_l1(self):
+    def test_lab_3d_2d_shapes_and_l1(self):
         lab = _red_lab()
         cases = [
             (compute_lab_3d_histogram(lab, bins=4), (64,)),
@@ -90,9 +109,6 @@ class TestW2Shapes(unittest.TestCase):
                 lab, channels=(0, 2), bins=8), (64,)),
             (compute_lab_2d_histogram(
                 lab, channels=(1, 2), bins=16), (256,)),
-            (compute_lab_2d_concat_histogram(
-                lab, parts=[((0, 1), 16), ((0, 2), 16)]),
-             (512,)),
         ]
         for v, shape in cases:
             self.assertEqual(v.shape, shape)
@@ -115,26 +131,27 @@ class TestW2Shapes(unittest.TestCase):
         with self.assertRaises(AssertionError):
             compute_lab_mixed_concat_histogram(lab, parts=[((0, 1, 2), 16)])
 
+    def test_build_method_exposes_params(self):
+        lab = _red_lab()
+        fn = build_method("Lab blocks 1D", blocks=2)
+        self.assertEqual(fn(lab).shape, (4 * 96,))
+        with self.assertRaises(ValueError):
+            build_method("Lab nope")
+
     def test_mask_keeps_shape_and_l1(self):
         lab = _red_lab()
         mask = np.zeros((32, 32), dtype=np.uint8)
         mask[8:24, 8:24] = 255
-        concat = lambda im, mask=mask: compute_lab_2d_concat_histogram(
-            im, parts=[((0, 1), 16), ((0, 2), 16)],
-            mask=mask,
-        )
-        for fn in (
-            compute_lab_3d_histogram,
-            compute_lab_2d_histogram,
-            concat,
-            compute_lab_pyramid_histogram,
-        ):
+        for fn in (compute_lab_3d_histogram,
+                   compute_lab_2d_histogram,
+                   compute_lab_mixed_concat_histogram,
+                   compute_lab_pyramid_histogram):
             full = fn(lab)
             masked = fn(lab, mask=mask)
             self.assertEqual(full.shape, masked.shape)
             self.assertAlmostEqual(float(masked.sum()), 1.0, places=5)
         # A partial mask must change the global descriptor on a two-color
-        # image (on a flat image the histogram does not change: the test
+        # image (on a flat image the histogram does not change: the case
         # above used flat red).
         bicolor = np.zeros((32, 32, 3), dtype=np.uint8)
         bicolor[:, :16] = (255, 0, 0)
@@ -166,20 +183,13 @@ class TestW2Shapes(unittest.TestCase):
                   for _ in range(2)]
         methods = compute_descriptors_w2(SimpleNamespace(images=images))
         self.assertEqual(len(methods), len(METHODS_W2_NAMES))
-        for m in methods:
-            self.assertEqual(len(m), 2)
-        levels = {"Lab block 2x2 1D 32": (2,),
-                  "Lab block 2x4 1D 32": ((2, 4),),
-                  "Lab block 4x4 1D 32": (4,),
-                  "Lab block 6x6 1D 32": (6,),
-                  "Lab pyramid 1D 32": (1, 2, 4)}
-        for name, grids in levels.items():
-            descriptors = methods[METHODS_W2_NAMES.index(name)]
-            for image, descriptor in zip(images, descriptors):
+        for j, name in enumerate(METHODS_W2_NAMES):
+            self.assertEqual(len(methods[j]), 2)
+            reference = build_method(name)
+            for image, descriptor in zip(images, methods[j]):
                 lab = cv2.cvtColor(image, cv2.COLOR_RGB2LAB)
-                reference = compute_lab_pyramid_histogram(
-                    lab, levels=grids)
-                np.testing.assert_allclose(descriptor, reference, atol=1e-7)
+                np.testing.assert_allclose(
+                    descriptor, reference(lab), atol=1e-7)
 
     def test_pyramid_dimensions_and_l1(self):
         """Cell count x dims per cell; L1 mass is 1 (ported spatial check)."""
@@ -189,12 +199,6 @@ class TestW2Shapes(unittest.TestCase):
             self.assertEqual(result.shape, (cells * 96,))
             self.assertTrue(np.isfinite(result).all())
             self.assertAlmostEqual(float(result.sum()), 1, places=5)
-            result3d = compute_lab_pyramid_histogram(
-                lab, levels=grids,
-                block_fn=lambda b, m: compute_lab_3d_histogram(
-                    b, bins=4, mask=m))
-            self.assertEqual(result3d.shape, (cells * 64,))
-            self.assertAlmostEqual(float(result3d.sum()), 1, places=5)
 
     def test_single_level_matches_global(self):
         """levels=(1,) with the default block equals the global descriptor."""
@@ -204,6 +208,9 @@ class TestW2Shapes(unittest.TestCase):
             cv2.COLOR_RGB2LAB)
         np.testing.assert_allclose(
             compute_lab_pyramid_histogram(lab, levels=(1,)),
+            compute_lab_histogram(lab, bins=32), atol=1e-7)
+        np.testing.assert_allclose(
+            compute_lab_block_histogram(lab, grid=1),
             compute_lab_histogram(lab, bins=32), atol=1e-7)
 
     def test_joint_captures_channel_relationships(self):

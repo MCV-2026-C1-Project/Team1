@@ -47,5 +47,5 @@ Run `study.py` first: it generates the cached histograms needed by
 For the shorter comparison using the integrated methods:
 
 ```bash
-python src/eval_w2_color.py --sections A E F
+python src/methods_w2.py --museum data/BBDD --queries data/qsd1_w2 --ground-truth data/qsd1_w2/gt_corresps.pkl
 ```
