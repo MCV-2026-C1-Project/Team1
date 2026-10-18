@@ -215,7 +215,7 @@ the shadow or lighter strip of wall just below a painting.
 Add `--background-removal` to the retrieval command: each query is segmented
 with Task 3 and the descriptor only counts the painting pixels.
 ```powershell
-python src\methods_w2.py --museum data\BBDD --queries data\qsd2_w2 --ground-truth data\qsd2_w2\qsd2_w1\gt_corresps.pkl --method "Lab blocks 1D" --blocks 36 --background-removal
+python src\methods_w2.py --museum data\BBDD --queries data\qsd2_w2 --ground-truth data\qsd2_w2\qsd2_w1\gt_corresps.pkl --method "Lab pyramid" --levels 7 --background-removal
 ```
 
 Museum images contain only the painting, but a query has wall around it. The
@@ -227,13 +227,14 @@ this off.
 
 mAP@1 / mAP@5 on QSD2 (L1):
 
-| `Lab blocks 1D` | **Mask + crop** | Ground-truth mask + crop |
+| Descriptor | **Mask + crop** | Ground-truth mask + crop |
 |---|---:|---:|
-| `--blocks 36` | **0.7667 / 0.8139** | 0.8667 / 0.8844 |
-| `--blocks 16` | **0.7000 / 0.7556** | 0.7333 / 0.7890 |
+| `Lab pyramid --levels 7` | **0.8333 / 0.8483** | 0.8667 / 0.8750 |
+| `Lab blocks 1D --blocks 36` | 0.7667 / 0.8139 | 0.8667 / 0.8844 |
+| `Lab blocks 1D --blocks 16` | 0.7000 / 0.7556 | 0.7333 / 0.7890 |
 
 The last column uses the ground-truth masks (`--query-masks data\qsd2_w1`) and is
-the upper bound for a perfect segmentation. `--background-removal` and
+a comparison with the annotated masks. `--background-removal` and
 `--query-masks` cannot be used together.
 
 ### Task 6: Blind Submission (QST1 and QST2)
