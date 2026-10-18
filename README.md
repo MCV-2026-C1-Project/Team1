@@ -250,7 +250,7 @@ directly). Use `--submit-out` to change the output folder (default
 | Output under `results/week2/` | Content |
 |---|---|
 | `QST1/method1/result.pkl` | `Lab blocks 1D`, 6x6 cells (`--blocks 36`), L1, whole image |
-| `QST1/method2/result.pkl` | `Lab blocks 1D`, 4x4 cells (`--blocks 16`), L1, whole image |
+| `QST1/method2/result.pkl` | `Lab pyramid`, 7 levels (`--levels 7`), L1, whole image |
 | `QST2/method1/result.pkl`, `QST2/method2/result.pkl` | same methods on the painting only (Task 3 mask + crop) |
 | `QST2/method1/*.png`, `QST2/method2/*.png` | background masks, same name as the query, 0/255 |
 

@@ -877,11 +877,11 @@ def evaluate_segmentation(pred_dir, gt_dir, save_path=None, images_dir=None,
 # ------------------------------------------------------ Task 6: submission
 K_SUBMISSION = 10
 # (output folder, descriptor, its parameters, comparison). method1 = Lab 6x6
-# blocks, method2 = Lab 4x4 blocks, 32 bins per channel, L1: the best two on
+# blocks, method2 = Lab pyramid (7 levels), 32 bins per channel, L1: the best two on
 # QSD1 / QSD2. Change here to change the submission.
 SUBMISSION_METHODS = (
     ("method1", "Lab blocks 1D", {"blocks": 36}, "L1"),
-    ("method2", "Lab blocks 1D", {"blocks": 16}, "L1"),
+    ("method2", "Lab pyramid", {"levels": 7}, "L1"),
 )
 
 
