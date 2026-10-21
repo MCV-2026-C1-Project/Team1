@@ -259,3 +259,95 @@ museum IDs per query, best first. After writing, the script reads every file
 back and checks the IDs, and that each mask exists, has the size of its query
 and contains only 0 and 255. The methods are defined in `SUBMISSION_METHODS`
 in `methods_w2.py`.
+
+---
+
+## Week 3
+
+The development sets are in `data/qsd1_w3` and `data/qsd2_w3`. Use the JPG
+files in these folders; `non_augmented/` contains the clean reference copies
+and is not used as query input.
+
+Tasks 3 and 4 are in `paintings_w3.py`. This file reuses the W2 wall model,
+descriptor functions, ranking, mask evaluation and overlays. It is separate
+from `methods_w3.py` so work on filtering (Task 1) and texture descriptors
+(Task 2) can continue independently.
+
+### Task 3: Background Removal for Multiple Paintings
+
+```powershell
+python src/paintings_w3.py --segment data/qsd2_w3 --out results/week3/QSD2/masks --viz results/week3/QSD2/viz
+```
+
+The method follows the W2 Lab wall model and Mahalanobis distance. The wall
+is sampled from the outer 2% of the image. Closing connects thin frame edges
+before opening removes small speckles. Instead of keeping only the largest
+component, up to two components are kept, each above 2% of the image area.
+Overlapping boxes are merged and each painting gets its own bounding box.
+The mask is the union of these boxes, with the wall between them left out.
+
+Masks keep the query name and original dimensions, with 0 for background and
+255 for foreground. `segmentation.json` records crop boxes and per-image
+metrics. The overlays use the W2 convention: red prediction, green ground
+truth. Evaluate saved masks with the same W2 metrics:
+
+```powershell
+python src/paintings_w3.py --segmentation results/week3/QSD2/masks data/qsd2_w3 --save results/week3/QSD2/mask_metrics.txt
+```
+
+Results on the 30 augmented QSD2-W3 queries:
+
+| Method | Precision | Recall | F1 | Correct painting count |
+|---|---:|---:|---:|---:|
+| W2, largest component only | 0.9631 | 0.7330 | 0.8076 | 21/30 |
+| W3, two components, W2 4% border | 0.9622 | 0.9227 | 0.9348 | 29/30 |
+| W3, two components, 2% border | 0.9577 | 0.9573 | **0.9526** | **29/30** |
+
+The border width was selected on this development set. The comparison is
+saved in `results/week3/QSD2/segmentation_comparison.csv`. Query 00002 still
+loses the smaller painting; 00010 loses the dark lower part of the painting.
+
+### Task 4: Retrieval per Painting
+
+```powershell
+python src/paintings_w3.py --museum data/BBDD --queries data/qsd2_w3 --background-removal --ground-truth data/qsd2_w3/gt_corresps.pkl --output-dir results/week3/QSD2/lab_pyramid_baseline
+```
+
+Each painting is cropped separately, then compared with the museum images.
+Paintings in the same row are ordered left to right; vertically separated
+paintings are ordered top to bottom. Queries follow numeric filename order.
+If segmentation finds nothing, retrieval uses the full image and records
+the fallback; the saved segmentation mask remains empty.
+
+The default is the W2 Lab pyramid with 7 levels and L1 distance. This is a
+baseline for checking the multiple-painting pipeline, before integrating
+the Task 2 texture descriptor:
+
+| Descriptor | mAP@1 | mAP@5 |
+|---|---:|---:|
+| W2 Lab pyramid, 7 levels, predicted crops | 0.7436 | 0.7564 |
+
+Evaluation computes AP separately for each painting in annotation order.
+Missing or extra paintings contribute zero; the mean is taken over painting
+slots, so an image with two paintings contributes two scores. Count accuracy
+is reported separately. These results use the development correspondences.
+
+`retrieve_folder_w3` accepts a `descriptor(rgb)` callable, shared by museum
+images and query crops, and an optional `query_filter(rgb)` applied only to
+queries. The CLI accepts them as `--descriptor module:function` and
+`--query-filter module:function`. The existing Task 1 median filter can be
+selected with `--query-filter methods_w3:median_filter`. The baseline above
+does not apply a query filter.
+
+Outputs in the chosen folder:
+
+| File | Content |
+|---|---|
+| `result.pkl` | query -> painting -> 10 ranked integer museum IDs |
+| `*.png`, `segmentation.json` | masks and crop boxes when using background removal |
+| `retrieval.json` | rankings, configuration, fallbacks and evaluation metrics |
+
+Even a query with one painting has the extra list level: `[[[7, 25, ...]],
+[[44, 81, ...], [3, 9, ...]], ...]`. The result file is read back and checked
+for list sizes, unique IDs and Python integers. Blind QST outputs and the
+final descriptor selection are pending.
