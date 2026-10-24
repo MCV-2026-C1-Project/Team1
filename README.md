@@ -264,14 +264,129 @@ in `methods_w2.py`.
 
 ## Week 3
 
-The development sets are in `data/qsd1_w3` and `data/qsd2_w3`. Use the JPG
-files in these folders; `non_augmented/` contains the clean reference copies
-and is not used as query input.
+The development sets are in `data/qsd1_w3` (30 cropped queries, one painting each)
+and `data/qsd2_w3` (30 queries with up to two paintings). Both contain noise and
+hue changes. Use the JPG files in these folders; `non_augmented/` contains the
+clean reference copies and is not used as query input.
 
-Tasks 3 and 4 are in `paintings_w3.py`. This file reuses the W2 wall model,
-descriptor functions, ranking, mask evaluation and overlays. It is separate
-from `methods_w3.py` so work on filtering (Task 1) and texture descriptors
-(Task 2) can continue independently.
+| File | Content |
+|---|---|
+| `methods_w3.py` | Task 1: median filter for the queries |
+| `paintings_w3.py` | Task 2: texture descriptors (LBP, Multiscale LBP, DCT, Wavelet, and the improved DCT log and Texture fusion); Tasks 3, 4 and 5: multi-painting segmentation, retrieval per painting, blind submission |
+
+`paintings_w3.py` reuses the W2 wall model, ranking, mask evaluation and
+overlays. The texture descriptors are the first part of the same file, so
+`paintings_w3.py` is self-contained apart from the W2 modules; the median filter
+of Task 1 stays in `methods_w3.py` and is selected with `--query-filter`.
+
+### Task 1: Noise Filtering
+
+`methods_w3.py` implements a non-linear median filter, applied per channel
+(`median_filter`, default 3x3). It is applied **only to the queries**; museum
+images are never filtered, so the museum descriptors stay the same.
+
+```powershell
+python src/methods_w3.py --museum data/BBDD --queries data/qsd1_w3 --method all --ground-truth data/qsd1_w3/gt_corresps.pkl
+```
+
+### Task 2: Texture Descriptors
+
+All descriptors work on the grayscale image, so the random hue changes of the
+W3 queries cannot affect them. The image is split into 5x5 = 25 blocks and the
+block features are concatenated, which keeps the position of the texture.
+
+| Method | Description | Size |
+|---|---|---:|
+| `LBP` | 3x3 Local Binary Pattern, 256-bin histogram per block | 6400 |
+| `LBP uniform` | same codes, 58 uniform patterns plus one bin for the rest | 1475 |
+| `Multiscale LBP` | circular LBP at (P,R) = (8,1), (12,2.5), (16,4), bilinear interpolation, uniform patterns, three histograms per block | 10925 |
+| `DCT` | 2D DCT per block, zig-zag scan, first 15 coefficients without the DC term | 375 |
+| `Wavelet` | 3-level Haar; mean absolute value of each detail subband per block | 225 |
+| `DCT log` | DCT with log-compressed coefficients, sign(c)*log(1+abs(c)) | 375 |
+| `Texture fusion` | `DCT log`, square-root `Multiscale LBP` and square-root `Wavelet`, each scaled to unit L2 norm and concatenated | 11525 |
+
+Evaluation on QSD1-W3 with texture only: no segmentation (the queries are
+already cropped), no color. `--table` prints a method x distance table; run it
+without a filter and with the median filter (best distance per method, 30
+queries, mAP@1):
+
+```powershell
+python src/paintings_w3.py --museum data/BBDD --queries data/qsd1_w3 --ground-truth data/qsd1_w3/gt_corresps.pkl --table --method all --distance all
+python src/paintings_w3.py --museum data/BBDD --queries data/qsd1_w3 --ground-truth data/qsd1_w3/gt_corresps.pkl --table --method all --distance all --denoise 3
+python src/paintings_w3.py --museum data/BBDD --queries data/qsd1_w3 --ground-truth data/qsd1_w3/gt_corresps.pkl --table --method all --distance all --denoise 5
+```
+
+| Descriptor | No filter | Median 3x3 | Median 5x5 |
+|---|---:|---:|---:|
+| `LBP` | 0.800 | 0.600 | 0.533 |
+| `LBP uniform` | 0.667 | 0.600 | 0.533 |
+| `Multiscale LBP` | 0.900 | 0.967 | 0.967 |
+| `DCT` (L1 or Cosine) | 0.967 | 0.967 | 0.967 |
+| `Wavelet` | 0.833 | 0.867 | 0.867 |
+| `DCT log` (L1, Cosine, Correlation) | **1.000** | **1.000** | **1.000** |
+| `Texture fusion` (L1, Euclidean, Cosine, Correlation) | **1.000** | **1.000** | **1.000** |
+
+`DCT log` and `Texture fusion` find the right painting at rank 1 for all 30
+queries, with and without the median filter, so they are robust to the noise
+and the hue changes of QSD1-W3. Plain `DCT` is also stable (0.967), while the
+LBP histograms depend on the filter: the median hurts plain LBP, which reads the
+smoothed texture as a different pattern, but helps Multiscale LBP (best with
+Chi-square or Hellinger) and Wavelet. The best distance for histogram
+descriptors is Chi-square, Hellinger or L1; Euclidean and Cosine are poor for
+Multiscale LBP.
+
+#### Texture fusion (final descriptor)
+
+`Texture fusion` is the descriptor submitted for Tasks 4 and 5. It joins three
+texture descriptors that look at the image in different ways, using only the
+grayscale image (no color):
+
+| Part | What it captures | How it is computed | Size |
+|---|---|---|---:|
+| `DCT log` | Frequency content of each block (coarse to fine texture) | gray image resized to 255x255, 25 blocks of 51x51; 2D DCT per block; zig-zag scan; the DC term (mean brightness) is dropped and the next 15 coefficients are kept; each coefficient c becomes sign(c)*log(1+abs(c)) | 375 |
+| Multiscale LBP | Local micro-patterns (edges, spots, flat areas) at three scales | gray image with the longest side at 256 px; circular LBP at (P,R) = (8,1), (12,2.5), (16,4); uniform patterns; one histogram per block and scale; L1 normalization; square root | 10925 |
+| Wavelet | Oriented detail energy at three scales | gray image resized to 256x256; 3-level Haar; mean absolute value of the horizontal, vertical and diagonal details in each block; L1 normalization; square root | 225 |
+
+The final vector is `[DCT log / ||DCT log||, MLBP / ||MLBP||, Wavelet / ||Wavelet||]`:
+every part is divided by its own L2 norm and the three are concatenated with
+the same weight (11525 values). No weight was tuned.
+
+Why each step is there:
+
+- **DCT without the DC term.** The DC coefficient is the mean brightness of
+  the block, which is not texture and changes with lighting. Skipping it makes
+  the descriptor insensitive to brightness shifts.
+- **Log on the DCT coefficients.** The low-frequency coefficients are much
+  larger than the others, so in a plain L1 or Euclidean distance they dominate
+  and the fine texture is ignored. The log compresses that range, so every
+  coefficient counts, and it also reduces the effect of noise and contrast
+  changes. This step alone moves `DCT` from 0.7436 to 0.7692 on QSD2-W3.
+- **Square root on the histograms.** LBP and wavelet values are L1-normalized
+  histograms. After a square root, the Euclidean distance between two vectors is
+  the Hellinger distance between the histograms, which is a better measure for
+  histograms and reduces the weight of very frequent patterns.
+- **Unit L2 norm per part.** The three parts have very different sizes (375,
+  10925, 225 values) and scales. Without this step the long LBP part would
+  dominate the distance; with it, each part contributes comparably.
+- **Grayscale only.** The queries have random hue changes, so color is not used.
+  LBP is also invariant to any monotonic change of the gray levels.
+- **Same treatment for museum and query.** The museum images are never
+  filtered; only the query crops go through the 3x3 median filter of Task 1.
+
+Why the fusion works: the three parts are complementary. The DCT describes
+global frequency content per block, LBP describes the local structure of the
+pixels, and the wavelet describes how much detail there is and in which
+direction. A painting that is ambiguous for one of them is usually
+separated by another. This is visible in the results: on QSD2-W3 the best single
+descriptor reaches mAP@1 0.7692, while the fusion reaches 0.9231 (+0.154), and
+on QSD1-W3 it finds all 30 paintings at rank 1.
+
+The default distance is L1; on QSD1-W3 the fusion gives 1.000 with L1,
+Euclidean, Cosine and Correlation, so it does not depend on one distance.
+Because the vector contains signed DCT values, Chi-square, Histogram
+Intersection and Hellinger are not valid for it. The cost is a longer vector
+(11525 values) and a slower descriptor computation than a single descriptor,
+which is acceptable for 287 museum images and 30 to 50 queries.
 
 ### Task 3: Background Removal for Multiple Paintings
 
@@ -295,6 +410,14 @@ truth. Evaluate saved masks with the same W2 metrics:
 python src/paintings_w3.py --segmentation results/week3/QSD2/masks data/qsd2_w3 --save results/week3/QSD2/mask_metrics.txt
 ```
 
+To evaluate several method outputs stored below one directory (for example
+`all_methods/dct`, `all_methods/lbp`, and `all_methods/wavelet`), pass the
+parent directory. The saved report contains one labeled section per method:
+
+```powershell
+python src/paintings_w3.py --segmentation results/week3/QSD2/all_methods data/qsd2_w3 --save results/week3/QSD2/mask_metrics_all.txt
+```
+
 Results on the 30 augmented QSD2-W3 queries:
 
 | Method | Precision | Recall | F1 | Correct painting count |
@@ -310,7 +433,7 @@ loses the smaller painting; 00010 loses the dark lower part of the painting.
 ### Task 4: Retrieval per Painting
 
 ```powershell
-python src/paintings_w3.py --museum data/BBDD --queries data/qsd2_w3 --background-removal --ground-truth data/qsd2_w3/gt_corresps.pkl --output-dir results/week3/QSD2/lab_pyramid_baseline
+python src/paintings_w3.py --museum data/BBDD --queries data/qsd2_w3 --background-removal --ground-truth data/qsd2_w3/gt_corresps.pkl --query-filter methods_w3:median_filter --output-dir results/week3/QSD2/texture_fusion
 ```
 
 Each painting is cropped separately, then compared with the museum images.
@@ -319,13 +442,33 @@ paintings are ordered top to bottom. Queries follow numeric filename order.
 If segmentation finds nothing, retrieval uses the full image and records
 the fallback; the saved segmentation mask remains empty.
 
-The default is the W2 Lab pyramid with 7 levels and L1 distance. This is a
-baseline for checking the multiple-painting pipeline, before integrating
-the Task 2 texture descriptor:
+The default method is `Texture fusion` with the L1 distance. Choose another one
+with `--method NAME` (`--method all` runs every texture method, saving each one
+in its own subfolder) and `--distance NAME`.
 
-| Descriptor | mAP@1 | mAP@5 |
-|---|---:|---:|
-| W2 Lab pyramid, 7 levels, predicted crops | 0.7436 | 0.7564 |
+mAP on the 30 QSD2-W3 queries, L1, predicted crops, 3x3 median filter on the
+queries (`--method all`):
+
+| Descriptor | mAP@1 | mAP@5 | mAP@10 |
+|---|---:|---:|---:|
+| W2 Lab pyramid, 7 levels (baseline, no median) | 0.7436 | 0.7564 | - |
+| `LBP uniform` | 0.5128 | 0.5650 | 0.5723 |
+| `LBP` | 0.6154 | 0.6603 | 0.6639 |
+| `Wavelet` | 0.6923 | 0.7205 | 0.7248 |
+| `Multiscale LBP` | 0.7179 | 0.7231 | 0.7231 |
+| `DCT` | 0.7436 | 0.7436 | 0.7436 |
+| `DCT log` | 0.7692 | 0.8085 | 0.8085 |
+| **`Texture fusion`** | **0.9231** | **0.9231** | **0.9231** |
+
+Without the median filter, the first run gave `LBP` 0.6154, `LBP uniform`
+0.5641, `Multiscale LBP` 0.6410, `DCT` 0.7436 and `Wavelet` 0.6923 (mAP@1). The
+filter helps Multiscale LBP (+0.077) and lowers LBP uniform (-0.051). All
+methods share the same masks (F1 0.9526, 29/30 correct painting counts), so
+the differences come only from the descriptor.
+
+`Texture fusion` is 0.18 above the best single descriptor. Of the 39 paintings,
+36 are correct at rank 1; the missing ones come from the image with a wrong
+painting count and from weak masks, so segmentation is now the main limit.
 
 Evaluation computes AP separately for each painting in annotation order.
 Missing or extra paintings contribute zero; the mean is taken over painting
@@ -335,9 +478,8 @@ is reported separately. These results use the development correspondences.
 `retrieve_folder_w3` accepts a `descriptor(rgb)` callable, shared by museum
 images and query crops, and an optional `query_filter(rgb)` applied only to
 queries. The CLI accepts them as `--descriptor module:function` and
-`--query-filter module:function`. The existing Task 1 median filter can be
-selected with `--query-filter methods_w3:median_filter`. The baseline above
-does not apply a query filter.
+`--query-filter module:function`, for example
+`--descriptor paintings_w3:dct_log_descriptor`.
 
 Outputs in the chosen folder:
 
@@ -349,5 +491,25 @@ Outputs in the chosen folder:
 
 Even a query with one painting has the extra list level: `[[[7, 25, ...]],
 [[44, 81, ...], [3, 9, ...]], ...]`. The result file is read back and checked
-for list sizes, unique IDs and Python integers. Blind QST outputs and the
-final descriptor selection are pending.
+for list sizes, unique IDs and Python integers.
+
+### Task 5: Blind Submission (QST1 and QST2)
+
+Only the best method is submitted, one per test set: `Texture fusion`, L1,
+median filter on the queries, top 10. Every `result.pkl` has the extra list
+level (a list of one or two painting rankings per query).
+
+QST1-W3 has cropped pictures with one painting, so segmentation is not used and
+the whole image is the painting. QST2-W3 has pictures with background and up to
+two paintings, so segmentation is used and the masks are submitted.
+
+```powershell
+python src/paintings_w3.py --museum data/BBDD --queries data/qst1_w3 --method "Texture fusion" --distance L1 --query-filter methods_w3:median_filter --top-k 10 --output-dir results/week3/QST1/method1
+python src/paintings_w3.py --museum data/BBDD --queries data/qst2_w3 --background-removal --method "Texture fusion" --distance L1 --query-filter methods_w3:median_filter --top-k 10 --output-dir results/week3/QST2/method1
+```
+
+| Output | Content |
+|---|---|
+| `Team1/week3/QST1/method1/result.pkl` | 50 queries, one painting ranking each |
+| `Team1/week3/QST2/method1/result.pkl` | 30 queries, one or two painting rankings each |
+| `Team1/week3/QST2/method1/*.png` | background masks, same name as the query, 0/255 |
