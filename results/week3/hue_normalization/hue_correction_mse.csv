@@ -1,0 +1,2 @@
+sample,reference_file,gt_id,hue_scale,mse_altered_vs_gt,mse_corrected_vs_gt
+00014.jpg,bbdd_00219.jpg,219,1.2750,275.5277,249.3838

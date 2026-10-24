@@ -1,0 +1,31 @@
+query gt(top: filename ids) top5 verdict
+00000.jpg [120] ['bbdd_00120.jpg', 'bbdd_00184.jpg', 'bbdd_00035.jpg', 'bbdd_00226.jpg', 'bbdd_00222.jpg'] ok *
+00001.jpg [170] ['bbdd_00170.jpg', 'bbdd_00286.jpg', 'bbdd_00057.jpg', 'bbdd_00271.jpg', 'bbdd_00225.jpg'] ok
+00002.jpg [277] ['bbdd_00277.jpg', 'bbdd_00106.jpg', 'bbdd_00046.jpg', 'bbdd_00021.jpg', 'bbdd_00190.jpg'] ok
+00003.jpg [227] ['bbdd_00227.jpg', 'bbdd_00057.jpg', 'bbdd_00094.jpg', 'bbdd_00084.jpg', 'bbdd_00260.jpg'] ok
+00004.jpg [251] ['bbdd_00251.jpg', 'bbdd_00105.jpg', 'bbdd_00019.jpg', 'bbdd_00167.jpg', 'bbdd_00066.jpg'] ok
+00005.jpg [274] ['bbdd_00128.jpg', 'bbdd_00216.jpg', 'bbdd_00240.jpg', 'bbdd_00238.jpg', 'bbdd_00046.jpg'] fail *
+00006.jpg [285] ['bbdd_00285.jpg', 'bbdd_00013.jpg', 'bbdd_00130.jpg', 'bbdd_00031.jpg', 'bbdd_00020.jpg'] ok
+00007.jpg [258] ['bbdd_00258.jpg', 'bbdd_00106.jpg', 'bbdd_00011.jpg', 'bbdd_00036.jpg', 'bbdd_00049.jpg'] ok
+00008.jpg [117] ['bbdd_00117.jpg', 'bbdd_00000.jpg', 'bbdd_00073.jpg', 'bbdd_00197.jpg', 'bbdd_00217.jpg'] ok
+00009.jpg [203] ['bbdd_00203.jpg', 'bbdd_00027.jpg', 'bbdd_00271.jpg', 'bbdd_00244.jpg', 'bbdd_00205.jpg'] ok
+00010.jpg [192] ['bbdd_00192.jpg', 'bbdd_00225.jpg', 'bbdd_00072.jpg', 'bbdd_00239.jpg', 'bbdd_00031.jpg'] ok
+00011.jpg [22] ['bbdd_00022.jpg', 'bbdd_00012.jpg', 'bbdd_00205.jpg', 'bbdd_00211.jpg', 'bbdd_00016.jpg'] ok
+00012.jpg [113] ['bbdd_00113.jpg', 'bbdd_00225.jpg', 'bbdd_00088.jpg', 'bbdd_00192.jpg', 'bbdd_00072.jpg'] ok
+00013.jpg [101] ['bbdd_00101.jpg', 'bbdd_00085.jpg', 'bbdd_00272.jpg', 'bbdd_00184.jpg', 'bbdd_00187.jpg'] ok *
+00014.jpg [174] ['bbdd_00174.jpg', 'bbdd_00235.jpg', 'bbdd_00031.jpg', 'bbdd_00242.jpg', 'bbdd_00110.jpg'] ok
+00015.jpg [155] ['bbdd_00155.jpg', 'bbdd_00140.jpg', 'bbdd_00103.jpg', 'bbdd_00084.jpg', 'bbdd_00163.jpg'] ok
+00016.jpg [270] ['bbdd_00212.jpg', 'bbdd_00252.jpg', 'bbdd_00270.jpg', 'bbdd_00226.jpg', 'bbdd_00077.jpg'] fail
+00017.jpg [47] ['bbdd_00036.jpg', 'bbdd_00005.jpg', 'bbdd_00077.jpg', 'bbdd_00049.jpg', 'bbdd_00018.jpg'] fail *
+00018.jpg [286] ['bbdd_00286.jpg', 'bbdd_00057.jpg', 'bbdd_00271.jpg', 'bbdd_00126.jpg', 'bbdd_00072.jpg'] ok
+00019.jpg [215] ['bbdd_00215.jpg', 'bbdd_00103.jpg', 'bbdd_00239.jpg', 'bbdd_00088.jpg', 'bbdd_00113.jpg'] ok
+00020.jpg [262] ['bbdd_00262.jpg', 'bbdd_00286.jpg', 'bbdd_00248.jpg', 'bbdd_00260.jpg', 'bbdd_00218.jpg'] ok
+00021.jpg [245] ['bbdd_00245.jpg', 'bbdd_00281.jpg', 'bbdd_00282.jpg', 'bbdd_00057.jpg', 'bbdd_00279.jpg'] ok
+00022.jpg [257] ['bbdd_00257.jpg', 'bbdd_00057.jpg', 'bbdd_00138.jpg', 'bbdd_00286.jpg', 'bbdd_00021.jpg'] ok
+00023.jpg [182] ['bbdd_00182.jpg', 'bbdd_00212.jpg', 'bbdd_00186.jpg', 'bbdd_00097.jpg', 'bbdd_00226.jpg'] ok
+00024.jpg [262] ['bbdd_00262.jpg', 'bbdd_00170.jpg', 'bbdd_00286.jpg', 'bbdd_00057.jpg', 'bbdd_00168.jpg'] ok
+00025.jpg [38] ['bbdd_00038.jpg', 'bbdd_00002.jpg', 'bbdd_00229.jpg', 'bbdd_00217.jpg', 'bbdd_00146.jpg'] ok
+00026.jpg [238] ['bbdd_00173.jpg', 'bbdd_00238.jpg', 'bbdd_00121.jpg', 'bbdd_00240.jpg', 'bbdd_00128.jpg'] fail
+00027.jpg [67] ['bbdd_00067.jpg', 'bbdd_00182.jpg', 'bbdd_00038.jpg', 'bbdd_00184.jpg', 'bbdd_00232.jpg'] ok
+00028.jpg [86] ['bbdd_00027.jpg', 'bbdd_00200.jpg', 'bbdd_00086.jpg', 'bbdd_00154.jpg', 'bbdd_00149.jpg'] fail *
+00029.jpg [133] ['bbdd_00133.jpg', 'bbdd_00218.jpg', 'bbdd_00110.jpg', 'bbdd_00157.jpg', 'bbdd_00123.jpg'] ok *

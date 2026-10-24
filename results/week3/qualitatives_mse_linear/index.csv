@@ -1,0 +1,4 @@
+filter,parameter,sample,augmentation,mse,gt_id,gt_rank,n_museum,folder
+average,9x9,00016.jpg,UnnamedImpulseNoise,332.0823,94,40,287,average
+gaussian,9x9,00016.jpg,UnnamedImpulseNoise,273.9601,94,35,287,gaussian
+wavelet_lowpass,db2_lvl3,00016.jpg,UnnamedImpulseNoise,353.9089,94,35,287,wavelet_lowpass

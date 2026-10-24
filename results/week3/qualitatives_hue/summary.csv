@@ -1,0 +1,2 @@
+sample,augmentation,reference_file,gt_id,hue_scale,hist_distance_before,hist_distance_after,baseline_rank,method_rank
+00014.jpg,None-MultiplyHue,bbdd_00219.jpg,219,1.2750,1.3995,1.2740,2,1

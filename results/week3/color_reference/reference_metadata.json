@@ -1,0 +1,7 @@
+{
+  "n_references": 287,
+  "bins": 180,
+  "saturation_threshold": 40,
+  "museum_dir": "C:\\Users\\andre\\Desktop\\MCV\\C1\\Team1\\data\\BBDD",
+  "reference_file": "C:\\Users\\andre\\Desktop\\MCV\\C1\\Team1\\results\\week3\\color_reference\\museum_hue_references.npz"
+}

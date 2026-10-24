@@ -1,0 +1,15 @@
+scope,filter,parameter,mAP@1,mAP@5
+query,gaussian,3x3,0.6667,0.7556
+query,gaussian,5x5,0.7000,0.7667
+query,gaussian,7x7,0.7333,0.7889
+query,gaussian,9x9,0.7333,0.7844
+query,gaussian,11x11,0.7333,0.7844
+query,gaussian,13x13,0.7333,0.7844
+query,gaussian,15x15,0.7333,0.7778
+both,gaussian,3x3,0.6667,0.7556
+both,gaussian,5x5,0.7333,0.7889
+both,gaussian,7x7,0.7333,0.7889
+both,gaussian,9x9,0.7333,0.7956
+both,gaussian,11x11,0.7333,0.7956
+both,gaussian,13x13,0.7333,0.7956
+both,gaussian,15x15,0.7333,0.7956

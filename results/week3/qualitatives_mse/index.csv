@@ -1,0 +1,23 @@
+filter,parameter,sample,augmentation,mse,gt_id,gt_rank,n_museum,folder
+none,sin filtro,00018.jpg,UnnamedImpulseNoise,0.0000,164,1,287,none
+none,sin filtro,00020.jpg,UnnamedImpulseNoise,0.0000,252,3,287,none
+median,9x9,00018.jpg,UnnamedImpulseNoise,221.7411,164,1,287,median
+median,9x9,00020.jpg,UnnamedImpulseNoise,362.6585,252,1,287,median
+gaussian,9x9,00018.jpg,UnnamedImpulseNoise,202.8046,164,1,287,gaussian
+gaussian,9x9,00020.jpg,UnnamedImpulseNoise,313.4606,252,1,287,gaussian
+bilateral,9x9,00018.jpg,UnnamedImpulseNoise,51.9322,164,1,287,bilateral
+bilateral,9x9,00020.jpg,UnnamedImpulseNoise,52.5115,252,1,287,bilateral
+erode,9x9,00018.jpg,UnnamedImpulseNoise,1380.8182,164,5,287,erode
+erode,9x9,00020.jpg,UnnamedImpulseNoise,2597.0243,252,24,287,erode
+dilate,9x9,00018.jpg,UnnamedImpulseNoise,4543.7311,164,4,287,dilate
+dilate,9x9,00020.jpg,UnnamedImpulseNoise,5477.2988,252,3,287,dilate
+open,9x9,00018.jpg,UnnamedImpulseNoise,508.3055,164,1,287,open
+open,9x9,00020.jpg,UnnamedImpulseNoise,864.9768,252,5,287,open
+close,9x9,00018.jpg,UnnamedImpulseNoise,778.6175,164,1,287,close
+close,9x9,00020.jpg,UnnamedImpulseNoise,1315.9622,252,1,287,close
+open+close,9x9,00018.jpg,UnnamedImpulseNoise,456.0761,164,1,287,open_close
+open+close,9x9,00020.jpg,UnnamedImpulseNoise,784.9033,252,2,287,open_close
+close+open,9x9,00018.jpg,UnnamedImpulseNoise,548.0492,164,1,287,close_open
+close+open,9x9,00020.jpg,UnnamedImpulseNoise,1070.5442,252,1,287,close_open
+wavelet_lowpass,db2_lvl3,00018.jpg,UnnamedImpulseNoise,227.5161,164,1,287,wavelet_lowpass
+wavelet_lowpass,db2_lvl3,00020.jpg,UnnamedImpulseNoise,456.8135,252,1,287,wavelet_lowpass
