@@ -538,10 +538,6 @@ Why each step is there:
   dominate the distance; with it, each part contributes comparably.
 - **Grayscale only.** The queries have random hue changes, so color is not used.
   LBP is also invariant to any monotonic change of the gray levels.
-- **Same descriptor for museum and query, filter on the query only.** The
-  museum images are never filtered in this pipeline; only the query crops go
-  through a 3x3 **median** filter (`--filter median --kernel 3`), the best
-  Task 1 filter for texture (see the discussion in Task 4).
 
 Why the fusion works: the three parts are complementary. The DCT describes
 global frequency content per block, LBP describes the local structure of the
