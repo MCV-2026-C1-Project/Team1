@@ -271,57 +271,157 @@ clean reference copies and is not used as query input.
 
 | File | Content |
 |---|---|
-| `methods_w3.py` | Task 1: query filters (Median, Open, Close, Open+Close, Close+Open, Average, Gaussian, Low-pass Wavelet) plus the HSV hue-invariance mode |
+| `methods_w3.py` | Task 1: query filters (Median, Open, Close, Open+Close, Close+Open, Average, Gaussian, Low-pass Wavelet), the filter sweep, and the HSV hue-invariance mode |
 | `paintings_w3.py` | Task 2: texture descriptors (LBP, Multiscale LBP, DCT, Wavelet, and the improved DCT log and Texture fusion); Tasks 3, 4 and 5: multi-painting segmentation, retrieval per painting, blind submission |
 
 `paintings_w3.py` reuses the W2 wall model, ranking, mask evaluation and
 overlays. The texture descriptors are the first part of the same file, so
-`paintings_w3.py` is self-contained apart from the W2 modules; the median filter
-of Task 1 stays in `methods_w3.py` and is selected with `--query-filter`.
+`paintings_w3.py` is self-contained apart from the W2 modules and the Task 1
+filter, which it imports from `methods_w3.py` through `--query-filter`.
 
 ### Task 1: Noise Filtering
 
 `methods_w3.py` registers one `Lab blocks 1D <filter>` method per filter
 (Median, Open, Close, Open+Close, Close+Open, Average, Gaussian, Low-pass
-Wavelet) sharing a `--kernel` size, plus an HSV hue-invariance mode
-(`--hue-invariant`). The filter is applied to **both** the queries and the
-museum images by default (`--filter-scope both`), so both sides share the
-same filtered domain; `--filter-scope query` restores queries-only.
+Wavelet) plus the unfiltered `Lab blocks 1D` baseline. All of them use the W2
+descriptor (CIE-Lab, 32 bins per channel, 5x5 = 25 cells, L1-normalized) with
+the L1 distance, so only the preprocessing changes between methods.
+
+Common options:
+
+| Option | Meaning |
+|---|---|
+| `--kernel K` | Odd spatial size (>= 3) shared by every filter. **Required**, with no default, so every reported number states its kernel. The wavelet filter uses `--wavelet-level` instead |
+| `--filter-scope both` | (default) the filter is applied to the queries **and** the museum images, so both sides share the same filtered domain. `query` filters the queries only |
+| `--hue-invariant` | HSV hue-invariance mode: a global hue scale is estimated per (query, museum image) pair and the raw Lab distance is blended with the hue-normalized one. Needs `color_reference` |
+| `--hue-reference FILE.npz` | Cache for the museum hue histograms. If the file exists it is **loaded, not rebuilt**, so use one file per filter and kernel |
+| `--hue-alpha`, `--hue-temperature` | Blend weight and confidence temperature of the hue correction (default 1.0 each) |
+
+Without `--hue-invariant` the script prints a warning: those numbers do not
+include the hue correction and cannot be compared with hue-invariant ones.
+
+**Single-pass comparison at one kernel size.** All methods with the same
+kernel (hue-invariance is not available with `--method all`):
 
 ```powershell
-# one kernel per run; --kernel is mandatory and the missing --hue-invariant
-# is warned about loudly
-python src/methods_w3.py --museum data/BBDD --queries data/qsd1_w3 --method all --kernel 7 --ground-truth data/qsd1_w3/gt_corresps.pkl
+python src/methods_w3.py --museum data/BBDD --queries data/qsd1_w3 --method all --kernel 5 --ground-truth data/qsd1_w3/gt_corresps.pkl
 ```
 
-`--method all` shares one kernel across all methods and cannot use the hue
-mode, so per-filter best kernels need single-method runs.
+| Method (kernel 5x5) | mAP@1 | mAP@5 |
+|---|---:|---:|
+| `Lab blocks 1D` (no filter) | 0.6667 | 0.7511 |
+| Median | 0.7333 | 0.7944 |
+| Average | 0.7333 | 0.7889 |
+| Gaussian | 0.7333 | 0.7889 |
+| Open | 0.7333 | 0.7806 |
+| Close | 0.7000 | 0.7622 |
+| Open+Close | 0.7333 | 0.7861 |
+| Close+Open | 0.7000 | 0.7789 |
 
-### Task 1 (extension): HSV Hue Invariance
-
-`--hue-invariant` estimates one global hue scale per (query, museum candidate)
-pair from the HSV hue histograms and blends the raw and hue-corrected LAB
-`L1` distances. The descriptor stays "Lab blocks 1D"; HSV is only used to
-correct the hue.
-
-The museum hue references are **always built from the unfiltered museum
-images**, whatever `--filter-scope` is: the hue scale describes the true
-appearance of each candidate, so it must not depend on the filter or kernel
-under test. The cached histograms record this provenance (`source=raw`) and a
-cache built from filtered images, or written before the field existed, is
-refused with an actionable error instead of silently changing the numbers.
+**Kernel search per filter.** The sweep tries every filter over a grid of
+sizes (`--kernel` is still required by the parser but the sweep uses its own
+grids):
 
 ```powershell
-python src/methods_w3.py --museum data/BBDD --queries data/qsd1_w3 --method "Lab blocks 1D open+close" --kernel 11 --filter-scope both --hue-invariant --hue-reference results/week3/color_reference/museum_hue_references.npz --ground-truth data/qsd1_w3/gt_corresps.pkl
-python results/week3/run_filter_hue_bars.py --recompute   # best kernel per filter, with hue
+python src/methods_w3.py --museum data/BBDD --queries data/qsd1_w3 --sweep --kernel 3 --ground-truth data/qsd1_w3/gt_corresps.pkl
 ```
 
-The canonical cache is `results/week3/color_reference/museum_hue_references.npz`.
-If it is missing, the first hue run rebuilds it from the unfiltered museum and
-saves it with `source=raw`; if it exists but predates the provenance field, run
-`results/week3/color_reference/migrate_reference_provenance.py` (it verifies the
-histograms are unchanged before rewriting the file). Using a different cache
-path produces different mAP values, so always pass this one.
+Best kernel per filter on QSD1-W3 (`Lab blocks 1D`, L1, 30 queries,
+`--filter-scope both`, no hue-invariance):
+
+| Filter | Best kernel | mAP@1 | mAP@5 |
+|---|---:|---:|---:|
+| none (baseline) | - | 0.6667 | 0.7511 |
+| **Median** | **7x7** | **0.7667** | **0.8178** |
+| Median (best mAP@5) | 15x15 / 17x17 | 0.7667 | 0.8233 |
+| Open+Close | 7x7 | 0.7667 | 0.8028 |
+| Average | 9x9 / 11x11 | 0.7333 | 0.7983 |
+| Gaussian | 9x9 to 15x15 | 0.7333 | 0.7956 |
+| Low-pass Wavelet | level 3 | 0.7333 | 0.7956 |
+| Open | 5x5 | 0.7333 | 0.7806 |
+| Close+Open | 3x3 | 0.7000 | 0.7722 |
+| Close | 3x3 | 0.7000 | 0.7667 |
+
+This table was run **without** `--hue-invariant`. Every filter improves on the
+unfiltered baseline (0.7511 mAP@5). Without hue correction the median filter
+is the best one: its mAP@5 is flat from 7x7 to 21x21 (0.8122-0.8233), so the
+result does not depend on a lucky kernel size. Open+Close is the best
+morphological filter (7x7), 0.015 mAP@5 below the median. The final system
+uses hue-invariance, so the filters are ranked again with it below.
+
+**Hue-invariance.** The hue correction is added on top of a filter. Use one
+cache file per filter and kernel (a stale cache from another filter gives wrong
+numbers):
+
+```powershell
+python src/methods_w3.py --museum data/BBDD --queries data/qsd1_w3 --method "Lab blocks 1D open+close" --kernel 7 --filter-scope both --hue-invariant --hue-reference results/week3/hue_openclose7.npz --ground-truth data/qsd1_w3/gt_corresps.pkl
+python src/methods_w3.py --museum data/BBDD --queries data/qsd1_w3 --method "Lab blocks 1D wavelet" --kernel 7 --wavelet-level 3 --filter-scope both --hue-invariant --hue-reference results/week3/hue_wavelet3.npz --ground-truth data/qsd1_w3/gt_corresps.pkl
+```
+
+(`--kernel` is required by the parser but the wavelet filter ignores it and
+uses `--wavelet-level`.)
+
+Best kernel per filter on QSD1-W3 with hue-invariance (`--hue-invariant`,
+`Lab blocks 1D`, L1, 30 queries, `--filter-scope both`):
+
+| Filter | Best setting | mAP@1 | mAP@5 |
+|---|---:|---:|---:|
+| none (baseline) | - | 0.7333 | 0.7694 |
+| Median | 7x7 | 0.8000 | 0.8317 |
+| Open | 9x9 | 0.7667 | 0.8000 |
+| Close | 7x7 | 0.7333 | 0.7928 |
+| Open+Close | 7x7 | 0.8000 | 0.8278 |
+| Close+Open | 7x7 | 0.7667 | 0.8167 |
+| Average | 5x5 | 0.8000 | 0.8317 |
+| Gaussian | 7x7 | 0.8000 | 0.8317 |
+| **Low-pass Wavelet** | **level 3** | **0.8000** | **0.8344** |
+
+Hue-invariance adds 0.067 mAP@1 and 0.0183 mAP@5 to the unfiltered baseline
+(0.6667 / 0.7511 without it), and it raises every filter: for example
+Open+Close 7x7 goes from 0.7667 / 0.8028 to 0.8000 / 0.8278. Low-pass Wavelet
+is the best filter overall, but the margin is small: the median, average and
+Gaussian filters are 0.0027 mAP@5 behind it and Open+Close 0.0066, which on 30
+queries is at most one query moving one rank. All of them reach mAP@1 0.8000,
+so they cannot be told apart at rank 1. The morphological filters Open, Close
+and Close+Open are the weakest.
+
+An earlier Open+Close 11x11 run with hue-invariance (0.7333 / 0.7861) is
+identical to the no-hue 5x5 result, so it is not used; 7x7 is the best size
+for Open+Close in the sweep.
+
+**Why the other filters are kept.** Low-pass Wavelet is the best filter of
+this comparison, but all filters stay registered and selectable (`--method`,
+`--sweep`) instead of fixing the wavelet for the rest of the project. The
+reasons are the following hypotheses:
+
+1. **The result is specific to one system and one set.** The ranking was
+   measured for the Lab colour histogram with hue-invariance on the 30 queries
+   of QSD1-W3. The margins are small: the wavelet (0.8344) is 0.0027 mAP@5
+   above the median, average and Gaussian filters (0.8317) and 0.0066 above
+   Open+Close 7x7 (0.8278), with the same mAP@1 (0.8000) for all of them. On 30
+   queries these filters are practically tied, so the winner may change with
+   another set of queries.
+2. **Other descriptors may depend on different image information.** A colour
+   histogram with 32 bins per channel uses coarse intensity distributions, so
+   it should tolerate a filter that removes fine detail. Texture descriptors
+   such as LBP, DCT or wavelet energies are computed from local pixel
+   differences and high-frequency content, which a low-pass filter removes. A
+   filter that is best for colour is therefore not guaranteed to be best for
+   texture, and keeping the alternatives allows to check it for each
+   descriptor.
+3. **The noise model is unknown and only some queries are noisy.** The task
+   does not describe the noise, and the test queries may contain different
+   noise from the development ones. A median filter is a robust option for
+   isolated outlier pixels and preserves edges, so it is kept as a fallback
+   to a filter that was tuned on 30 images.
+4. **A common set of filters makes the comparison reproducible.** With every
+   filter available under the same interface (`--kernel`, `--wavelet-level`,
+   `--filter-scope`), the selection can be repeated for any later descriptor
+   or development set, instead of assuming that the winner of one experiment
+   transfers to the next.
+
+The texture descriptors of Task 2 use only the grayscale image, so
+hue-invariance does not apply to them.
 
 ### Task 2: Texture Descriptors
 
@@ -340,34 +440,68 @@ block features are concatenated, which keeps the position of the texture.
 | `Texture fusion` | `DCT log`, square-root `Multiscale LBP` and square-root `Wavelet`, each scaled to unit L2 norm and concatenated | 11525 |
 
 Evaluation on QSD1-W3 with texture only: no segmentation (the queries are
-already cropped), no color. `--table` prints a method x distance table; run it
-without a filter and with the median filter (best distance per method, 30
-queries, mAP@1):
+already cropped), no color. `--table` prints a method x distance table (mAP@1
+and mAP@10, 30 queries). It is run without a filter and with several Task 1
+filters on the queries (the museum images are not filtered). `--denoise N` is a
+median filter; any other Task 1 filter is selected with `--filter NAME
+--kernel K` (the wavelet needs no kernel).
 
 ```powershell
 python src/paintings_w3.py --museum data/BBDD --queries data/qsd1_w3 --ground-truth data/qsd1_w3/gt_corresps.pkl --table --method all --distance all
 python src/paintings_w3.py --museum data/BBDD --queries data/qsd1_w3 --ground-truth data/qsd1_w3/gt_corresps.pkl --table --method all --distance all --denoise 3
 python src/paintings_w3.py --museum data/BBDD --queries data/qsd1_w3 --ground-truth data/qsd1_w3/gt_corresps.pkl --table --method all --distance all --denoise 5
+python src/paintings_w3.py --museum data/BBDD --queries data/qsd1_w3 --ground-truth data/qsd1_w3/gt_corresps.pkl --table --method all --distance all --filter average --kernel 5
+python src/paintings_w3.py --museum data/BBDD --queries data/qsd1_w3 --ground-truth data/qsd1_w3/gt_corresps.pkl --table --method all --distance all --filter gaussian --kernel 7
+python src/paintings_w3.py --museum data/BBDD --queries data/qsd1_w3 --ground-truth data/qsd1_w3/gt_corresps.pkl --table --method all --distance all --filter wavelet_lowpass
+python src/paintings_w3.py --museum data/BBDD --queries data/qsd1_w3 --ground-truth data/qsd1_w3/gt_corresps.pkl --table --method all --distance all --filter open+close --kernel 7
 ```
 
-| Descriptor | No filter | Median 3x3 | Median 5x5 |
-|---|---:|---:|---:|
-| `LBP` | 0.800 | 0.600 | 0.533 |
-| `LBP uniform` | 0.667 | 0.600 | 0.533 |
-| `Multiscale LBP` | 0.900 | 0.967 | 0.967 |
-| `DCT` (L1 or Cosine) | 0.967 | 0.967 | 0.967 |
-| `Wavelet` | 0.833 | 0.867 | 0.867 |
-| `DCT log` (L1, Cosine, Correlation) | **1.000** | **1.000** | **1.000** |
-| `Texture fusion` (L1, Euclidean, Cosine, Correlation) | **1.000** | **1.000** | **1.000** |
+mAP@1, best distance per descriptor and filter:
 
-`DCT log` and `Texture fusion` find the right painting at rank 1 for all 30
-queries, with and without the median filter, so they are robust to the noise
-and the hue changes of QSD1-W3. Plain `DCT` is also stable (0.967), while the
-LBP histograms depend on the filter: the median hurts plain LBP, which reads the
-smoothed texture as a different pattern, but helps Multiscale LBP (best with
-Chi-square or Hellinger) and Wavelet. The best distance for histogram
-descriptors is Chi-square, Hellinger or L1; Euclidean and Cosine are poor for
-Multiscale LBP.
+| Descriptor | No filter | Median 3x3 | Median 5x5 | Average 5x5 | Gaussian 7x7 | Wavelet L3 | Open+Close 7x7 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| `LBP` | 0.800 | 0.600 | 0.533 | 0.500 | 0.500 | 0.300 | 0.233 |
+| `LBP uniform` | 0.667 | 0.600 | 0.533 | 0.467 | 0.467 | 0.300 | 0.233 |
+| `Multiscale LBP` | 0.900 | 0.967 | 0.967 | 0.933 | 0.933 | 0.533 | 0.367 |
+| `DCT` | 0.967 | 0.967 | 0.967 | 0.967 | 0.967 | 0.967 | 0.933 |
+| `Wavelet` | 0.833 | 0.867 | 0.867 | 0.833 | 0.867 | 0.633 | 0.633 |
+| `DCT log` | **1.000** | **1.000** | **1.000** | **1.000** | **1.000** | **1.000** | 0.967 |
+| `Texture fusion` | **1.000** | **1.000** | **1.000** | **1.000** | **1.000** | **1.000** | **1.000** (L1: 0.967) |
+
+Best distances: `DCT` and `DCT log` work with L1, Cosine and Correlation;
+`Texture fusion` with L1, Euclidean, Cosine and Correlation (with Open+Close,
+L1 drops to 0.967 and the other three keep 1.000); Multiscale LBP with
+Hellinger or Chi-square after most filters; Wavelet with L1 or Histogram
+Intersection. Euclidean and Cosine are poor for Multiscale LBP.
+
+Observations:
+
+- **`DCT log` and `Texture fusion` are the most robust.** They find the right
+  painting at rank 1 for all 30 queries with no filter and with the median,
+  average, Gaussian and wavelet filters; only Open+Close 7x7 lowers `DCT log`
+  to 0.967. The noise and the hue changes of QSD1-W3 do not affect them, and
+  plain `DCT` is also stable (0.933-0.967). A likely reason is that the DCT
+  parts keep only the first 15 zig-zag coefficients of each block, which are
+  low frequencies, and the filters mostly change the high frequencies. The
+  fusion inherits this stability from its `DCT log` part.
+- **The LBP histograms get worse as the smoothing gets stronger.** Plain LBP
+  goes from 0.800 (no filter) to 0.600 (median), 0.500 (average, Gaussian),
+  0.300 (wavelet) and 0.233 (Open+Close). The code of a pixel depends on the
+  sign of its differences with the neighbours, so a filtered query has other
+  codes than the unfiltered museum image it should match. The strongest
+  filters (wavelet, Open+Close) remove most of the local variation, and this
+  gives the largest drop.
+- **Multiscale LBP and the Haar `Wavelet` descriptor benefit from mild
+  filters and fail with strong ones.** Multiscale LBP rises from 0.900 to
+  0.967 with the median and 0.933 with the average and Gaussian filters, but
+  falls to 0.533 (wavelet) and 0.367 (Open+Close). `Wavelet` goes from 0.833
+  to 0.867 with the median and Gaussian filters and falls to 0.633 with the
+  wavelet and Open+Close. Both use larger neighbourhoods or subband energies,
+  so removing isolated noise pixels helps them, but removing the real fine
+  texture does not.
+- **The filter has to be tuned to the descriptor.** The same filter can
+  improve one descriptor and damage another, so the table is read per column
+  and not only per row.
 
 #### Texture fusion (final descriptor)
 
@@ -404,16 +538,18 @@ Why each step is there:
   dominate the distance; with it, each part contributes comparably.
 - **Grayscale only.** The queries have random hue changes, so color is not used.
   LBP is also invariant to any monotonic change of the gray levels.
-- **Same treatment for museum and query.** The museum images are never
-  filtered; only the query crops go through the 3x3 median filter of Task 1.
+- **Same descriptor for museum and query, filter on the query only.** The
+  museum images are never filtered in this pipeline; only the query crops go
+  through a 3x3 **median** filter (`--filter median --kernel 3`), the best
+  Task 1 filter for texture (see the discussion in Task 4).
 
 Why the fusion works: the three parts are complementary. The DCT describes
 global frequency content per block, LBP describes the local structure of the
 pixels, and the wavelet describes how much detail there is and in which
 direction. A painting that is ambiguous for one of them is usually
 separated by another. This is visible in the results: on QSD2-W3 the best single
-descriptor reaches mAP@1 0.7692, while the fusion reaches 0.9231 (+0.154), and
-on QSD1-W3 it finds all 30 paintings at rank 1.
+descriptor reaches mAP@1 0.7692, while the fusion reaches 0.9231 (+0.154, 3x3
+median run), and on QSD1-W3 it finds all 30 paintings at rank 1.
 
 The default distance is L1; on QSD1-W3 the fusion gives 1.000 with L1,
 Euclidean, Cosine and Correlation, so it does not depend on one distance.
@@ -452,7 +588,8 @@ parent directory. The saved report contains one labeled section per method:
 python src/paintings_w3.py --segmentation results/week3/QSD2/all_methods data/qsd2_w3 --save results/week3/QSD2/mask_metrics_all.txt
 ```
 
-Results on the 30 augmented QSD2-W3 queries:
+Results on the 30 augmented QSD2-W3 queries (segmentation does not depend on
+the query filter or on the descriptor):
 
 | Method | Precision | Recall | F1 | Correct painting count |
 |---|---:|---:|---:|---:|
@@ -466,8 +603,11 @@ loses the smaller painting; 00010 loses the dark lower part of the painting.
 
 ### Task 4: Retrieval per Painting
 
+Final command: `Texture fusion`, L1, queries filtered with a 3x3 median
+filter (Task 1 filter, chosen on QSD2-W3):
+
 ```powershell
-python src/paintings_w3.py --museum data/BBDD --queries data/qsd2_w3 --background-removal --ground-truth data/qsd2_w3/gt_corresps.pkl --query-filter methods_w3:median_filter --output-dir results/week3/QSD2/texture_fusion
+python src/paintings_w3.py --museum data/BBDD --queries data/qsd2_w3 --background-removal --ground-truth data/qsd2_w3/gt_corresps.pkl --method "Texture fusion" --distance L1 --filter median --kernel 3 --top-k 10 --output-dir results/week3/QSD2/texture_fusion
 ```
 
 Each painting is cropped separately, then compared with the museum images.
@@ -480,12 +620,44 @@ The default method is `Texture fusion` with the L1 distance. Choose another one
 with `--method NAME` (`--method all` runs every texture method, saving each one
 in its own subfolder) and `--distance NAME`.
 
-mAP on the 30 QSD2-W3 queries, L1, predicted crops, 3x3 median filter on the
-queries (`--method all`):
+Query filter options (applied to every painting crop before its descriptor):
+
+| Option | Meaning |
+|---|---|
+| `--filter NAME` | Any Task 1 filter: `median`, `open`, `close`, `open+close`, `close+open`, `average`, `gaussian`, `wavelet_lowpass`, or `none`. Without this option retrieval uses `wavelet_lowpass` (level 3); `--table` uses `none` |
+| `--kernel K` | Odd kernel size of the spatial filters (required for them) |
+| `--wavelet`, `--wavelet-level` | Family and level of `wavelet_lowpass` (default `db2`, 3); no kernel is needed |
+| `--filter-scope {query,both}` | Filter only the query crops (default) or the museum images too |
+| `--query-filter module:function` | Custom `fn(rgb) -> rgb`, instead of `--filter` |
+
+The wavelet filter needs the `PyWavelets` package. The filter name and scope
+are saved in `retrieval.json`.
+
+#### Effect of the Task 1 filter on the texture pipeline
+
+`Texture fusion`, L1, QSD2-W3, predicted crops (30 queries, 39 paintings). The
+segmentation is the same in every run (F1 0.9526, painting count correct in
+29/30), so the differences come only from the filter:
+
+| Query filter | Scope | mAP@1 | mAP@5 | mAP@10 |
+|---|---|---:|---:|---:|
+| none | - | 0.7949 | 0.8192 | 0.8192 |
+| **Median 3x3** | query | **0.9231** | **0.9231** | **0.9231** |
+| Low-pass Wavelet (db2, level 3) | both | 0.8462 | 0.8739 | 0.8739 |
+| Open+Close 7x7 | query | 0.7436 | 0.7607 | 0.7675 |
+
+```powershell
+python src/paintings_w3.py --museum data/BBDD --queries data/qsd2_w3 --background-removal --ground-truth data/qsd2_w3/gt_corresps.pkl --method "Texture fusion" --distance L1 --top-k 10 --filter none --output-dir results/week3/QSD2/tests/none
+python src/paintings_w3.py --museum data/BBDD --queries data/qsd2_w3 --background-removal --ground-truth data/qsd2_w3/gt_corresps.pkl --method "Texture fusion" --distance L1 --top-k 10 --filter median --kernel 3 --output-dir results/week3/QSD2/tests/median3
+python src/paintings_w3.py --museum data/BBDD --queries data/qsd2_w3 --background-removal --ground-truth data/qsd2_w3/gt_corresps.pkl --method "Texture fusion" --distance L1 --top-k 10 --filter wavelet_lowpass --filter-scope both --output-dir results/week3/QSD2/tests/wavelet_both
+python src/paintings_w3.py --museum data/BBDD --queries data/qsd2_w3 --background-removal --ground-truth data/qsd2_w3/gt_corresps.pkl --method "Texture fusion" --distance L1 --top-k 10 --filter open+close --kernel 7 --output-dir results/week3/QSD2/tests/openclose7
+```
+
+Per descriptor, L1, 3x3 median on the queries (`--method all`):
 
 | Descriptor | mAP@1 | mAP@5 | mAP@10 |
 |---|---:|---:|---:|
-| W2 Lab pyramid, 7 levels (baseline, no median) | 0.7436 | 0.7564 | - |
+| W2 Lab pyramid, 7 levels (baseline, no filter) | 0.7436 | 0.7564 | - |
 | `LBP uniform` | 0.5128 | 0.5650 | 0.5723 |
 | `LBP` | 0.6154 | 0.6603 | 0.6639 |
 | `Wavelet` | 0.6923 | 0.7205 | 0.7248 |
@@ -494,15 +666,67 @@ queries (`--method all`):
 | `DCT log` | 0.7692 | 0.8085 | 0.8085 |
 | **`Texture fusion`** | **0.9231** | **0.9231** | **0.9231** |
 
-Without the median filter, the first run gave `LBP` 0.6154, `LBP uniform`
+Without a filter, the first run gave `LBP` 0.6154, `LBP uniform`
 0.5641, `Multiscale LBP` 0.6410, `DCT` 0.7436 and `Wavelet` 0.6923 (mAP@1). The
-filter helps Multiscale LBP (+0.077) and lowers LBP uniform (-0.051). All
-methods share the same masks (F1 0.9526, 29/30 correct painting counts), so
-the differences come only from the descriptor.
+median filter helps Multiscale LBP (+0.077) and lowers LBP uniform (-0.051).
+With the median filter, `Texture fusion` is 0.18 above the best single
+descriptor. Of the 39 paintings, 36 are correct at rank 1; the missing ones
+come from the image with a wrong painting count and from weak masks, so
+segmentation is now the main limit.
 
-`Texture fusion` is 0.18 above the best single descriptor. Of the 39 paintings,
-36 are correct at rank 1; the missing ones come from the image with a wrong
-painting count and from weak masks, so segmentation is now the main limit.
+#### Discussion: why the filter matters, and why the median wins
+
+1. **The noise corrupts the texture descriptors.** The noisy queries have
+   isolated, randomly coloured pixels (see the QSD1-W3 examples). LBP compares
+   every pixel with its neighbours, so one wrong pixel changes the code of
+   itself and of its eight neighbours; the DCT and the wavelet details pick up
+   the same pixels as spurious high-frequency energy. The museum images do not
+   have this noise, so the unfiltered query and its museum image look like
+   different textures. This is why `Texture fusion` reaches only 0.7949 without
+   a filter.
+2. **The median removes this noise and keeps the texture.** An isolated outlier
+   is never the median of its 3x3 neighbourhood, so it is replaced by a value
+   from the surrounding painting, while edges and strokes wider than two pixels
+   survive. This brings the query back close to its clean museum image, which
+   explains the gain of +0.128 mAP@1 (0.7949 to 0.9231). The small kernel
+   matters: the texture descriptors work on fine detail, so a filter that
+   changes more than the outlier pixels also changes the signal that is being
+   matched.
+3. **The low-pass wavelet helps, but less (0.8462).** It removes the noise
+   because it zeroes every detail coefficient of the first three levels, but it
+   zeroes the genuine fine texture too, which the LBP, wavelet and high-order
+   DCT parts of the fusion need. It was applied to both queries and museum, so
+   the two sides are blurred in the same way and remain comparable, which is
+   probably why it still beats no filter; but the information that was
+   removed cannot be recovered, so it stays below the median.
+4. **Open+Close 7x7 hurts (0.7436, below no filter).** Opening and closing
+   with a 7x7 element flatten every bright or dark structure smaller than the
+   element, and this includes the small strokes and grain that make up the
+   texture. In flat areas, the LBP comparison (neighbour >= centre) gives the
+   same code everywhere, so the histograms change a lot. As this filter was
+   applied to the queries only, the query is now much smoother than the sharp
+   museum image it should match, and the mismatch is bigger than the noise it
+   removed.
+5. **The best filter for colour is not the best for texture.** In Task 1 the
+   Lab colour histogram (32 bins per channel, hue-invariant) preferred the
+   low-pass wavelet and Open+Close 7x7, since colour histograms depend on
+   coarse intensity distributions and are barely affected by losing fine
+   detail. The texture descriptors depend on exactly that fine detail, so the
+   ranking reverses: median > wavelet > none > Open+Close. A filter must be
+   selected for the descriptor that it feeds, and this is why Task 4 repeats the
+   comparison.
+6. **The remaining error is segmentation.** All runs share the same masks. With
+   the median filter, the 3 wrong paintings out of 39 come from the image with
+   a wrong painting count and from weak masks, so a better descriptor or filter
+   would not change much. `mAP@1 = mAP@5` shows that when the painting is
+   found, it is already at rank 1.
+
+Limits of this comparison: the four runs differ in the filter **and** in the
+scope (the wavelet was applied to queries and museum, the others to the queries
+only), and each filter was tested with one kernel size. The explanations above
+fit the results, but they were not isolated by separate experiments. To
+isolate them, run the median with `--filter-scope both`, the wavelet with
+`--filter-scope query`, and the median with `--kernel 5` and `7`.
 
 Evaluation computes AP separately for each painting in annotation order.
 Missing or extra paintings contribute zero; the mean is taken over painting
@@ -510,9 +734,10 @@ slots, so an image with two paintings contributes two scores. Count accuracy
 is reported separately. These results use the development correspondences.
 
 `retrieve_folder_w3` accepts a `descriptor(rgb)` callable, shared by museum
-images and query crops, and an optional `query_filter(rgb)` applied only to
-queries. The CLI accepts them as `--descriptor module:function` and
-`--query-filter module:function`, for example
+images and query crops, and an optional `query_filter(rgb)` applied to the
+queries (and to the museum images with `filter_scope="both"`). The CLI builds
+the filter from `--filter`/`--kernel`, or loads `--descriptor module:function`
+and `--query-filter module:function`, for example
 `--descriptor paintings_w3:dct_log_descriptor`.
 
 Outputs in the chosen folder:
@@ -521,7 +746,7 @@ Outputs in the chosen folder:
 |---|---|
 | `result.pkl` | query -> painting -> 10 ranked integer museum IDs |
 | `*.png`, `segmentation.json` | masks and crop boxes when using background removal |
-| `retrieval.json` | rankings, configuration, fallbacks and evaluation metrics |
+| `retrieval.json` | rankings, configuration (including the filter name and scope), fallbacks and evaluation metrics |
 
 Even a query with one painting has the extra list level: `[[[7, 25, ...]],
 [[44, 81, ...], [3, 9, ...]], ...]`. The result file is read back and checked
@@ -530,7 +755,7 @@ for list sizes, unique IDs and Python integers.
 ### Task 5: Blind Submission (QST1 and QST2)
 
 Only the best method is submitted, one per test set: `Texture fusion`, L1,
-median filter on the queries, top 10. Every `result.pkl` has the extra list
+3x3 median filter on the queries, top 10. Every `result.pkl` has the extra list
 level (a list of one or two painting rankings per query).
 
 QST1-W3 has cropped pictures with one painting, so segmentation is not used and
@@ -538,8 +763,8 @@ the whole image is the painting. QST2-W3 has pictures with background and up to
 two paintings, so segmentation is used and the masks are submitted.
 
 ```powershell
-python src/paintings_w3.py --museum data/BBDD --queries data/qst1_w3 --method "Texture fusion" --distance L1 --query-filter methods_w3:median_filter --top-k 10 --output-dir results/week3/QST1/method1
-python src/paintings_w3.py --museum data/BBDD --queries data/qst2_w3 --background-removal --method "Texture fusion" --distance L1 --query-filter methods_w3:median_filter --top-k 10 --output-dir results/week3/QST2/method1
+python src/paintings_w3.py --museum data/BBDD --queries data/qst1_w3 --method "Texture fusion" --distance L1 --filter median --kernel 3 --top-k 10 --output-dir results/week3/QST1/method1
+python src/paintings_w3.py --museum data/BBDD --queries data/qst2_w3 --background-removal --method "Texture fusion" --distance L1 --filter median --kernel 3 --top-k 10 --output-dir results/week3/QST2/method1
 ```
 
 | Output | Content |
@@ -547,3 +772,6 @@ python src/paintings_w3.py --museum data/BBDD --queries data/qst2_w3 --backgroun
 | `Team1/week3/QST1/method1/result.pkl` | 50 queries, one painting ranking each |
 | `Team1/week3/QST2/method1/result.pkl` | 30 queries, one or two painting rankings each |
 | `Team1/week3/QST2/method1/*.png` | background masks, same name as the query, 0/255 |
+
+Only these files are delivered; `segmentation.json` and `retrieval.json` in the
+same folders are for our own records.

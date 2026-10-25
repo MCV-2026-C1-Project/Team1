@@ -65,6 +65,11 @@ from utils import compute_segmentation_metrics
 # ===========================================================================
 
 DEFAULT_BLOCKS = 25
+# Task 1 filter used by default in retrieval: low-pass wavelet, level 3
+# (best filter with hue-invariance on QSD1-W3). Needs PyWavelets.
+DEFAULT_FILTER = "wavelet_lowpass"
+DEFAULT_FILTER_WAVELET = "db2"
+DEFAULT_FILTER_WAVELET_LEVEL = 3
 DEFAULT_DISTANCE = "L1"
 DEFAULT_SIZE = 256           # DCT / wavelet work on a fixed-size gray image
 DEFAULT_LBP_SIDE = 256       # LBP works with the longest side at this size
@@ -147,6 +152,34 @@ def median_denoise(img_rgb, ksize):
         return img_rgb
     from methods_w3 import median_filter
     return median_filter(img_rgb, ksize=ksize)
+
+
+def build_query_filter(name=DEFAULT_FILTER, kernel=None,
+                       wavelet=DEFAULT_FILTER_WAVELET,
+                       wavelet_level=DEFAULT_FILTER_WAVELET_LEVEL):
+    """Task 1 filter as ``fn(rgb) -> rgb`` (None for "none").
+
+    Default: low-pass wavelet (``wavelet`` family, ``wavelet_level`` levels):
+    the approximation coefficients are kept and every detail is zeroed.
+    Spatial filters (median, open+close, ...) use ``kernel`` instead. The
+    returned function has a readable ``__name__`` (for example
+    ``wavelet_lowpass_db2_L3``) that is saved in ``retrieval.json``.
+    """
+    if name is None or name == "none":
+        return None
+    from methods_w3 import build_image_filter
+    image_filter = build_image_filter(name, ksize=kernel, wavelet=wavelet,
+                                      wavelet_level=wavelet_level)
+
+    def query_filter(rgb):
+        return image_filter(rgb)
+
+    if "wavelet" in name:
+        label = f"{name}_{wavelet}_L{wavelet_level}"
+    else:
+        label = f"{name}_{kernel}" if kernel else name
+    query_filter.__name__ = label.replace("+", "_")
+    return query_filter
 
 
 def _cell_edges(size, parts):
@@ -417,7 +450,7 @@ def build_descriptor(name, blocks=DEFAULT_BLOCKS, n_coeffs=DEFAULT_DCT_COEFFS,
 
 def load_descriptors_texture(path, names, query=False, denoise=0,
                              blocks=DEFAULT_BLOCKS, n_coeffs=DEFAULT_DCT_COEFFS,
-                             levels=DEFAULT_WAVELET_LEVELS):
+                             levels=DEFAULT_WAVELET_LEVELS, image_filter=None):
     """Descriptors of every image of a folder, in numeric ID order.
 
     ``names`` is a list of methods; the result is one descriptor list per
@@ -432,7 +465,9 @@ def load_descriptors_texture(path, names, query=False, denoise=0,
         if image is None:
             raise ValueError(f"Cannot decode image: {image_path}")
         rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        if query:
+        if image_filter is not None:
+            rgb = image_filter(rgb)
+        elif query:
             rgb = median_denoise(rgb, denoise)
         for index, function in enumerate(functions):
             descriptors[index].append(function(rgb))
@@ -462,7 +497,8 @@ def _distance_names(distance_name):
 def evaluate_table_texture(museum_path, queries_path, methods, distances,
                            top_k=5, ground_truth_path=None, denoise=0,
                            blocks=DEFAULT_BLOCKS, n_coeffs=DEFAULT_DCT_COEFFS,
-                           levels=DEFAULT_WAVELET_LEVELS):
+                           levels=DEFAULT_WAVELET_LEVELS, image_filter=None,
+                           filter_scope="query"):
     """mAP@1 / mAP@K of every method x distance; prints a table.
 
     Descriptors are computed once per method. Returns
@@ -474,18 +510,22 @@ def evaluate_table_texture(museum_path, queries_path, methods, distances,
     names = [canonical_method_name(m) for m in methods]
     museum_ids, museum = load_descriptors_texture(
         museum_path, names, query=False, blocks=blocks, n_coeffs=n_coeffs,
-        levels=levels)
+        levels=levels,
+        image_filter=image_filter if filter_scope == "both" else None)
     query_ids, queries = load_descriptors_texture(
         queries_path, names, query=True, denoise=denoise, blocks=blocks,
-        n_coeffs=n_coeffs, levels=levels)
+        n_coeffs=n_coeffs, levels=levels, image_filter=image_filter)
     ground_truth = _load_ground_truth(ground_truth_path, query_ids)
     if ground_truth is None:
         raise ValueError("A ground truth (--ground-truth) is needed for the "
                          "comparison table")
     results = {}
     print(f"{len(museum_ids)} museum images, {len(query_ids)} queries, "
-          f"{blocks} blocks, median filter on queries: "
-          f"{'off' if not denoise or denoise <= 1 else f'{denoise}x{denoise}'}")
+          f"{blocks} blocks, filter ({filter_scope}): "
+          + (getattr(image_filter, "__name__", "custom")
+             if image_filter is not None else
+             ("off" if not denoise or denoise <= 1
+              else f"median {denoise}x{denoise}")))
     print(f"{'Method':<16}{'Distance':<24}{'dim':>7}"
           f"{'mAP@1':>9}{'mAP@' + str(top_k):>9}")
     for index, name in enumerate(names):
@@ -680,7 +720,8 @@ def _descriptor_vector(descriptor, rgb):
 def retrieve_folder_w3(museum_path, queries_path, out_dir, descriptor=None,
                        distance_name=DEFAULT_RETRIEVAL_DISTANCE, top_k=10, ground_truth_path=None,
                        background_removal=True, params=None, query_filter=None,
-                       viz_dir=None, descriptor_name="W3 Texture fusion"):
+                       viz_dir=None, descriptor_name="W3 Texture fusion",
+                       filter_scope="query"):
     """Rank each crop independently and save query -> painting -> museum IDs.
 
     descriptor(rgb) is shared by museum images and query crops. query_filter
@@ -702,7 +743,14 @@ def retrieve_folder_w3(museum_path, queries_path, out_dir, descriptor=None,
     destination.mkdir(parents=True, exist_ok=True)
     segmentation = (segment_folder_w3(queries_path, destination, viz_dir, params)
                     if background_removal else None)
-    museum = [_descriptor_vector(descriptor, _read_rgb(path)) for path in museum_paths]
+    def museum_image(path):
+        rgb = _read_rgb(path)
+        if query_filter is not None and filter_scope == "both":
+            rgb = query_filter(rgb)
+        return rgb
+
+    museum = [_descriptor_vector(descriptor, museum_image(path))
+              for path in museum_paths]
     dimension = museum[0].size
     if any(vector.size != dimension for vector in museum):
         raise ValueError("All museum descriptors must have the same dimension")
@@ -732,6 +780,7 @@ def retrieve_folder_w3(museum_path, queries_path, out_dir, descriptor=None,
               "background_removal": background_removal,
               "evaluation": "AP per painting in reading order; unmatched slots score zero",
               "query_filter": getattr(query_filter, "__name__", None),
+              "filter_scope": filter_scope,
               "museum_count": len(museum_ids), "per_image": rows}
     if ground_truth is not None:
         metrics = {}
@@ -796,6 +845,25 @@ def build_parser():
                                   help="Task 2 RGB descriptor, module:function")
     parser.add_argument("--query-filter", type=_import_callable,
                         help="Task 1 RGB filter, e.g. methods_w3:median_filter")
+    from methods_w3 import IMAGE_FILTERS
+    parser.add_argument("--filter", choices=IMAGE_FILTERS, default=None,
+                        help="Task 1 filter built from methods_w3. Default: "
+                             f"{DEFAULT_FILTER} (level "
+                             f"{DEFAULT_FILTER_WAVELET_LEVEL}) in retrieval, "
+                             "none with --table. Use 'none' to disable it")
+    parser.add_argument("--kernel", type=int, default=None,
+                        help="Odd kernel size for the spatial filters "
+                             "(median, open+close, ...); not used by the "
+                             "wavelet filter")
+    parser.add_argument("--wavelet", default=DEFAULT_FILTER_WAVELET,
+                        help="Wavelet family of the wavelet filter")
+    parser.add_argument("--wavelet-level", type=int,
+                        default=DEFAULT_FILTER_WAVELET_LEVEL,
+                        help="Decomposition level of the wavelet filter")
+    parser.add_argument("--filter-scope", choices=("query", "both"),
+                        default="query",
+                        help="Filter only the queries (default) or the "
+                             "museum images too")
     parser.add_argument("--blocks", type=int, default=DEFAULT_BLOCKS)
     parser.add_argument("--n-coeffs", type=int, default=DEFAULT_DCT_COEFFS)
     parser.add_argument("--levels", type=int, default=DEFAULT_WAVELET_LEVELS)
@@ -834,11 +902,23 @@ def main(args=None):
         parser.error("--method all cannot be combined with --descriptor")
     methods = (TEXTURE_METHOD_NAMES if opts.method == "all"
                else (opts.method or DEFAULT_METHOD,))
+    filter_name = opts.filter
+    if filter_name is None:
+        filter_name = ("none" if opts.table or opts.query_filter
+                       else DEFAULT_FILTER)
+    if opts.query_filter and filter_name != "none":
+        parser.error("Use either --filter or --query-filter")
+    if filter_name not in ("none", DEFAULT_FILTER) and opts.kernel is None:
+        parser.error(f"--filter {filter_name} needs an explicit --kernel")
+    query_filter = (opts.query_filter
+                    or build_query_filter(filter_name, opts.kernel,
+                                          opts.wavelet, opts.wavelet_level))
     if opts.table:
         evaluate_table_texture(
             opts.museum, opts.queries, methods, _distance_names(opts.distance),
             opts.top_k, opts.ground_truth, opts.denoise, opts.blocks,
-            opts.n_coeffs, opts.levels)
+            opts.n_coeffs, opts.levels, image_filter=query_filter,
+            filter_scope=opts.filter_scope)
         return
     if opts.distance == DISTANCE_ALL:
         parser.error("--distance all needs --table")
@@ -861,8 +941,8 @@ def main(args=None):
             distance_name=opts.distance, top_k=opts.top_k,
             ground_truth_path=opts.ground_truth,
             background_removal=opts.background_removal,
-            query_filter=opts.query_filter, viz_dir=method_viz,
-            descriptor_name=name)
+            query_filter=query_filter, viz_dir=method_viz,
+            descriptor_name=name, filter_scope=opts.filter_scope)
 
 
 if __name__ == "__main__":
