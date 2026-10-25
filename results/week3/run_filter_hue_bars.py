@@ -44,7 +44,7 @@ CONFIGS = [
     ("Median", "Lab blocks 1D median", 7, "7x7"),
     ("Open", "Lab blocks 1D open", 9, "9x9"),
     ("Close", "Lab blocks 1D close", 7, "7x7"),
-    ("Open+Close", "Lab blocks 1D open+close", 11, "11x11"),
+    ("Open+Close", "Lab blocks 1D open+close", 7, "7x7"),
     ("Close+Open", "Lab blocks 1D close+open", 7, "7x7"),
     ("Average", "Lab blocks 1D average", 5, "5x5"),
     ("Gaussian", "Lab blocks 1D gaussian", 7, "7x7"),
