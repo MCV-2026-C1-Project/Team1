@@ -50,6 +50,7 @@ Run as a script (argparse selects the action):
 
 import argparse
 import math
+import sys
 from pathlib import Path
 
 import cv2
@@ -991,8 +992,11 @@ def build_parser():
                         default=DEFAULT_DISTANCE)
     parser.add_argument("--top-k", type=int, default=5)
     parser.add_argument("--kernel", "--median-size", dest="kernel",
-                        type=_odd_kernel, default=DEFAULT_MEDIAN_KSIZE,
-                        help="Spatial filter size, odd and >= 3 (default 3)")
+                        type=_odd_kernel, default=None,
+                        help="REQUIRED (except with --list): spatial filter "
+                             "size, odd and >= 3 (e.g. 7 means 7x7). There "
+                             "is no default on purpose: every reported "
+                             "number must state its kernel.")
     parser.add_argument("--wavelet", default=DEFAULT_WAVELET,
                         help="Wavelet family for the wavelet method "
                              f"(default {DEFAULT_WAVELET})")
@@ -1023,6 +1027,15 @@ def build_parser():
     return parser
 
 
+def _warn_without_hue_invariant():
+    """Loud warning: plain numbers are not hue-invariant numbers."""
+    print("WARNING: --hue-invariant NOT set. This run does NOT apply hue "
+          "correction, so its numbers are NOT comparable with any figure "
+          "titled 'Applying hue-invariance'. Re-run with --hue-invariant "
+          "(and --hue-reference) for hue-invariant numbers.",
+          file=sys.stderr, flush=True)
+
+
 def main(args=None):
     parser = build_parser()
     opts = parser.parse_args(args)
@@ -1030,6 +1043,12 @@ def main(args=None):
         for name in METHODS_W3_NAMES:
             print(name)
         return
+    if opts.kernel is None:
+        parser.error("--kernel is required: pass an explicit odd size "
+                     ">= 3 (e.g. --kernel 7). Silent defaults caused "
+                     "3x3 numbers to be mistaken for best-kernel numbers.")
+    if not opts.hue_invariant and (opts.method is not None or opts.sweep):
+        _warn_without_hue_invariant()
     if opts.sweep:
         if not opts.museum or not opts.queries:
             parser.error("--sweep needs --museum and --queries")
@@ -1051,6 +1070,15 @@ def main(args=None):
     if opts.method == METHOD_ALL:
         if opts.pre_filter is not None:
             parser.error("--pre-filter cannot be combined with --method all")
+        if opts.hue_invariant:
+            parser.error("--hue-invariant cannot be combined with --method "
+                         "all (it would be silently ignored): run one "
+                         "--method at a time with --kernel K "
+                         "--hue-invariant instead.")
+        print("NOTE: --method all applies the same --kernel "
+              f"({opts.kernel}x{opts.kernel}) to every method; "
+              "per-filter best kernels need single-method runs.",
+              file=sys.stderr, flush=True)
         evaluate_all_folders_w3(
             opts.museum, opts.queries, opts.distance, opts.top_k,
             opts.ground_truth, opts.kernel, opts.blocks, opts.bins,
