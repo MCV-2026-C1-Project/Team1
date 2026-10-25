@@ -643,7 +643,7 @@ segmentation is the same in every run (F1 0.9526, painting count correct in
 |---|---|---:|---:|---:|
 | none | - | 0.7949 | 0.8192 | 0.8192 |
 | **Median 3x3** | query | **0.9231** | **0.9231** | **0.9231** |
-| Low-pass Wavelet (db2, level 3) | both | 0.8462 | 0.8739 | 0.8739 |
+| Low-pass Wavelet (level 3) | both | 0.8462 | 0.8739 | 0.8739 |
 | Open+Close 7x7 | query | 0.7436 | 0.7607 | 0.7675 |
 
 ```powershell
