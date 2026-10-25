@@ -1,10 +1,9 @@
 """Methods_W3: Week 3, Task 1 (noise filtering) and the unfiltered baseline.
 
 Task 1 asks for a linear or non-linear filter for an unknown noise model,
-where only some queries are noisy. This module implements the non-linear
-median filter and applies it to the queries by default; the museum/reference
-images (BBDD) stay unfiltered unless the symmetric variant is requested with
-``filter_scope="both"``.
+where only some queries are noisy. The filter is applied to BOTH the queries
+and the museum/reference images (BBDD) so both sides live in the same
+filtered domain; pass ``filter_scope="query"`` for the queries-only variant.
 
 Two retrieval methods share the Week 2 "Lab blocks 1D" descriptor:
 
@@ -77,7 +76,7 @@ DEFAULT_DISTANCE = "L1"
 DEFAULT_HUE_ALPHA = 1.0
 DEFAULT_HUE_TEMPERATURE = 1.0
 FILTER_SCOPES = ("query", "both")
-DEFAULT_FILTER_SCOPE = "query"
+DEFAULT_FILTER_SCOPE = "both"
 
 MORPH_OPERATIONS = ("open", "close")
 WAVELET_FILTER_NAMES = ("wavelet", "wavelet_lowpass")
@@ -444,8 +443,10 @@ def canonical_method_name(name):
 def build_descriptor(blocks=DEFAULT_BLOCKS, bins=DEFAULT_BINS):
     """Descriptor-only function ``fn(rgb, mask=None)`` with no filtering.
 
-    This is what must be used for the museum / reference images, which are
-    never filtered.
+    This is the unfiltered primitive. Under the default
+    ``filter_scope="both"`` the museum pipeline applies the method's filter
+    to the images *before* calling it (see ``evaluate_folders_w3``), so both
+    sides share the same filtered domain.
     """
     def descriptor(img_rgb, mask=None):
         return baseline_descriptor(
@@ -513,8 +514,9 @@ def compute_descriptors_w3(dataset, ksize=DEFAULT_MEDIAN_KSIZE,
                            wavelet_level=DEFAULT_WAVELET_LEVEL):
     """Descriptors for every W3 method, in METHODS_W3_NAMES order.
 
-    dataset.images are assumed to be RGB query images, so each method applies
-    its own query filter. For reference / museum images use
+    dataset.images are assumed to be RGB images on which each method applies
+    its own filter; under the Task 1 contract this holds for queries and
+    museum references alike. For guaranteed-unfiltered descriptors use
     ``compute_baseline_descriptors_w3`` instead.
     """
     functions = {
@@ -576,11 +578,12 @@ def load_descriptors_w3(path, method=None, query=False,
 
 def load_museum_descriptors_w3(path, blocks=DEFAULT_BLOCKS,
                                bins=DEFAULT_BINS, image_filter=None):
-    """Reference descriptors, unfiltered unless ``image_filter`` is given.
+    """Reference descriptors, with optional preprocessing.
 
-    The default (``image_filter=None``) preserves the Task 1 query-only
-    contract. Passing a filter computes the same preprocessing on the museum
-    images, which is the symmetric variant.
+    Pass the method's filter as ``image_filter`` (what ``evaluate_folders_w3``
+    does under the default ``filter_scope="both"``) so museum and queries
+    share the same filtered domain. With ``image_filter=None`` the references
+    are unfiltered.
     """
     if image_filter is None:
         return load_descriptors_w3(path, method=BASELINE_METHOD, query=False,
@@ -663,9 +666,10 @@ def evaluate_folders_w3(museum_path, queries_path, method,
                         hue_temperature=DEFAULT_HUE_TEMPERATURE):
     """Retrieval with a W3 method; print mAP if a ground truth is given.
 
-    With filter_scope="query" (default) only the queries are filtered, which
-    is the Task 1 contract. With filter_scope="both" the same filter is also
-    applied to the museum/reference images. ``image_filter`` overrides the
+    With filter_scope="both" (default) the method's filter is applied to
+    both the queries and the museum/reference images, which is the Task 1
+    contract. With filter_scope="query" only the queries are filtered.
+    ``image_filter`` overrides the
     method's own filter with any preprocessing function.
 
     With hue_invariant=True the HSV hue-invariance approach is enabled on top
@@ -801,9 +805,9 @@ def evaluate_filter_sweep(museum_path, queries_path, ground_truth_path,
                           filter_scope=DEFAULT_FILTER_SCOPE):
     """Compare filters and print mAP@1 / mAP@top_k.
 
-    With filter_scope="query" (default) only the queries are preprocessed.
-    With filter_scope="both" the same filter is applied to the museum
-    references as well. With stop_on_drop, the sweep stops after the first
+    With filter_scope="both" (default) the filter is applied to both the
+    queries and the museum references. With filter_scope="query" only the
+    queries are preprocessed. With stop_on_drop, the sweep stops after the first
     filter whose mAP@top_k is lower than the best seen so far.
     """
     from k_similarity import (
@@ -940,8 +944,8 @@ def build_parser():
                              "(single-method retrieval only)")
     parser.add_argument("--filter-scope", choices=FILTER_SCOPES,
                         default=DEFAULT_FILTER_SCOPE,
-                        help="Apply the filter to queries only (default) or "
-                             "to both queries and museum references")
+                        help="Apply the filter to both queries and museum "
+                             "references (default) or to queries only")
     parser.add_argument("--museum", type=Path, help="Museum image folder")
     parser.add_argument("--queries", type=Path, help="Query image folder")
     parser.add_argument("--ground-truth", type=Path, default=None,

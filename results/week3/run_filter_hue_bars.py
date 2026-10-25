@@ -1,7 +1,7 @@
 """Best kernel per filter, WITH hue-invariance (query-only scope + hue).
 
-For every group the query-side filter is applied at its best kernel and the
-ranking uses the HSV hue-invariance mode of methods_w3 (per-candidate hue
+For every group the filter is applied at its best kernel to BOTH queries and
+museum (Task 1 contract, ``filter_scope="both"``) and the ranking uses the HSV hue-invariance mode of methods_w3 (per-candidate hue
 scale, blend of raw and hue-normalized LAB distances).
 
 Outputs (recomputed only with --recompute):

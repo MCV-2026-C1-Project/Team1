@@ -273,7 +273,7 @@ class TestW3Descriptors(unittest.TestCase):
 class TestW3FilterScope(unittest.TestCase):
     def test_scope_constants(self):
         self.assertEqual(FILTER_SCOPES, ("query", "both"))
-        self.assertEqual(DEFAULT_FILTER_SCOPE, "query")
+        self.assertEqual(DEFAULT_FILTER_SCOPE, "both")
 
     def test_invalid_scope_rejected(self):
         with self.assertRaises(AssertionError):

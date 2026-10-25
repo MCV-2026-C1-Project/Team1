@@ -284,8 +284,9 @@ of Task 1 stays in `methods_w3.py` and is selected with `--query-filter`.
 `methods_w3.py` registers one `Lab blocks 1D <filter>` method per filter
 (Median, Open, Close, Open+Close, Close+Open, Average, Gaussian, Low-pass
 Wavelet) sharing a `--kernel` size, plus an HSV hue-invariance mode
-(`--hue-invariant`). Filters are applied **only to the queries** by default;
-museum images are never filtered, so the museum descriptors stay the same.
+(`--hue-invariant`). The filter is applied to **both** the queries and the
+museum images by default (`--filter-scope both`), so both sides share the
+same filtered domain; `--filter-scope query` restores queries-only.
 
 ```powershell
 python src/methods_w3.py --museum data/BBDD --queries data/qsd1_w3 --method all --ground-truth data/qsd1_w3/gt_corresps.pkl
