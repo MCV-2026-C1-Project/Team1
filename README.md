@@ -289,8 +289,39 @@ museum images by default (`--filter-scope both`), so both sides share the
 same filtered domain; `--filter-scope query` restores queries-only.
 
 ```powershell
-python src/methods_w3.py --museum data/BBDD --queries data/qsd1_w3 --method all --ground-truth data/qsd1_w3/gt_corresps.pkl
+# one kernel per run; --kernel is mandatory and the missing --hue-invariant
+# is warned about loudly
+python src/methods_w3.py --museum data/BBDD --queries data/qsd1_w3 --method all --kernel 7 --ground-truth data/qsd1_w3/gt_corresps.pkl
 ```
+
+`--method all` shares one kernel across all methods and cannot use the hue
+mode, so per-filter best kernels need single-method runs.
+
+### Task 1 (extension): HSV Hue Invariance
+
+`--hue-invariant` estimates one global hue scale per (query, museum candidate)
+pair from the HSV hue histograms and blends the raw and hue-corrected LAB
+`L1` distances. The descriptor stays "Lab blocks 1D"; HSV is only used to
+correct the hue.
+
+The museum hue references are **always built from the unfiltered museum
+images**, whatever `--filter-scope` is: the hue scale describes the true
+appearance of each candidate, so it must not depend on the filter or kernel
+under test. The cached histograms record this provenance (`source=raw`) and a
+cache built from filtered images, or written before the field existed, is
+refused with an actionable error instead of silently changing the numbers.
+
+```powershell
+python src/methods_w3.py --museum data/BBDD --queries data/qsd1_w3 --method "Lab blocks 1D open+close" --kernel 11 --filter-scope both --hue-invariant --hue-reference results/week3/color_reference/museum_hue_references.npz --ground-truth data/qsd1_w3/gt_corresps.pkl
+python results/week3/run_filter_hue_bars.py --recompute   # best kernel per filter, with hue
+```
+
+The canonical cache is `results/week3/color_reference/museum_hue_references.npz`.
+If it is missing, the first hue run rebuilds it from the unfiltered museum and
+saves it with `source=raw`; if it exists but predates the provenance field, run
+`results/week3/color_reference/migrate_reference_provenance.py` (it verifies the
+histograms are unchanged before rewriting the file). Using a different cache
+path produces different mAP values, so always pass this one.
 
 ### Task 2: Texture Descriptors
 

@@ -270,6 +270,78 @@ class TestW3Descriptors(unittest.TestCase):
             self.assertIn(("wavelet_lowpass", level), specs)
 
 
+class TestHueReferenceProvenance(unittest.TestCase):
+    def test_cache_with_wrong_provenance_is_rejected(self):
+        from color_reference import HueReference
+        from methods_w3 import _resolve_hue_reference
+
+        hist = np.ones((1, 180)) / 180.0
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "stale.npz"
+            HueReference(("0",), hist, source="filtered").save(path)
+            with self.assertRaises(ValueError) as caught:
+                _resolve_hue_reference(path, ("0",), [_red_rgb()])
+        message = str(caught.exception)
+        self.assertIn("filtered", message)
+        self.assertIn("raw", message)
+
+    def test_cache_without_provenance_is_rejected(self):
+        from methods_w3 import _resolve_hue_reference
+
+        hist = np.ones((1, 180)) / 180.0
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "legacy.npz"
+            np.savez_compressed(
+                path, ids=np.asarray(("0",)), histograms=hist,
+                bins=np.asarray(180), saturation_threshold=np.asarray(40))
+            with self.assertRaises(ValueError) as caught:
+                _resolve_hue_reference(path, ("0",), [_red_rgb()])
+        self.assertIn("provenance", str(caught.exception))
+
+    def test_matching_provenance_loads(self):
+        from color_reference import HueReference
+        from methods_w3 import _resolve_hue_reference
+
+        hist = np.ones((1, 180)) / 180.0
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "raw.npz"
+            HueReference(("0",), hist).save(path)
+            reference = _resolve_hue_reference(path, ("0",), [_red_rgb()])
+        self.assertEqual(reference.source, "raw")
+        np.testing.assert_allclose(reference.histograms, hist)
+
+    def test_references_use_the_unfiltered_museum_under_both_scope(self):
+        from color_reference import HueReference, hue_histogram
+        from methods_w2 import _read_rgb
+        from methods_w3 import MEDIAN_METHOD, median_filter
+
+        museum = np.full((32, 32, 3), (200, 60, 60), dtype=np.uint8)
+        museum[0:3, 0:3] = (0, 255, 0)      # saturated speck: gone after median
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            museum_dir = root / "museum"
+            query_dir = root / "queries"
+            museum_dir.mkdir()
+            query_dir.mkdir()
+            cv2.imwrite(str(museum_dir / "00000.jpg"),
+                        cv2.cvtColor(museum, cv2.COLOR_RGB2BGR))
+            cv2.imwrite(str(query_dir / "00000.jpg"),
+                        cv2.cvtColor(museum, cv2.COLOR_RGB2BGR))
+            cache = root / "refs.npz"
+            evaluate_folders_w3(
+                str(museum_dir), str(query_dir), MEDIAN_METHOD, ksize=7,
+                filter_scope="both", hue_invariant=True,
+                hue_reference=str(cache))
+            reference = HueReference.load(cache)
+            decoded = _read_rgb(museum_dir / "00000.jpg")
+        self.assertEqual(reference.source, "raw")
+        np.testing.assert_allclose(
+            reference.histograms[0], hue_histogram(decoded), atol=1e-9)
+        self.assertFalse(np.allclose(
+            reference.histograms[0],
+            hue_histogram(median_filter(decoded, 7))))
+
+
 class TestW3FilterScope(unittest.TestCase):
     def test_scope_constants(self):
         self.assertEqual(FILTER_SCOPES, ("query", "both"))

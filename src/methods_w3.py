@@ -18,17 +18,19 @@ Besides the median filter, the module exposes linear Average and Gaussian
 filters, per-channel morphological opening and closing, chained opening+closing
 in both orders and a low-pass wavelet filter (keep the approximation
 coefficients, zero the details). Filters can be chained with "+" (for example
-"open+close"). These are query-side candidates for the same Task 1
-comparison; pass ``--filter-scope both`` to apply the same filter to the
-references too. Every filter is registered as a ``"Lab blocks 1D <filter>"``
+"open+close"). Every filter is registered as a ``"Lab blocks 1D <filter>"``
 method sharing one ``--kernel`` size parameter (the wavelet uses
-``--wavelet-level`` instead).
+``--wavelet-level`` instead), and is applied to queries and references alike
+under the default ``--filter-scope both``.
 
 The HSV hue-invariance approach lives in ``src/color_reference`` and is
 available here as an additional retrieval mode: pass ``hue_invariant=True``
 (or ``--hue-invariant``) to estimate a per-candidate global hue scale and
 blend the raw and hue-normalized LAB distances. The descriptor and distance
-stay "Lab blocks 1D" + L1 in every case.
+stay "Lab blocks 1D" + L1 in every case. The museum hue references are always
+built from the UNFILTERED museum images: the hue scale describes the true
+appearance of each candidate, so it must not depend on the filter under test.
+The ``.npz`` cache records its provenance and is rejected on mismatch.
 
 Run as a script (argparse selects the action):
     python methods_w3.py --list
@@ -75,6 +77,9 @@ DEFAULT_WAVELET_LEVEL = 3
 DEFAULT_DISTANCE = "L1"
 DEFAULT_HUE_ALPHA = 1.0
 DEFAULT_HUE_TEMPERATURE = 1.0
+# Museum hue references always describe the unfiltered images, so the
+# estimated hue scale does not depend on the filter under test.
+DEFAULT_HUE_REFERENCE_SOURCE = "raw"
 FILTER_SCOPES = ("query", "both")
 DEFAULT_FILTER_SCOPE = "both"
 
@@ -626,12 +631,20 @@ def _check_filter_scope(filter_scope):
 
 
 def _resolve_hue_reference(hue_reference, museum_ids, museum_images,
-                           saturation_threshold=40):
-    """Load (or build) the per-museum hue references for hue-invariant mode.
+                           saturation_threshold=40,
+                           source=DEFAULT_HUE_REFERENCE_SOURCE):
+    """Load (or build) the museum hue references for hue-invariant mode.
 
     ``hue_reference`` may be a path to a cached ``.npz`` (loaded when it
     exists, refreshed from ``museum_images`` otherwise) or ``None`` to build
     the references in memory without touching the disk.
+
+    ``museum_images`` must be the UNFILTERED museum images (``source="raw"``):
+    the hue scale describes the true appearance of each candidate, so it must
+    not depend on the filter or kernel under test. The cache records its
+    provenance and is rejected when it does not match (or when it predates the
+    provenance field), instead of silently producing different numbers for the
+    same command.
     """
     from color_reference import (
         DEFAULT_SATURATION_THRESHOLD,
@@ -644,13 +657,29 @@ def _resolve_hue_reference(hue_reference, museum_ids, museum_images,
     if hue_reference is not None:
         path = Path(hue_reference)
         if path.exists():
-            return HueReference.load(path).reorder(museum_ids)
+            cached = HueReference.load(path)
+            if cached.source == "legacy":
+                raise ValueError(
+                    f"hue reference cache {path} has no recorded provenance "
+                    f"(it predates the 'source' field), so it cannot be "
+                    f"trusted. Delete it, or pass a new --hue-reference "
+                    f"path, to rebuild it from the unfiltered museum images.")
+            if cached.source != source:
+                raise ValueError(
+                    f"hue reference cache {path} was built from "
+                    f"{cached.source!r} museum images, but this run needs "
+                    f"{source!r}. Use a different --hue-reference path (or "
+                    f"delete the cache) instead of reusing it: the estimated "
+                    f"hue scale, and therefore the mAP, depends on it.")
+            return cached.reorder(museum_ids)
         reference = build_hue_references_from_images(
-            museum_ids, museum_images, saturation_threshold=threshold)
+            museum_ids, museum_images, saturation_threshold=threshold,
+            source=source)
         reference.save(path)
         return reference
     return build_hue_references_from_images(
-        museum_ids, museum_images, saturation_threshold=threshold)
+        museum_ids, museum_images, saturation_threshold=threshold,
+        source=source)
 
 
 def evaluate_folders_w3(museum_path, queries_path, method,
@@ -669,15 +698,16 @@ def evaluate_folders_w3(museum_path, queries_path, method,
     With filter_scope="both" (default) the method's filter is applied to
     both the queries and the museum/reference images, which is the Task 1
     contract. With filter_scope="query" only the queries are filtered.
-    ``image_filter`` overrides the
-    method's own filter with any preprocessing function.
+    ``image_filter`` overrides the method's own filter with any preprocessing
+    function.
 
     With hue_invariant=True the HSV hue-invariance approach is enabled on top
     of the method's filter: a global hue scale is estimated per
     (query, museum candidate) pair and the raw LAB distance is blended with
     the hue-normalized LAB distance (``hue_alpha`` weights the correction,
     ``hue_temperature`` the per-candidate confidence). ``hue_reference`` is
-    an optional cache path for the museum hue histograms.
+    an optional cache path for the museum hue histograms, which are always
+    built from the unfiltered museum images regardless of ``filter_scope``.
     """
     from k_similarity import DISTANCE_FUNCTIONS, retrieve_all_queries
 
@@ -720,8 +750,7 @@ def evaluate_folders_w3(museum_path, queries_path, method,
     descriptor_fn = lambda image: baseline_descriptor(
         image, blocks=blocks, bins=bins)
     museum = [descriptor_fn(image) for image in reference_images]
-    reference = _resolve_hue_reference(hue_reference, museum_ids,
-                                       reference_images)
+    reference = _resolve_hue_reference(hue_reference, museum_ids, raw_museum)
     museum_array = np.asarray(museum, dtype=np.float64)
     rankings = []
     for image in queries:
@@ -970,7 +999,8 @@ def build_parser():
                         help="Enable the HSV hue-invariance approach on top "
                              "of the method's filter")
     parser.add_argument("--hue-reference", type=Path, default=None,
-                        help="Cache path for the museum hue histograms "
+                        help="Cache path for the museum hue histograms, "
+                             "always built from the UNFILTERED museum "
                              "(built in memory when omitted)")
     parser.add_argument("--hue-alpha", type=float, default=DEFAULT_HUE_ALPHA,
                         help="Blend weight of the hue-normalized distance "

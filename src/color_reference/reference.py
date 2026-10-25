@@ -3,6 +3,16 @@
 The references live in their own package so they can be built, cached and
 inspected without touching the W3 noise-filter code.  The normal cache path is
 ``results/week3/color_reference/museum_hue_references.npz``.
+
+A reference must always describe the museum images as they really are, so the
+canonical source is the UNFILTERED museum (``source="raw"``). Filters change
+the per-channel color, so a reference built from filtered images would make the
+estimated hue scale depend on the filter and kernel being tested, and two runs
+with the same command would disagree depending on which cache file they
+happened to load. That is recorded in the cache and checked on load; caches
+written before the field existed are reported as ``legacy`` and refused, so
+they must be rebuilt (see
+``results/week3/color_reference/migrate_reference_provenance.py``).
 """
 
 from __future__ import annotations
@@ -20,6 +30,11 @@ from .hue import (
     hue_histogram,
 )
 
+REFERENCE_SOURCES = ("raw", "filtered")
+# Caches written before provenance existed: their origin cannot be trusted.
+LEGACY_REFERENCE_SOURCE = "legacy"
+DEFAULT_REFERENCE_SOURCE = "raw"
+
 
 @dataclass
 class HueReference:
@@ -29,10 +44,15 @@ class HueReference:
     histograms: np.ndarray
     bins: int = HUE_BINS
     saturation_threshold: int = DEFAULT_SATURATION_THRESHOLD
+    source: str = DEFAULT_REFERENCE_SOURCE
 
     def __post_init__(self):
         self.ids = tuple(str(image_id) for image_id in self.ids)
         self.histograms = np.asarray(self.histograms, dtype=np.float64)
+        if self.source not in REFERENCE_SOURCES + (LEGACY_REFERENCE_SOURCE,):
+            raise ValueError(
+                f"source must be one of {REFERENCE_SOURCES}, "
+                f"got {self.source!r}")
         if self.histograms.ndim != 2:
             raise ValueError(
                 "histograms must be a 2-D array, got "
@@ -71,6 +91,7 @@ class HueReference:
             histograms=self.histograms[order],
             bins=self.bins,
             saturation_threshold=self.saturation_threshold,
+            source=self.source,
         )
 
     def save(self, path):
@@ -82,23 +103,31 @@ class HueReference:
             histograms=self.histograms,
             bins=np.asarray(self.bins),
             saturation_threshold=np.asarray(self.saturation_threshold),
+            source=np.asarray(self.source),
         )
         return path
 
     @classmethod
     def load(cls, path):
         with np.load(Path(path), allow_pickle=False) as data:
+            # A cache without the provenance field was written before it
+            # existed: its origin is unknown, so it is reported as "legacy"
+            # and the retrieval code refuses to use it.
+            source = (str(data["source"]) if "source" in data.files
+                      else LEGACY_REFERENCE_SOURCE)
             return cls(
                 ids=tuple(str(image_id) for image_id in data["ids"]),
                 histograms=data["histograms"],
                 bins=int(data["bins"]),
                 saturation_threshold=int(data["saturation_threshold"]),
+                source=source,
             )
 
 
 def build_hue_references_from_images(ids, images,
                                      bins=HUE_BINS,
-                                     saturation_threshold=DEFAULT_SATURATION_THRESHOLD):
+                                     saturation_threshold=DEFAULT_SATURATION_THRESHOLD,
+                                     source=DEFAULT_REFERENCE_SOURCE):
     """Build references from already-loaded RGB uint8 images."""
     ids = tuple(str(image_id) for image_id in ids)
     if len(ids) != len(images):
@@ -115,14 +144,16 @@ def build_hue_references_from_images(ids, images,
         histograms=histograms,
         bins=bins,
         saturation_threshold=saturation_threshold,
+        source=source,
     )
 
 
 def build_hue_references(museum_dir, bins=HUE_BINS,
-                         saturation_threshold=DEFAULT_SATURATION_THRESHOLD):
+                         saturation_threshold=DEFAULT_SATURATION_THRESHOLD,
+                         source=DEFAULT_REFERENCE_SOURCE):
     """Build one hue reference per image in a museum folder."""
     ids, paths = _ordered_image_paths(museum_dir)
     images = [_read_rgb(path) for path in paths]
     return build_hue_references_from_images(
         ids, images, bins=bins,
-        saturation_threshold=saturation_threshold)
+        saturation_threshold=saturation_threshold, source=source)

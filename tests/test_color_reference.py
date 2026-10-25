@@ -103,6 +103,41 @@ class TestHueReference(unittest.TestCase):
         with self.assertRaises(ValueError):
             reference.reorder(("a", "b"))
 
+    def test_source_defaults_to_raw(self):
+        hist = _normalized(np.ones(180))
+        reference = HueReference(("a",), hist.reshape(1, -1))
+        self.assertEqual(reference.source, "raw")
+
+    def test_invalid_source_rejected(self):
+        hist = _normalized(np.ones(180))
+        with self.assertRaises(ValueError):
+            HueReference(("a",), hist.reshape(1, -1), source="median7x7")
+
+    def test_source_survives_save_load_and_reorder(self):
+        hist_a = _normalized([1.0, 2.0, 3.0] + [0.0] * 177)
+        hist_b = _normalized([0.0, 1.0, 1.0] + [0.0] * 177)
+        reference = HueReference(("a", "b"), np.stack([hist_a, hist_b]),
+                                 source="filtered")
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "reference.npz"
+            reference.save(path)
+            loaded = HueReference.load(path)
+        self.assertEqual(loaded.source, "filtered")
+        self.assertEqual(loaded.reorder(("b", "a")).source, "filtered")
+
+    def test_legacy_cache_without_source_loads_as_legacy(self):
+        hist_a = _normalized(np.ones(180))
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "legacy.npz"
+            np.savez_compressed(
+                path,
+                ids=np.asarray(("a",)),
+                histograms=hist_a.reshape(1, -1),
+                bins=np.asarray(180),
+                saturation_threshold=np.asarray(40))
+            loaded = HueReference.load(path)
+        self.assertEqual(loaded.source, "legacy")
+
 
 class TestRanking(unittest.TestCase):
     def _reference(self):

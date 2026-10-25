@@ -20,6 +20,8 @@ from .hue import (
     warp_hue_histogram,
 )
 from .reference import (
+    DEFAULT_REFERENCE_SOURCE,
+    REFERENCE_SOURCES,
     HueReference,
     build_hue_references,
     build_hue_references_from_images,
@@ -31,6 +33,7 @@ from .retrieval import (
 )
 
 __all__ = [
+    "DEFAULT_REFERENCE_SOURCE",
     "DEFAULT_REGULARIZATION",
     "DEFAULT_SATURATION_THRESHOLD",
     "DEFAULT_SCALE_MAX",
@@ -39,6 +42,7 @@ __all__ = [
     "HUE_BINS",
     "HueReference",
     "HueRetrievalResult",
+    "REFERENCE_SOURCES",
     "build_hue_references",
     "build_hue_references_from_images",
     "confidence_weights",
