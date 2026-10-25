@@ -45,7 +45,6 @@ from methods_w3 import (  # noqa: E402
     WAVELET_METHOD,
     average_filter,
     baseline_descriptor,
-    bilateral_filter,
     build_descriptor,
     build_image_filter,
     build_method,
@@ -55,8 +54,6 @@ from methods_w3 import (  # noqa: E402
     compute_lab_blocks_1d_histogram,
     compute_descriptors_w3,
     default_filter_specs,
-    dilate_filter,
-    erode_filter,
     evaluate_folders_w3,
     gaussian_filter,
     load_museum_descriptors_w3,
@@ -134,26 +131,28 @@ class TestW3Filters(unittest.TestCase):
         with self.assertRaises(AssertionError):
             median_filter(_red_rgb(), ksize=2)
 
-    def test_morphology_shapes_and_direction(self):
+    def test_morphology_shapes(self):
         gray = np.zeros((7, 7), dtype=np.uint8)
         gray[3, 3] = 255
-        self.assertGreaterEqual(
-            int(dilate_filter(gray, 3).sum()), int(gray.sum()))
-        self.assertLessEqual(
-            int(erode_filter(gray, 3).sum()), int(gray.sum()))
         self.assertEqual(open_filter(gray, 3).shape, gray.shape)
         self.assertEqual(close_filter(gray, 3).shape, gray.shape)
-        self.assertEqual(morphology_filter(gray, "dilate").dtype, np.uint8)
+        self.assertEqual(open_filter(gray, 3).dtype, np.uint8)
+        self.assertEqual(close_filter(gray, 3).dtype, np.uint8)
+        self.assertEqual(morphology_filter(gray, "open").dtype, np.uint8)
         for operation in MORPH_OPERATIONS:
             self.assertEqual(
                 morphology_filter(_red_rgb(), operation).shape,
                 _red_rgb().shape)
         with self.assertRaises(ValueError):
             morphology_filter(gray, "not-an-operation")
+        with self.assertRaises(ValueError):
+            morphology_filter(gray, "dilate")
+        with self.assertRaises(ValueError):
+            morphology_filter(gray, "erode")
 
     def test_morphology_rejects_bad_ksize(self):
         with self.assertRaises(AssertionError):
-            morphology_filter(np.zeros((5, 5), np.uint8), "dilate", ksize=2)
+            morphology_filter(np.zeros((5, 5), np.uint8), "open", ksize=2)
 
     def test_average_shapes(self):
         rgb = _red_rgb()
@@ -163,11 +162,6 @@ class TestW3Filters(unittest.TestCase):
         self.assertEqual(average_filter(gray, 5).shape, gray.shape)
         with self.assertRaises(AssertionError):
             average_filter(rgb, ksize=4)
-
-    def test_bilateral_shapes(self):
-        rgb = _red_rgb()
-        self.assertEqual(bilateral_filter(rgb, 5).shape, rgb.shape)
-        self.assertEqual(bilateral_filter(rgb, 5).dtype, np.uint8)
 
     def test_gaussian_shapes(self):
         rgb = _red_rgb()
@@ -259,9 +253,14 @@ class TestW3Descriptors(unittest.TestCase):
     def test_sweep_specs(self):
         specs = default_filter_specs()
         self.assertEqual(specs[0], ("none", 1))
+        self.assertEqual(
+            set(IMAGE_FILTERS),
+            {"none", "average", "median", "gaussian", "wavelet_lowpass",
+             "open", "close", "open+close", "close+open"})
+        for name, _ in specs:
+            self.assertIn(name, IMAGE_FILTERS)
         self.assertIn(("average", AVERAGE_SWEEP_SIZES[0]), specs)
         self.assertIn(("median", 7), specs)
-        self.assertIn(("bilateral", 7), specs)
         self.assertIn(("gaussian", GAUSSIAN_SWEEP_SIZES[0]), specs)
         for operation in MORPH_OPERATIONS:
             self.assertIn((operation, 3), specs)

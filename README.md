@@ -271,7 +271,7 @@ clean reference copies and is not used as query input.
 
 | File | Content |
 |---|---|
-| `methods_w3.py` | Task 1: median filter for the queries |
+| `methods_w3.py` | Task 1: query filters (Median, Open, Close, Open+Close, Close+Open, Average, Gaussian, Low-pass Wavelet) plus the HSV hue-invariance mode |
 | `paintings_w3.py` | Task 2: texture descriptors (LBP, Multiscale LBP, DCT, Wavelet, and the improved DCT log and Texture fusion); Tasks 3, 4 and 5: multi-painting segmentation, retrieval per painting, blind submission |
 
 `paintings_w3.py` reuses the W2 wall model, ranking, mask evaluation and
@@ -281,9 +281,11 @@ of Task 1 stays in `methods_w3.py` and is selected with `--query-filter`.
 
 ### Task 1: Noise Filtering
 
-`methods_w3.py` implements a non-linear median filter, applied per channel
-(`median_filter`, default 3x3). It is applied **only to the queries**; museum
-images are never filtered, so the museum descriptors stay the same.
+`methods_w3.py` registers one `Lab blocks 1D <filter>` method per filter
+(Median, Open, Close, Open+Close, Close+Open, Average, Gaussian, Low-pass
+Wavelet) sharing a `--kernel` size, plus an HSV hue-invariance mode
+(`--hue-invariant`). Filters are applied **only to the queries** by default;
+museum images are never filtered, so the museum descriptors stay the same.
 
 ```powershell
 python src/methods_w3.py --museum data/BBDD --queries data/qsd1_w3 --method all --ground-truth data/qsd1_w3/gt_corresps.pkl

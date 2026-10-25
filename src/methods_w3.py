@@ -16,11 +16,10 @@ Both use the W2 configuration: CIE-Lab, 32 bins per channel, 5x5 = 25
 spatial cells, L1-normalized histograms and the L1 distance.
 
 Besides the median filter, the module exposes linear Average and Gaussian
-filters, an edge-preserving bilateral filter, per-channel morphological
-dilation, erosion, opening and closing, chained opening+closing in both
-orders and a low-pass wavelet filter (keep the approximation coefficients,
-zero the details). Filters can be chained with "+" (for example
-"median+open"). These are query-side candidates for the same Task 1
+filters, per-channel morphological opening and closing, chained opening+closing
+in both orders and a low-pass wavelet filter (keep the approximation
+coefficients, zero the details). Filters can be chained with "+" (for example
+"open+close"). These are query-side candidates for the same Task 1
 comparison; pass ``--filter-scope both`` to apply the same filter to the
 references too. Every filter is registered as a ``"Lab blocks 1D <filter>"``
 method sharing one ``--kernel`` size parameter (the wavelet uses
@@ -38,7 +37,7 @@ Run as a script (argparse selects the action):
     python methods_w3.py --museum <dir> --queries <dir> --method all \
         --ground-truth <pkl>
     python methods_w3.py --museum <dir> --queries <dir> --method NAME \
-        --pre-filter {none,average,median,bilateral,gaussian,wavelet_lowpass,dilate,erode,open,close,open+close,close+open} \
+        --pre-filter {none,average,median,gaussian,wavelet_lowpass,open,close,open+close,close+open} \
         --kernel SIZE [--wavelet-level LEVEL] [--filter-scope {query,both}] \
         [--hue-invariant [--hue-reference <npz>]] [--ground-truth <pkl>]
     python methods_w3.py --museum <dir> --queries <dir> --sweep \
@@ -70,8 +69,6 @@ DEFAULT_BLOCKS = 25
 DEFAULT_AVERAGE_KSIZE = 3
 DEFAULT_MEDIAN_KSIZE = 3
 DEFAULT_MORPH_KSIZE = 3
-DEFAULT_BILATERAL_KSIZE = 7
-DEFAULT_BILATERAL_SIGMA = 50
 DEFAULT_GAUSSIAN_KSIZE = 3
 DEFAULT_GAUSSIAN_SIGMA = 0
 DEFAULT_WAVELET = "db2"
@@ -82,17 +79,16 @@ DEFAULT_HUE_TEMPERATURE = 1.0
 FILTER_SCOPES = ("query", "both")
 DEFAULT_FILTER_SCOPE = "query"
 
-MORPH_OPERATIONS = ("dilate", "erode", "open", "close")
+MORPH_OPERATIONS = ("open", "close")
 WAVELET_FILTER_NAMES = ("wavelet", "wavelet_lowpass")
 IMAGE_FILTERS = (
-    "none", "average", "median", "bilateral", "gaussian",
+    "none", "average", "median", "gaussian",
     "wavelet_lowpass", "open+close", "close+open",
 ) + MORPH_OPERATIONS
 AVERAGE_SWEEP_SIZES = (3, 5, 7, 9, 11, 13, 15)
 MEDIAN_SWEEP_SIZES = (3, 5, 7, 9, 11, 13, 15, 17, 19, 21)
 MORPH_SWEEP_SIZES = (3, 5)
 CHAIN_SWEEP_SIZES = (3, 5, 7, 9, 11)
-BILATERAL_SWEEP_SIZES = (5, 7, 9)
 GAUSSIAN_SWEEP_SIZES = (3, 5, 7, 9, 11, 13, 15)
 WAVELET_SWEEP_LEVELS = (1, 2, 3)
 
@@ -231,7 +227,7 @@ def _check_morph_ksize(ksize):
 def morphology_filter(img_rgb, operation, ksize=DEFAULT_MORPH_KSIZE):
     """Morphological filter applied per channel.
 
-    operation: "dilate", "erode", "open" or "close". The structuring element
+    operation: "open" or "close". The structuring element
     is an ellipse of size ksize x ksize. Works on grayscale HxW or RGB HxWx3
     uint8 images and keeps the shape and dtype.
     """
@@ -244,10 +240,6 @@ def morphology_filter(img_rgb, operation, ksize=DEFAULT_MORPH_KSIZE):
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (ksize, ksize))
 
     def apply(channel):
-        if operation == "dilate":
-            return cv2.dilate(channel, kernel)
-        if operation == "erode":
-            return cv2.erode(channel, kernel)
         code = cv2.MORPH_OPEN if operation == "open" else cv2.MORPH_CLOSE
         return cv2.morphologyEx(channel, code, kernel)
 
@@ -262,16 +254,6 @@ def morphology_filter(img_rgb, operation, ksize=DEFAULT_MORPH_KSIZE):
     return np.stack(channels, axis=-1)
 
 
-def dilate_filter(img_rgb, ksize=DEFAULT_MORPH_KSIZE):
-    """Morphological dilation (expands bright regions)."""
-    return morphology_filter(img_rgb, "dilate", ksize)
-
-
-def erode_filter(img_rgb, ksize=DEFAULT_MORPH_KSIZE):
-    """Morphological erosion (expands dark regions)."""
-    return morphology_filter(img_rgb, "erode", ksize)
-
-
 def open_filter(img_rgb, ksize=DEFAULT_MORPH_KSIZE):
     """Morphological opening: erosion followed by dilation."""
     return morphology_filter(img_rgb, "open", ksize)
@@ -282,26 +264,8 @@ def close_filter(img_rgb, ksize=DEFAULT_MORPH_KSIZE):
     return morphology_filter(img_rgb, "close", ksize)
 
 
-dilation_filter = dilate_filter
-erosion_filter = erode_filter
 opening_filter = open_filter
 closing_filter = close_filter
-
-
-def bilateral_filter(img_rgb, ksize=DEFAULT_BILATERAL_KSIZE,
-                     sigma_color=DEFAULT_BILATERAL_SIGMA,
-                     sigma_space=DEFAULT_BILATERAL_SIGMA):
-    """Edge-preserving bilateral filter for a grayscale or RGB uint8 image."""
-    assert (isinstance(ksize, int) and not isinstance(ksize, bool)
-            and ksize >= 1 and ksize % 2 == 1), (
-        f"bilateral ksize must be an odd integer >= 1, got {ksize!r}")
-    image = np.asarray(img_rgb)
-    assert image.dtype == np.uint8, (
-        f"bilateral_filter expects a uint8 image, got {image.dtype}")
-    assert image.ndim in (2, 3), (
-        f"bilateral_filter expects HxW or HxWxC, got shape {image.shape}")
-    return cv2.bilateralFilter(
-        image, ksize, sigma_color, sigma_space)
 
 
 def gaussian_filter(img_rgb, ksize=DEFAULT_GAUSSIAN_KSIZE,
@@ -402,8 +366,6 @@ def build_image_filter(name, ksize=None, wavelet=DEFAULT_WAVELET,
         "identity": "none",
         "mean": "average",
         "box": "average",
-        "dilation": "dilate",
-        "erosion": "erode",
         "opening": "open",
         "closing": "close",
         "wavelet": "wavelet_lowpass",
@@ -430,9 +392,6 @@ def build_image_filter(name, ksize=None, wavelet=DEFAULT_WAVELET,
     if key == "median":
         ksize = DEFAULT_MEDIAN_KSIZE if ksize is None else ksize
         return lambda image: median_filter(image, ksize=ksize)
-    if key == "bilateral":
-        ksize = DEFAULT_BILATERAL_KSIZE if ksize is None else ksize
-        return lambda image: bilateral_filter(image, ksize=ksize)
     if key == "gaussian":
         ksize = DEFAULT_GAUSSIAN_KSIZE if ksize is None else ksize
         return lambda image: gaussian_filter(image, ksize=ksize)
@@ -813,7 +772,7 @@ def evaluate_all_folders_w3(museum_path, queries_path,
 def default_filter_specs(median_sizes=None, morph_sizes=None,
                          chain_sizes=None, wavelet_levels=None):
     """Filter grid for the sweep: baseline, average, median, Gaussian,
-    bilateral, morphology, chained open+close / close+open and low-pass
+    morphology (open/close), chained open+close / close+open and low-pass
     wavelet levels."""
     median_sizes = (MEDIAN_SWEEP_SIZES if median_sizes is None
                     else tuple(median_sizes))
@@ -827,7 +786,6 @@ def default_filter_specs(median_sizes=None, morph_sizes=None,
     specs += [("average", ksize) for ksize in AVERAGE_SWEEP_SIZES]
     specs += [("median", ksize) for ksize in median_sizes]
     specs += [("gaussian", ksize) for ksize in GAUSSIAN_SWEEP_SIZES]
-    specs += [("bilateral", ksize) for ksize in BILATERAL_SWEEP_SIZES]
     specs += [(operation, ksize) for operation in MORPH_OPERATIONS
               for ksize in morph_sizes]
     specs += [("open+close", ksize) for ksize in chain_sizes]
