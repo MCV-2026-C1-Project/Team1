@@ -420,14 +420,16 @@ reasons are the following hypotheses:
    or development set, instead of assuming that the winner of one experiment
    transfers to the next.
 
-The texture descriptors of Task 2 use only the grayscale image, so
-hue-invariance does not apply to them.
+The texture descriptors of Task 2 use only the grayscale image, so the
+HSV hue-invariance step is not used for them. Grayscale conversion alone does
+not guarantee invariance to hue changes.
 
 ### Task 2: Texture Descriptors
 
-All descriptors work on the grayscale image, so the random hue changes of the
-W3 queries cannot affect them. The image is split into 5x5 = 25 blocks and the
-block features are concatenated, which keeps the position of the texture.
+All descriptors extract texture features from the grayscale image rather than
+explicit color histograms. Hue changes can still change the converted gray
+levels. The image is split into 5x5 = 25 blocks and the block features are
+concatenated, which keeps the position of the texture.
 
 | Method | Description | Size |
 |---|---|---:|
@@ -479,11 +481,11 @@ Observations:
 - **`DCT log` and `Texture fusion` are the most robust.** They find the right
   painting at rank 1 for all 30 queries with no filter and with the median,
   average, Gaussian and wavelet filters; only Open+Close 7x7 lowers `DCT log`
-  to 0.967. The noise and the hue changes of QSD1-W3 do not affect them, and
-  plain `DCT` is also stable (0.933-0.967). A likely reason is that the DCT
-  parts keep only the first 15 zig-zag coefficients of each block, which are
-  low frequencies, and the filters mostly change the high frequencies. The
-  fusion inherits this stability from its `DCT log` part.
+  to 0.967. These results show robust retrieval on the noisy, hue-modified
+  QSD1-W3 queries; plain `DCT` is also stable (0.933-0.967). A likely reason is
+  that the DCT parts keep only the first 15 zig-zag coefficients of each block,
+  which are low frequencies, and the filters mostly change the high frequencies.
+  The fusion inherits this stability from its `DCT log` part.
 - **The LBP histograms get worse as the smoothing gets stronger.** Plain LBP
   goes from 0.800 (no filter) to 0.600 (median), 0.500 (average, Gaussian),
   0.300 (wavelet) and 0.233 (Open+Close). The code of a pixel depends on the
@@ -536,8 +538,9 @@ Why each step is there:
 - **Unit L2 norm per part.** The three parts have very different sizes (375,
   10925, 225 values) and scales. Without this step the long LBP part would
   dominate the distance; with it, each part contributes comparably.
-- **Grayscale only.** The queries have random hue changes, so color is not used.
-  LBP is also invariant to any monotonic change of the gray levels.
+- **Grayscale only.** No explicit color descriptor is used, although hue changes
+  can still affect the gray levels. LBP is invariant to strictly increasing
+  transformations of the gray levels.
 
 Why the fusion works: the three parts are complementary. The DCT describes
 global frequency content per block, LBP describes the local structure of the
@@ -665,10 +668,10 @@ Per descriptor, L1, 3x3 median on the queries (`--method all`):
 Without a filter, the first run gave `LBP` 0.6154, `LBP uniform`
 0.5641, `Multiscale LBP` 0.6410, `DCT` 0.7436 and `Wavelet` 0.6923 (mAP@1). The
 median filter helps Multiscale LBP (+0.077) and lowers LBP uniform (-0.051).
-With the median filter, `Texture fusion` is 0.18 above the best single
-descriptor. Of the 39 paintings, 36 are correct at rank 1; the missing ones
-come from the image with a wrong painting count and from weak masks, so
-segmentation is now the main limit.
+With the median filter, `Texture fusion` is 0.154 above `DCT log`, the best single
+descriptor (mAP@1: 0.9231 vs. 0.7692). Of the 39 paintings, 36 are correct at
+rank 1; the missing ones come from the image with a wrong painting count and
+from weak masks, so segmentation is now the main limit.
 
 #### Discussion: why the filter matters, and why the median wins
 
