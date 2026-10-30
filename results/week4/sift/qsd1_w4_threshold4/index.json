@@ -1,0 +1,790 @@
+{
+  "schema_version": 1,
+  "method": "SIFT",
+  "nfeatures": 1000,
+  "opencv_version": "4.13.0",
+  "role": "queries",
+  "source_folder": "/home/asingh/Desktop/uni/Master/C1/datasets/dev_set/P4/qsd1_w4",
+  "preprocessing": "grayscale; no extra denoising or resizing",
+  "coordinate_system": "keypoints relative to each crop",
+  "images": [
+    {
+      "image_id": 0,
+      "source_path": "/home/asingh/Desktop/uni/Master/C1/datasets/dev_set/P4/qsd1_w4/00000.jpg",
+      "image_shape": [
+        3686,
+        2110,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            64,
+            46,
+            2046,
+            3650
+          ],
+          "feature_file": "00000_painting0.npz",
+          "keypoint_count": 1000
+        }
+      ]
+    },
+    {
+      "image_id": 1,
+      "source_path": "/home/asingh/Desktop/uni/Master/C1/datasets/dev_set/P4/qsd1_w4/00001.jpg",
+      "image_shape": [
+        732,
+        544,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            29,
+            56,
+            480,
+            634
+          ],
+          "feature_file": "00001_painting0.npz",
+          "keypoint_count": 1000
+        }
+      ]
+    },
+    {
+      "image_id": 2,
+      "source_path": "/home/asingh/Desktop/uni/Master/C1/datasets/dev_set/P4/qsd1_w4/00002.jpg",
+      "image_shape": [
+        506,
+        864,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            34,
+            36,
+            411,
+            474
+          ],
+          "feature_file": "00002_painting0.npz",
+          "keypoint_count": 631
+        },
+        {
+          "painting_index": 1,
+          "box": [
+            449,
+            21,
+            854,
+            489
+          ],
+          "feature_file": "00002_painting1.npz",
+          "keypoint_count": 227
+        }
+      ]
+    },
+    {
+      "image_id": 3,
+      "source_path": "/home/asingh/Desktop/uni/Master/C1/datasets/dev_set/P4/qsd1_w4/00003.jpg",
+      "image_shape": [
+        409,
+        474,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            31,
+            30,
+            461,
+            353
+          ],
+          "feature_file": "00003_painting0.npz",
+          "keypoint_count": 450
+        }
+      ]
+    },
+    {
+      "image_id": 4,
+      "source_path": "/home/asingh/Desktop/uni/Master/C1/datasets/dev_set/P4/qsd1_w4/00004.jpg",
+      "image_shape": [
+        2352,
+        1514,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            47,
+            58,
+            1491,
+            2352
+          ],
+          "feature_file": "00004_painting0.npz",
+          "keypoint_count": 1000
+        }
+      ]
+    },
+    {
+      "image_id": 5,
+      "source_path": "/home/asingh/Desktop/uni/Master/C1/datasets/dev_set/P4/qsd1_w4/00005.jpg",
+      "image_shape": [
+        2061,
+        1679,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            66,
+            46,
+            1576,
+            2020
+          ],
+          "feature_file": "00005_painting0.npz",
+          "keypoint_count": 1000
+        }
+      ]
+    },
+    {
+      "image_id": 6,
+      "source_path": "/home/asingh/Desktop/uni/Master/C1/datasets/dev_set/P4/qsd1_w4/00006.jpg",
+      "image_shape": [
+        801,
+        554,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            204,
+            34,
+            472,
+            339
+          ],
+          "feature_file": "00006_painting0.npz",
+          "keypoint_count": 677
+        },
+        {
+          "painting_index": 1,
+          "box": [
+            48,
+            360,
+            476,
+            789
+          ],
+          "feature_file": "00006_painting1.npz",
+          "keypoint_count": 176
+        }
+      ]
+    },
+    {
+      "image_id": 7,
+      "source_path": "/home/asingh/Desktop/uni/Master/C1/datasets/dev_set/P4/qsd1_w4/00007.jpg",
+      "image_shape": [
+        2558,
+        1409,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            19,
+            38,
+            1371,
+            2495
+          ],
+          "feature_file": "00007_painting0.npz",
+          "keypoint_count": 1000
+        }
+      ]
+    },
+    {
+      "image_id": 8,
+      "source_path": "/home/asingh/Desktop/uni/Master/C1/datasets/dev_set/P4/qsd1_w4/00008.jpg",
+      "image_shape": [
+        660,
+        515,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            62,
+            56,
+            478,
+            646
+          ],
+          "feature_file": "00008_painting0.npz",
+          "keypoint_count": 416
+        }
+      ]
+    },
+    {
+      "image_id": 9,
+      "source_path": "/home/asingh/Desktop/uni/Master/C1/datasets/dev_set/P4/qsd1_w4/00009.jpg",
+      "image_shape": [
+        629,
+        1102,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            46,
+            35,
+            637,
+            618
+          ],
+          "feature_file": "00009_painting0.npz",
+          "keypoint_count": 1000
+        },
+        {
+          "painting_index": 1,
+          "box": [
+            807,
+            162,
+            1050,
+            453
+          ],
+          "feature_file": "00009_painting1.npz",
+          "keypoint_count": 249
+        }
+      ]
+    },
+    {
+      "image_id": 10,
+      "source_path": "/home/asingh/Desktop/uni/Master/C1/datasets/dev_set/P4/qsd1_w4/00010.jpg",
+      "image_shape": [
+        678,
+        1376,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            17,
+            68,
+            479,
+            644
+          ],
+          "feature_file": "00010_painting0.npz",
+          "keypoint_count": 704
+        },
+        {
+          "painting_index": 1,
+          "box": [
+            663,
+            37,
+            1315,
+            661
+          ],
+          "feature_file": "00010_painting1.npz",
+          "keypoint_count": 1000
+        }
+      ]
+    },
+    {
+      "image_id": 11,
+      "source_path": "/home/asingh/Desktop/uni/Master/C1/datasets/dev_set/P4/qsd1_w4/00011.jpg",
+      "image_shape": [
+        1929,
+        3199,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            47,
+            24,
+            3136,
+            1889
+          ],
+          "feature_file": "00011_painting0.npz",
+          "keypoint_count": 1000
+        }
+      ]
+    },
+    {
+      "image_id": 12,
+      "source_path": "/home/asingh/Desktop/uni/Master/C1/datasets/dev_set/P4/qsd1_w4/00012.jpg",
+      "image_shape": [
+        1604,
+        1645,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            78,
+            32,
+            1580,
+            1543
+          ],
+          "feature_file": "00012_painting0.npz",
+          "keypoint_count": 1000
+        }
+      ]
+    },
+    {
+      "image_id": 13,
+      "source_path": "/home/asingh/Desktop/uni/Master/C1/datasets/dev_set/P4/qsd1_w4/00013.jpg",
+      "image_shape": [
+        667,
+        731,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            51,
+            0,
+            731,
+            624
+          ],
+          "feature_file": "00013_painting0.npz",
+          "keypoint_count": 240
+        }
+      ]
+    },
+    {
+      "image_id": 14,
+      "source_path": "/home/asingh/Desktop/uni/Master/C1/datasets/dev_set/P4/qsd1_w4/00014.jpg",
+      "image_shape": [
+        2414,
+        3646,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            27,
+            45,
+            3592,
+            2369
+          ],
+          "feature_file": "00014_painting0.npz",
+          "keypoint_count": 1000
+        }
+      ]
+    },
+    {
+      "image_id": 15,
+      "source_path": "/home/asingh/Desktop/uni/Master/C1/datasets/dev_set/P4/qsd1_w4/00015.jpg",
+      "image_shape": [
+        723,
+        561,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            21,
+            25,
+            538,
+            707
+          ],
+          "feature_file": "00015_painting0.npz",
+          "keypoint_count": 1000
+        }
+      ]
+    },
+    {
+      "image_id": 16,
+      "source_path": "/home/asingh/Desktop/uni/Master/C1/datasets/dev_set/P4/qsd1_w4/00016.jpg",
+      "image_shape": [
+        555,
+        930,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            9,
+            53,
+            356,
+            497
+          ],
+          "feature_file": "00016_painting0.npz",
+          "keypoint_count": 35
+        }
+      ]
+    },
+    {
+      "image_id": 17,
+      "source_path": "/home/asingh/Desktop/uni/Master/C1/datasets/dev_set/P4/qsd1_w4/00017.jpg",
+      "image_shape": [
+        1378,
+        3314,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            57,
+            182,
+            3174,
+            1345
+          ],
+          "feature_file": "00017_painting0.npz",
+          "keypoint_count": 1000
+        }
+      ]
+    },
+    {
+      "image_id": 18,
+      "source_path": "/home/asingh/Desktop/uni/Master/C1/datasets/dev_set/P4/qsd1_w4/00018.jpg",
+      "image_shape": [
+        306,
+        1003,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            47,
+            42,
+            474,
+            244
+          ],
+          "feature_file": "00018_painting0.npz",
+          "keypoint_count": 209
+        },
+        {
+          "painting_index": 1,
+          "box": [
+            626,
+            10,
+            961,
+            301
+          ],
+          "feature_file": "00018_painting1.npz",
+          "keypoint_count": 386
+        }
+      ]
+    },
+    {
+      "image_id": 19,
+      "source_path": "/home/asingh/Desktop/uni/Master/C1/datasets/dev_set/P4/qsd1_w4/00019.jpg",
+      "image_shape": [
+        1804,
+        2717,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            33,
+            0,
+            2690,
+            1743
+          ],
+          "feature_file": "00019_painting0.npz",
+          "keypoint_count": 1000
+        }
+      ]
+    },
+    {
+      "image_id": 20,
+      "source_path": "/home/asingh/Desktop/uni/Master/C1/datasets/dev_set/P4/qsd1_w4/00020.jpg",
+      "image_shape": [
+        851,
+        754,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            289,
+            36,
+            693,
+            366
+          ],
+          "feature_file": "00020_painting0.npz",
+          "keypoint_count": 194
+        },
+        {
+          "painting_index": 1,
+          "box": [
+            42,
+            397,
+            693,
+            792
+          ],
+          "feature_file": "00020_painting1.npz",
+          "keypoint_count": 568
+        }
+      ]
+    },
+    {
+      "image_id": 21,
+      "source_path": "/home/asingh/Desktop/uni/Master/C1/datasets/dev_set/P4/qsd1_w4/00021.jpg",
+      "image_shape": [
+        1309,
+        2267,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            79,
+            73,
+            2211,
+            1247
+          ],
+          "feature_file": "00021_painting0.npz",
+          "keypoint_count": 1000
+        }
+      ]
+    },
+    {
+      "image_id": 22,
+      "source_path": "/home/asingh/Desktop/uni/Master/C1/datasets/dev_set/P4/qsd1_w4/00022.jpg",
+      "image_shape": [
+        648,
+        298,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            17,
+            53,
+            281,
+            637
+          ],
+          "feature_file": "00022_painting0.npz",
+          "keypoint_count": 1000
+        }
+      ]
+    },
+    {
+      "image_id": 23,
+      "source_path": "/home/asingh/Desktop/uni/Master/C1/datasets/dev_set/P4/qsd1_w4/00023.jpg",
+      "image_shape": [
+        2146,
+        1551,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            37,
+            42,
+            1503,
+            2098
+          ],
+          "feature_file": "00023_painting0.npz",
+          "keypoint_count": 1000
+        }
+      ]
+    },
+    {
+      "image_id": 24,
+      "source_path": "/home/asingh/Desktop/uni/Master/C1/datasets/dev_set/P4/qsd1_w4/00024.jpg",
+      "image_shape": [
+        728,
+        1981,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            24,
+            54,
+            798,
+            689
+          ],
+          "feature_file": "00024_painting0.npz",
+          "keypoint_count": 1000
+        },
+        {
+          "painting_index": 1,
+          "box": [
+            1049,
+            29,
+            1967,
+            719
+          ],
+          "feature_file": "00024_painting1.npz",
+          "keypoint_count": 1000
+        }
+      ]
+    },
+    {
+      "image_id": 25,
+      "source_path": "/home/asingh/Desktop/uni/Master/C1/datasets/dev_set/P4/qsd1_w4/00025.jpg",
+      "image_shape": [
+        449,
+        418,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            0,
+            15,
+            397,
+            421
+          ],
+          "feature_file": "00025_painting0.npz",
+          "keypoint_count": 516
+        }
+      ]
+    },
+    {
+      "image_id": 26,
+      "source_path": "/home/asingh/Desktop/uni/Master/C1/datasets/dev_set/P4/qsd1_w4/00026.jpg",
+      "image_shape": [
+        2555,
+        3277,
+        3
+      ],
+      "segmentation_fallback": true,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            0,
+            0,
+            3277,
+            2555
+          ],
+          "feature_file": "00026_painting0.npz",
+          "keypoint_count": 1001
+        }
+      ]
+    },
+    {
+      "image_id": 27,
+      "source_path": "/home/asingh/Desktop/uni/Master/C1/datasets/dev_set/P4/qsd1_w4/00027.jpg",
+      "image_shape": [
+        549,
+        695,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            45,
+            33,
+            695,
+            508
+          ],
+          "feature_file": "00027_painting0.npz",
+          "keypoint_count": 1001
+        }
+      ]
+    },
+    {
+      "image_id": 28,
+      "source_path": "/home/asingh/Desktop/uni/Master/C1/datasets/dev_set/P4/qsd1_w4/00028.jpg",
+      "image_shape": [
+        843,
+        563,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            40,
+            25,
+            504,
+            403
+          ],
+          "feature_file": "00028_painting0.npz",
+          "keypoint_count": 512
+        },
+        {
+          "painting_index": 1,
+          "box": [
+            16,
+            440,
+            538,
+            831
+          ],
+          "feature_file": "00028_painting1.npz",
+          "keypoint_count": 199
+        }
+      ]
+    },
+    {
+      "image_id": 29,
+      "source_path": "/home/asingh/Desktop/uni/Master/C1/datasets/dev_set/P4/qsd1_w4/00029.jpg",
+      "image_shape": [
+        2666,
+        2740,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            137,
+            95,
+            2651,
+            2571
+          ],
+          "feature_file": "00029_painting0.npz",
+          "keypoint_count": 1000
+        }
+      ]
+    }
+  ]
+}
