@@ -1,4 +1,4 @@
-"""Week 4: match saved SIFT features and visualize verified matches."""
+""" Match saved SIFT features and visualize verified matches."""
 
 import argparse
 import json
