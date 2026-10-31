@@ -319,6 +319,23 @@ def zigzag_order(size):
     return np.array(rows), np.array(cols)
 
 
+@lru_cache(maxsize=None)
+def _dct_basis(size):
+    """Orthonormal DCT-II basis, also for odd block sizes."""
+    frequency = np.arange(size, dtype=np.float64)[:, None]
+    position = np.arange(size, dtype=np.float64)[None, :]
+    basis = np.sqrt(2.0 / size) * np.cos(np.pi * frequency * (position + .5) / size)
+    basis[0] /= np.sqrt(2.0)
+    return basis
+
+
+def _dct2(block):
+    # Some OpenCV builds reject odd sizes; W3 uses 51x51 blocks.
+    if any(side % 2 for side in block.shape):
+        return _dct_basis(block.shape[0]) @ block @ _dct_basis(block.shape[1]).T
+    return cv2.dct(np.ascontiguousarray(block))
+
+
 def dct_descriptor(img_rgb, blocks=DEFAULT_BLOCKS, n_coeffs=DEFAULT_DCT_COEFFS,
                    size=DEFAULT_SIZE):
     """Block DCT: 2D DCT per block, zig-zag scan, first N coefficients.
@@ -336,7 +353,7 @@ def dct_descriptor(img_rgb, blocks=DEFAULT_BLOCKS, n_coeffs=DEFAULT_DCT_COEFFS,
     keep = slice(1, 1 + n_coeffs)            # skip the DC term
     features = []
     for y0, y1, x0, x1 in _grid_cells(gray.shape, grid):
-        coeffs = cv2.dct(np.ascontiguousarray(gray[y0:y1, x0:x1]))
+        coeffs = _dct2(gray[y0:y1, x0:x1])
         features.append(coeffs[rows, cols][keep])
     return np.concatenate(features).astype(np.float64)
 

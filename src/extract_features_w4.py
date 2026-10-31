@@ -2,6 +2,7 @@
 
 import argparse
 import json
+from dataclasses import asdict
 from pathlib import Path
 
 import cv2
@@ -45,6 +46,7 @@ def extract_folder(
     is_query=False,
     nfeatures=1000,
     limit=None,
+    segmentation_threshold=4.0,
 ):
     """Save features for every museum image or detected query painting."""
 
@@ -53,6 +55,12 @@ def extract_folder(
 
     if limit is not None and limit < 1:
         raise ValueError("limit must be positive")
+
+    if segmentation_threshold is not None and segmentation_threshold <= 0:
+        raise ValueError("segmentation_threshold must be positive")
+    params = PaintingParams()
+    if segmentation_threshold is not None:
+        params.thr_min = params.thr_max = segmentation_threshold
 
     image_ids, paths = _ordered_image_paths(folder)
 
@@ -65,7 +73,7 @@ def extract_folder(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     index = {
-        "schema_version": 1,
+        "schema_version": 2,
         "method": "SIFT",
         "nfeatures": nfeatures,
         "opencv_version": cv2.__version__,
@@ -73,6 +81,7 @@ def extract_folder(
         "source_folder": str(Path(folder).resolve()),
         "preprocessing": "grayscale; no extra denoising or resizing",
         "coordinate_system": "keypoints relative to each crop",
+        "segmentation": asdict(params) if is_query else None,
         "images": [],
     }
 
@@ -86,13 +95,7 @@ def extract_folder(
         fallback = False
 
         if is_query:
-            # Reuse Week 3 detection.
-            # Boxes use (x0, y0, x1, y1), with exclusive right/bottom.
-            # _, boxes = segment_paintings(image_rgb)
-            _, boxes = segment_paintings(
-                image_rgb,
-                params=PaintingParams(thr_min=4.0, thr_max=4.0),
-            )
+            _, boxes = segment_paintings(image_rgb, params=params)
 
             if not boxes:
                 # Keep the query represented even if segmentation fails.
@@ -182,6 +185,8 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--nfeatures", type=int, default=1000)
     parser.add_argument("--limit", type=int, default=None)
+    parser.add_argument("--segmentation-threshold", type=float, default=4.0,
+                        help="Fixed wall-distance threshold for query crops")
 
     args = parser.parse_args()
 
@@ -194,6 +199,7 @@ def main():
         is_query=is_query,
         nfeatures=args.nfeatures,
         limit=args.limit,
+        segmentation_threshold=args.segmentation_threshold,
     )
 
 

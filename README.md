@@ -774,3 +774,133 @@ python src/paintings_w3.py --museum data/BBDD --queries data/qst2_w3 --backgroun
 
 Only these files are delivered; `segmentation.json` and `retrieval.json` in the
 same folders are for our own records.
+
+---
+
+## Week 4
+
+QSD1-W4 contains 30 queries and 39 paintings: 29 belong to the museum and
+10 are unknown (`-1`). We use the JPG files directly in `data/qsd1_w4`,
+not the clean copies in `non_augmented/`. Museum images are in `data/BBDD`.
+
+### Tasks 1 and 2: SIFT and Matching
+
+`keypoints_w4.py` extracts SIFT descriptors from grayscale images, with
+`nfeatures=1000`. `extract_features_w4.py` processes the museum and each
+detected query crop, saving descriptors, keypoint coordinates and crop boxes.
+Query segmentation reuses the W3 wall model with a fixed distance threshold
+of 4. The original adaptive threshold and fixed thresholds 3, 4, 5 and 6 were
+compared on QSD1-W4:
+
+| Segmentation | Mask precision | Mask recall | Mask F1 | Correct painting count |
+|---|---:|---:|---:|---:|
+| W3 adaptive | 0.9036 | 0.8020 | 0.8358 | 25/30 |
+| Fixed threshold 3 | 0.8724 | 0.9630 | 0.9140 | 27/30 |
+| **Fixed threshold 4** | **0.9103** | **0.9424** | **0.9244** | **28/30** |
+| Fixed threshold 5 | 0.9267 | 0.8961 | 0.9050 | 26/30 |
+| Fixed threshold 6 | 0.8991 | 0.7786 | 0.8099 | 22/30 |
+
+Threshold 4 gives the best mask F1 and painting count among these settings.
+If no painting is found, the whole image is used as a fallback. This happens
+on query 00026. A fallback is still a prediction, so retrieval count accuracy
+can differ from the segmentation count in this table.
+
+```bash
+python src/extract_features_w4.py --museum data/BBDD --output results/week4/sift/museum
+python src/extract_features_w4.py --queries data/qsd1_w4 --segmentation-threshold 4 --output results/week4/sift/qsd1_w4_threshold4
+```
+
+`matching_w4.py` compares SIFT vectors with L2 distance and a nearest-neighbour
+ratio test of 0.75. A museum descriptor can be matched only once. Pairs with
+at least 8 tentative matches are checked with a RANSAC homography. Coordinates
+are scaled to a reference longest side of 1000 pixels, with a RANSAC tolerance
+of 5. Museum candidates are ranked by verified matches, then tentative matches,
+then museum ID to break ties.
+
+`batch_matching_w4.py` runs this over all crops. It also selects an unknown
+rejection threshold by maximizing unknown-positive F1 on the development set.
+Every threshold that changes a prediction is considered; equal-F1 ties use
+the smaller threshold. Prediction uses this saved calibration without reading GT.
+
+We also compared L1 and L2 descriptor distances with the same ratio test,
+RANSAC settings and crops. Each distance has its own F1 threshold sweep:
+
+| SIFT distance | Selected minimum inliers | mAP@1 | Unknown F1 |
+|---|---:|---:|---:|
+| L2 | 8 | 0.9231 | 0.9091 |
+| L1 | 8 | 0.9231 | 0.9091 |
+
+Both give the same final metrics, so we keep the original L2 configuration.
+Use `--distance L1` in the matching command to repeat the alternative.
+
+```bash
+python src/batch_matching_w4.py match --museum-features results/week4/sift/museum --query-features results/week4/sift/qsd1_w4_threshold4 --output results/week4/batch/matching_scores.json
+python src/batch_matching_w4.py tune --scores results/week4/batch/matching_scores.json --ground-truth data/qsd1_w4/gt_corresps.pkl --output results/week4/batch/calibration.json
+```
+
+The original feature indices contain image paths from the computer on which
+they were extracted. To draw matches locally, pass `--query-images data/qsd1_w4`
+and `--museum-images data/BBDD` to `matching_w4.py`.
+
+### Task 3: Evaluation and Comparison with W3
+
+Run from the project root:
+
+```bash
+python src/evaluate_w4.py --queries data/qsd1_w4 --rematch
+```
+
+This recomputes SIFT matching from the saved features, calibrates rejection,
+and runs the best W3 configuration on the same queries: Texture fusion, L1,
+3x3 median on query crops and the original adaptive W3 segmentation.
+To reuse saved matching scores, replace `--rematch` with
+`--scores results/week4/evaluation/sift/matching_scores.json`.
+
+| Method | mAP@1 | mAP@5 | mAP@10 | Prediction count correct | Unknown F1 |
+|---|---:|---:|---:|---:|---:|
+| W3 Texture fusion | 0.5385 | 0.5513 | 0.5556 | 27/30 | 0.0000 |
+| SIFT without rejection | 0.6667 | 0.6752 | 0.6752 | 29/30 | 0.0000 |
+| **SIFT with rejection** | **0.9231** | **0.9231** | **0.9231** | **29/30** | **0.9091** |
+
+The selected rejection threshold is **8 verified matches**: fewer than 8
+returns `[-1]` for that painting. All 10 unknown paintings are rejected, along
+with 2 known paintings: precision 0.8333, recall 1.0000 and F1 0.9091.
+
+We compute AP per painting in reading order, with zero for missing or extra
+crops. A correct `[-1]` prediction scores one for an unknown target. W3 has no
+rejection mechanism, so its score includes zero for all 10 unknowns. On the
+29 annotated known paintings alone, mAP@1 is **0.7241 for W3 (21/29)** and
+**0.8966 for SIFT (26/29)**. The full-system comparison also includes the
+segmentation change; it does not isolate the effect of the descriptor.
+
+The three remaining errors are in two queries:
+
+- **00008:** one noisy painting, museum ID 128. Its best match has 6 inliers,
+  below the rejection threshold, and the system returns unknown.
+- **00016:** two paintings, museum IDs 11 and 280. Segmentation keeps only the
+  left painting. That crop has no SIFT keypoints and is rejected; the right
+  painting is missing from the predictions.
+
+![SIFT errors: predicted crops and expected museum paintings](results/week4/evaluation/errors.png)
+
+Both the segmentation setting and rejection threshold were selected on
+QSD1-W4. These are development results, not held-out test scores. The saved
+features were extracted with OpenCV 4.13.0; this matching run used 5.0.0.
+The DCT in the W3 baseline keeps its original 51x51 blocks. For OpenCV builds
+that do not support odd-size DCTs, the same orthonormal DCT-II is calculated
+with NumPy.
+
+Outputs are under `results/week4/evaluation/`:
+
+| File | Content |
+|---|---|
+| `comparison.md`, `comparison.json` | Overall and known-only metrics, settings and versions |
+| `per_painting.csv`, `predictions.json` | Rankings, scores and errors for each painting |
+| `sift/matching_scores.json`, `sift/calibration.json` | Verified match counts and the F1 threshold sweep |
+| `distance_comparison/` | L1 match scores, calibration and comparison with L2 |
+| `sift/result.pkl` | Evaluated SIFT development predictions, including unknowns |
+| `w3_baseline/` | W3 predictions, masks and retrieval report on QSD1-W4 |
+| `segmentation.txt`, `errors.png` | Segmentation comparison and remaining SIFT errors |
+
+The original W4 feature files and matching results are kept in place. The
+files above are for development evaluation; the QST1-W4 submission is Task 4.

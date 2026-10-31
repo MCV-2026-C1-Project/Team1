@@ -7,7 +7,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from methods_w2 import _read_rgb
+from methods_w2 import _ordered_image_paths, _read_rgb
 
 
 def load_features(path):
@@ -27,11 +27,14 @@ def find_image(index, image_id):
     raise ValueError(f"Image ID {image_id} is absent from the index")
 
 
-def match_sift(query, museum, ratio=0.75, ransac_threshold=5.0):
+def match_sift(query, museum, ratio=0.75, ransac_threshold=5.0, distance="L2"):
     """Find tentative matches, then geometrically verify them."""
 
     if not 0 < ratio < 1 or ransac_threshold <= 0:
         raise ValueError("Invalid matching thresholds")
+    norms = {"L1": cv2.NORM_L1, "L2": cv2.NORM_L2}
+    if distance not in norms:
+        raise ValueError("SIFT distance must be L1 or L2")
 
     matches = []
 
@@ -40,7 +43,7 @@ def match_sift(query, museum, ratio=0.75, ransac_threshold=5.0):
         len(query["descriptors"]) > 0
         and len(museum["descriptors"]) >= 2
     ):
-        matcher = cv2.BFMatcher(cv2.NORM_L2)
+        matcher = cv2.BFMatcher(norms[distance])
 
         neighbors = matcher.knnMatch(
             query["descriptors"],
@@ -120,9 +123,16 @@ def match_sift(query, museum, ratio=0.75, ransac_threshold=5.0):
     }
 
 
-def read_crop(image_record, features):
+def read_crop(image_record, features, image_folder=None):
     """Read the same crop that was used during feature extraction."""
-    image = _read_rgb(image_record["source_path"])
+    source = Path(image_record["source_path"])
+    if image_folder is not None:
+        ids, paths = _ordered_image_paths(image_folder)
+        sources = dict(zip(ids, paths))
+        if image_record["image_id"] not in sources:
+            raise ValueError(f"Image {image_record['image_id']} absent from {image_folder}")
+        source = sources[image_record["image_id"]]
+    image = _read_rgb(source)
     x0, y0, x1, y1 = map(int, features["box"])
     return image[y0:y1, x0:x1]
 
@@ -134,11 +144,13 @@ def save_visualization(
     museum,
     result,
     output,
+    query_folder=None,
+    museum_folder=None,
 ):
     """Draw up to 60 geometrically verified matches."""
 
-    query_image = read_crop(query_record, query)
-    museum_image = read_crop(museum_record, museum)
+    query_image = read_crop(query_record, query, query_folder)
+    museum_image = read_crop(museum_record, museum, museum_folder)
 
     # Reconstruct minimal KeyPoint objects for drawing.
     # Matching itself uses the saved coordinates and descriptors.
@@ -212,6 +224,10 @@ def main():
         default=Path("results/week4/sift/qsd1_w4_threshold4"),
     )
     parser.add_argument("--query-id", type=int, required=True)
+    parser.add_argument("--query-images", type=Path,
+                        help="Override image paths saved on another computer")
+    parser.add_argument("--museum-images", type=Path,
+                        help="Override image paths saved on another computer")
     parser.add_argument("--painting-index", type=int, default=0)
     parser.add_argument(
         "--museum-id",
@@ -219,6 +235,7 @@ def main():
         help="Match only this museum ID; otherwise rank all museum images",
     )
     parser.add_argument("--ratio", type=float, default=0.75)
+    parser.add_argument("--distance", choices=("L1", "L2"), default="L2")
     parser.add_argument("--ransac-threshold", type=float, default=5.0)
     parser.add_argument(
         "--output",
@@ -274,6 +291,7 @@ def main():
             museum,
             ratio=args.ratio,
             ransac_threshold=args.ransac_threshold,
+            distance=args.distance,
         )
 
         results.append((record, painting, result))
@@ -313,11 +331,13 @@ def main():
         best_features,
         best_result,
         args.output,
+        query_folder=args.query_images,
+        museum_folder=args.museum_images,
     )
 
     print(
         "\nThis is a matching diagnostic. "
-        "Unknown rejection is not calibrated yet."
+        "Use batch_matching_w4.py tune for unknown-rejection calibration."
     )
 
 

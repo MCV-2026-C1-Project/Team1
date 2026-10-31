@@ -3,7 +3,10 @@
 import argparse
 import json
 import pickle
+from numbers import Integral
 from pathlib import Path
+
+import cv2
 
 from matching_w4 import load_features, match_sift
 from paintings_w3 import evaluate_painting_rankings
@@ -38,12 +41,17 @@ def run_matching(args):
 
     settings = {
         "method": "SIFT",
+        "distance": getattr(args, "distance", "L2"),
         "ratio": args.ratio,
         "ransac_threshold": args.ransac_threshold,
         "museum_nfeatures": museum_index["nfeatures"],
         "query_nfeatures": query_index["nfeatures"],
         "museum_preprocessing": museum_index["preprocessing"],
         "query_preprocessing": query_index["preprocessing"],
+        "matching_opencv_version": cv2.__version__,
+        "museum_feature_opencv_version": museum_index["opencv_version"],
+        "query_feature_opencv_version": query_index["opencv_version"],
+        "query_segmentation": query_index.get("segmentation"),
     }
 
     if museum_index["method"] != "SIFT" or query_index["method"] != "SIFT":
@@ -104,6 +112,7 @@ def run_matching(args):
                     features,
                     ratio=args.ratio,
                     ransac_threshold=args.ransac_threshold,
+                    distance=settings["distance"],
                 )
 
                 candidates.append({
@@ -174,6 +183,7 @@ def make_predictions(report, min_inliers):
 def unknown_metrics(predictions, truth):
     """Unknown is the positive class; compare slots in reading order."""
 
+    truth = normalize_truth(truth, len(predictions))
     tp = fp = fn = 0
 
     for predicted, actual in zip(predictions, truth):
@@ -205,18 +215,34 @@ def unknown_metrics(predictions, truth):
         "precision": precision,
         "recall": recall,
         "f1": f1,
+        "tp": tp,
+        "fp": fp,
+        "fn": fn,
     }
 
 
-def tune_threshold(args):
-    report = read_json(args.scores)
-
-    # Load only your trusted coursework ground-truth pickle.
-    with args.ground_truth.open("rb") as stream:
-        truth = pickle.load(stream)
-
-    if len(truth) != len(report["images"]):
+def normalize_truth(truth, count):
+    """Accept integer IDs or singleton ID lists, including unknown (-1)."""
+    if len(truth) != count:
         raise ValueError("Ground truth must match numeric query order")
+    normalized = []
+    for row in truth:
+        if not isinstance(row, (list, tuple)) or not 1 <= len(row) <= 2:
+            raise ValueError("Expected one or two ground-truth paintings")
+        values = []
+        for item in row:
+            if isinstance(item, (list, tuple)) and len(item) == 1:
+                item = item[0]
+            if isinstance(item, bool) or not isinstance(item, Integral) or item < -1:
+                raise ValueError("Expected museum IDs or -1 in ground truth")
+            values.append(int(item))
+        normalized.append(values)
+    return normalized
+
+
+def calibrate_threshold(report, truth, thresholds=None):
+    """Choose the rejection threshold on development unknown-positive F1."""
+    truth = normalize_truth(truth, len(report["images"]))
 
     if not any(value == -1 for row in truth for value in row):
         raise ValueError("Unknown calibration requires unknown examples")
@@ -224,37 +250,28 @@ def tune_threshold(args):
     if not any(value != -1 for row in truth for value in row):
         raise ValueError("Unknown calibration requires known examples")
 
+    if thresholds is None:
+        # Predictions change only when a threshold passes a best-match score.
+        thresholds = sorted({1} | {
+            painting["candidates"][0]["verified"] + 1
+            for image in report["images"] for painting in image["paintings"]
+            if painting["candidates"]
+        })
+    if not thresholds or any(isinstance(t, bool) or not isinstance(t, Integral)
+                             or t < 1 for t in thresholds):
+        raise ValueError("Expected positive integer thresholds")
     rows = []
-
-    print("Threshold  Unknown-P  Unknown-R  Unknown-F1   mAP@1   mAP@5")
-
-    for threshold in args.thresholds:
+    for threshold in sorted(set(thresholds)):
         predictions = make_predictions(report, threshold)
 
         metrics = unknown_metrics(predictions, truth)
-        evaluation1 = evaluate_painting_rankings(
-            predictions, truth, 1
-        )
-        evaluation5 = evaluate_painting_rankings(
-            predictions, truth, 5
-        )
-
         row = {
             "min_inliers": threshold,
             **metrics,
-            **evaluation1,
-            **evaluation5,
         }
+        for k in (1, 5, 10):
+            row.update(evaluate_painting_rankings(predictions, truth, k))
         rows.append(row)
-
-        print(
-            f"{threshold:9d} "
-            f"{metrics['precision']:10.4f} "
-            f"{metrics['recall']:10.4f} "
-            f"{metrics['f1']:11.4f} "
-            f"{row['mAP@1']:8.4f} "
-            f"{row['mAP@5']:8.4f}"
-        )
 
     # Optimize unknown F1, as required by Task 2.
     # Break equal-F1 ties using the smaller threshold.
@@ -263,17 +280,28 @@ def tune_threshold(args):
         key=lambda row: (row["f1"], -row["min_inliers"]),
     )
 
-    calibration = {
+    return {
         "min_inliers": best["min_inliers"],
         "settings": report["settings"],
-        "development_scores": str(args.scores.resolve()),
         "selection_metric": "unknown-positive F1, reading-order slots",
         "results": rows,
     }
 
+
+def tune_threshold(args):
+    report = read_json(args.scores)
+    with args.ground_truth.open("rb") as stream:
+        truth = pickle.load(stream)
+    calibration = calibrate_threshold(report, truth, args.thresholds)
+    calibration["development_scores"] = str(args.scores.resolve())
+    print("Threshold  Unknown-P  Unknown-R  Unknown-F1   mAP@1   mAP@5")
+    for row in calibration["results"]:
+        print(f"{row['min_inliers']:9d} {row['precision']:10.4f} "
+              f"{row['recall']:10.4f} {row['f1']:11.4f} "
+              f"{row['mAP@1']:8.4f} {row['mAP@5']:8.4f}")
     write_json(args.output, calibration)
 
-    print(f"Selected min_inliers={best['min_inliers']}")
+    print(f"Selected min_inliers={calibration['min_inliers']}")
     print("These are development tuning scores, not held-out test scores.")
     print(f"Saved calibration: {args.output}")
 
@@ -328,6 +356,7 @@ def main():
     )
     match.add_argument("--output", type=Path, required=True)
     match.add_argument("--ratio", type=float, default=0.75)
+    match.add_argument("--distance", choices=("L1", "L2"), default="L2")
     match.add_argument(
         "--ransac-threshold", type=float, default=5.0
     )
@@ -344,7 +373,8 @@ def main():
         "--thresholds",
         nargs="+",
         type=int,
-        default=[6, 8, 12, 16, 20, 30],
+        default=None,
+        help="Optional thresholds; by default test every distinct decision",
     )
     tune.set_defaults(run=tune_threshold)
 
