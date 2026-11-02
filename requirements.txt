@@ -3,3 +3,5 @@ matplotlib>=3.7
 opencv-python>=4.8
 Pillow>=10.0
 PyWavelets>=1.4
+torch>=2.0
+lightglue @ git+https://github.com/cvg/LightGlue.git
