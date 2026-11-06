@@ -1284,8 +1284,11 @@ painting is rejected with 7 verified matches, and the right one is lost in
 segmentation); see its section above.
 
 ![SIFT errors: predicted crops and expected museum paintings](results/week4/evaluation/errors.png)
+*Figure: SIFT errors*
 ![ORB v1 errors: predicted crops and expected museum paintings](results/week4/evaluation_orb/errors_orb_v1.png)
+*Figure: ORB v1 errors*
 ![ORB v2 errors: predicted crops and expected museum paintings](results/week4/evaluation_orb/errors_orb_v2.png)
+*Figure: ORB v2 errors*
 
 The segmentation setting, the FAST threshold and CLAHE choice, and both
 rejection thresholds were selected on QSD1-W4, the same 30 queries used to report
@@ -1341,8 +1344,7 @@ much as on the score. The risks of its development settings are described next.
 
 We submit ORB v2 with its development settings (FAST threshold 7, CLAHE,
 rejection threshold 6). The development score does not show the risks of these
-settings: what they did to the match counts and what could happen if they were
-applied to other images:
+settings. However, this could change if they were applied to other images:
 
 - **The gain comes from two crops.** The only difference between the v1 and v2
   predictions is that 00008 (5 to 7 verified matches) and the left painting of
@@ -1370,11 +1372,7 @@ applied to other images:
   reach 6.
 - **The alternative has more room.** SuperPoint + LightGlue separates the classes
   by a larger factor: its unknown paintings reach 9-20 matches and the known ones
-  at least 70, a ratio of 3.5 against 1.4.
-
-This is an argument about risk, not a measured result: we did not run ORB v2 on
-images other than QSD1-W4. We accept the risk for the higher development score
-and the lower cost.
+  at least 70, a ratio of 3.5 against 1.4. However, is more computationally expensive.
 
 Outputs are under `results/week4/evaluation/`:
 
@@ -1395,9 +1393,9 @@ files above are for development evaluation.
 
 ### Task 4: Blind submission (QST1-W4)
 
-We submit **ORB v2** as `method1`, the only method, as the assignment asks. It
-has the highest development score (mAP@1 0.9744, against 0.9487 for
-SuperPoint + LightGlue and 0.9231 for SIFT) and the lowest computational cost.
+We submit **ORB v2** as final method1. It has the highest development score 
+(mAP@1 0.9744, against 0.9487 for SuperPoint + LightGlue and 0.9231 for SIFT) 
+and the lowest computational cost.
 The risks of its settings are discussed in Task 3. The queries are processed with
 exactly the development settings (variant v2: FAST threshold 7 and CLAHE, up to
 1000 keypoints on crops resized to a longest side of 384 px, fixed segmentation
