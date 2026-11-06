@@ -1,0 +1,119 @@
+{
+  "dataset": "QSD1-W4",
+  "query_ids": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29
+  ],
+  "ground_truth": "data/qsd1_w4/gt_corresps.pkl",
+  "known_paintings": 29,
+  "unknown_paintings": 10,
+  "min_inliers": 8,
+  "sift_settings": {
+    "method": "SIFT",
+    "ratio": 0.75,
+    "ransac_threshold": 5.0,
+    "museum_nfeatures": 1000,
+    "query_nfeatures": 1000,
+    "museum_preprocessing": "grayscale; no extra denoising or resizing",
+    "query_preprocessing": "grayscale; no extra denoising or resizing",
+    "matching_opencv_version": "5.0.0",
+    "query_segmentation": null,
+    "museum_feature_opencv_version": "4.13.0",
+    "query_feature_opencv_version": "4.13.0",
+    "distance": "L2"
+  },
+  "opencv_version": "5.0.0",
+  "numpy_version": "2.5.4",
+  "baseline": {
+    "descriptor": "W3 Texture fusion, L1, median 3x3",
+    "distance": "L1",
+    "top_k": 10,
+    "dimension": 11525,
+    "background_removal": true,
+    "evaluation": "AP per painting in reading order; unmatched slots score zero",
+    "query_filter": "median_3",
+    "filter_scope": "query",
+    "museum_count": 287
+  },
+  "metrics": {
+    "W3 Texture fusion": {
+      "mAP@1": 0.5384615384615384,
+      "count_accuracy": 0.9,
+      "known_mAP@1": 0.7241379310344828,
+      "mAP@5": 0.5512820512820513,
+      "known_mAP@5": 0.7413793103448276,
+      "mAP@10": 0.5555555555555556,
+      "known_mAP@10": 0.7471264367816093,
+      "unknown": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 10
+      }
+    },
+    "SIFT without rejection": {
+      "mAP@1": 0.6666666666666666,
+      "count_accuracy": 0.9666666666666667,
+      "known_mAP@1": 0.896551724137931,
+      "mAP@5": 0.6752136752136753,
+      "known_mAP@5": 0.9080459770114943,
+      "mAP@10": 0.6752136752136753,
+      "known_mAP@10": 0.9080459770114943,
+      "unknown": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 10
+      }
+    },
+    "SIFT with rejection": {
+      "mAP@1": 0.9230769230769231,
+      "count_accuracy": 0.9666666666666667,
+      "known_mAP@1": 0.896551724137931,
+      "mAP@5": 0.9230769230769231,
+      "known_mAP@5": 0.896551724137931,
+      "mAP@10": 0.9230769230769231,
+      "known_mAP@10": 0.896551724137931,
+      "unknown": {
+        "precision": 0.8333333333333334,
+        "recall": 1.0,
+        "f1": 0.9090909090909091,
+        "tp": 10,
+        "fp": 2,
+        "fn": 0
+      }
+    }
+  }
+}
