@@ -231,7 +231,7 @@ def main():
                         help="Recompute the matching from the saved ORB features")
     parser.add_argument("--skip-w3", action="store_true",
                         help="do not run the Week 3 baseline (it is the slow step)")
-    parser.add_argument("--output", type=Path, default=Path("results/week4/evaluation_orb"))
+    parser.add_argument("--output", type=Path, default=Path("evaluations/orb"))
     args = parser.parse_args()
     cv2.setNumThreads(1)
 

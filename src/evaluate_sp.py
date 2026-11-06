@@ -207,7 +207,7 @@ def main():
     parser.add_argument("--run-w3", action="store_true",
                         help="Recompute the Week 3 baseline (slow step)")
     parser.add_argument("--output", type=Path,
-                        default=Path("results/week4/evaluations/superpoint"))
+                        default=Path("evaluations/superpoint"))
     args = parser.parse_args()
     cv2.setNumThreads(1)
 

@@ -183,7 +183,7 @@ def main():
                         help="Recompute matching from the saved SIFT features")
     parser.add_argument("--distance", choices=("L1", "L2"), default="L2",
                         help="SIFT matching distance when using --rematch")
-    parser.add_argument("--output", type=Path, default=Path("results/week4/evaluation"))
+    parser.add_argument("--output", type=Path, default=Path("evaluations/sift"))
     args = parser.parse_args()
     cv2.setNumThreads(1)
 

@@ -28,239 +28,647 @@ Create a virtual environment to encapsulate the required installations.
 
 ---
 
-## Week 1
+## Week 4
 
-### Task 1: Image Descriptors
+QSD1-W4 contains 30 queries and 39 paintings: 29 belong to the museum and
+10 are unknown (`-1`). We use the JPG files directly in `data/qsd1_w4`,
+not the clean copies in `non_augmented/`. Museum images are in `data/BBDD`.
 
-Run:
-```powershell
-python .\src\methods_w1.py --list
-```
+Week 4 replaces the global descriptors of Weeks 1-3 by **local features**:
+keypoints and local descriptors are computed on the museum images and on every
+query painting, tentative matches are found by comparing descriptors, and the
+matches are verified geometrically. We built the full system with **SIFT**,
+then developed a second method with **ORB** and a third one with learned
+**SuperPoint + LightGlue** features, keeping every other step of the pipeline
+fixed so that the descriptors can be compared. These are the three descriptors
+the assignment allows at most (ORB v1 and v2 are two settings of the same
+descriptor). The sections below follow that path: SIFT (Tasks 1-2), the step
+from SIFT to ORB, SuperPoint + LightGlue, the evaluation with a discussion of how
+the methods behave (Task 3) and the submission (Task 4). The submitted method is
+ORB v2, which has the best development score and the lowest cost; the discussion
+also weighs the risks of that choice.
 
-The W1 descriptors live in `methods_w1.py` (`METHODS_W1`), with the histogram
-implementations in `utils.py`:
-- Grayscale
-- RGB
-- HSV (one component per histogram)
-- HSV grid (4×4 cells, 512 values)
+### Tasks 1 and 2: SIFT and Matching
 
-### Task 2: Similarity Functions
+`keypoints_w4.py` extracts SIFT descriptors from grayscale images, with
+`nfeatures=1000`. `extract_features_w4.py` processes the museum and each
+detected query crop, saving descriptors, keypoint coordinates and crop boxes.
+Query segmentation reuses the W3 wall model with a fixed distance threshold
+of 4. The original adaptive threshold and fixed thresholds 3, 4, 5 and 6 were
+compared on QSD1-W4:
 
-All similarity formulas are implemented in `k_similarity.py`, and fall into two groups:
+| Segmentation | Mask precision | Mask recall | Mask F1 | Correct painting count |
+|---|---:|---:|---:|---:|
+| W3 adaptive | 0.9036 | 0.8020 | 0.8358 | 25/30 |
+| Fixed threshold 3 | 0.8724 | 0.9630 | 0.9140 | 27/30 |
+| **Fixed threshold 4** | **0.9103** | **0.9424** | **0.9244** | **28/30** |
+| Fixed threshold 5 | 0.9267 | 0.8961 | 0.9050 | 26/30 |
+| Fixed threshold 6 | 0.8991 | 0.7786 | 0.8099 | 22/30 |
 
-| Type | Functions | Interpretation |
-|------|-----------|----------------|
-| Distances | Euclidean, L1, Chi-square | Lower value = more similar |
-| Similarities | Histogram Intersection, Hellinger kernel, Cosine, Correlation | Higher value = more similar |
+Threshold 4 gives the best mask F1 and painting count among these settings.
+If no painting is found, the whole image is used as a fallback. This happens
+on query 00026. A fallback is still a prediction, so retrieval count accuracy
+can differ from the segmentation count in this table.
 
-### Task 3: Retrieval and Evaluation
-
-Run:
-```powershell
-python .\src\k_similarity.py
-```
-
-This script retrieves the top K museum images for each query by comparing image descriptors (Grayscale, HSV, RGB, HSV grid) using the similarity functions.
-
-**Ranking order**
-- Distances are sorted in ascending order.
-- Similarities (Histogram Intersection and Hellinger kernel) are sorted in descending order. They are listed in the `SIMILARITY_FUNCTIONS` constant, used by `rank_museum_images`.
-
-Sorting a similarity in ascending order would return the least similar images first (scores of 0), which is why this distinction is needed.
-
-**Evaluation metrics**
-- **AP@K** measures how accurately the relevant museum images are ranked within the top K results for a single query, using the ground-truth correspondences.
-- **mAP@K** averages AP@K across all queries, allowing retrieval performance to be compared across descriptor methods and distance functions for K=1 and K=5.
-
-### Task 4: Blind QST1 submission
-
-From the project directory, give the folders containing the museum and test images:
 ```bash
-python .\src\methods_w2.py --museum .\data\BBDD --queries .\data\qsd1_w2 --method "Lab blocks 1D" --blocks 25 
+python src/extract_features_w4.py --museum data/BBDD --output results/week4/sift/museum
+python src/extract_features_w4.py --queries data/qsd1_w4 --segmentation-threshold 4 --output results/week4/sift/qsd1_w4_threshold4
 ```
 
-Both arguments accept relative or absolute image-folder paths. Only JPG/JPEG
-files directly inside each folder are read. Queries are ordered by numeric filename ID. Museum IDs come from
-filenames: `bbdd_00007.jpg` becomes integer `7`.
+`matching_w4.py` compares SIFT vectors with L2 distance and a nearest-neighbour
+ratio test of 0.75. A museum descriptor can be matched only once. Pairs with
+at least 8 tentative matches are checked with a RANSAC homography. Coordinates
+are scaled to a reference longest side of 1000 pixels, with a RANSAC tolerance
+of 5. Museum candidates are ranked by verified matches, then tentative matches,
+then museum ID to break ties.
 
-Each `result.pkl` contains a Python list of lists, with exactly 10 unique Python
-integer museum IDs per query, ranked best first.
+![SIFT pipeline diagram](results/week4/figures/pipeline_sift.svg)
 
-| Output under `results/week1/QST1/` | Descriptor | Default comparison |
-|---|---|---|
-| `method1/result.pkl` | HSV | L1 |
-| `method2/result.pkl` | HSV grid | L1 |
+*Figure: SIFT pipeline (Tasks 1 and 2). Gray boxes are shared by the three methods; colored boxes are specific to the method.*
 
-At most two methods are allowed (statement), so only HSV and HSV grid are
-submitted; Grayscale and RGB remain in `METHODS_W1` for validation only.
+`batch_matching_w4.py` runs this over all crops. It also selects an unknown
+rejection threshold by maximizing unknown-positive F1 on the development set.
+Every threshold that changes a prediction is considered; equal-F1 ties use
+the smaller threshold. Prediction uses this saved calibration without reading GT.
 
-To override the comparison for both methods or change the output location:
-```bash
-python src/methods_w1.py --museum data/BBDD --queries data/qst1_w1 --distance Hellinger --output-dir results/hellinger/week1/QST1
-```
+We also compared L1 and L2 descriptor distances with the same ratio test,
+RANSAC settings and crops. Each distance has its own F1 threshold sweep:
 
-Available comparisons: `Euclidean`, `L1`, `Chi-square`, `Histogram Intersection`,
-`Hellinger`, `Cosine`, and `Correlation`. Quote names containing spaces.
-
----
-
-## Week 2
-
-### Task 1: Color Histograms
-
-`methods_w2.py` keeps four Lab descriptors (all L1-normalized, with an
-optional foreground mask):
-
-| Method | Description | Parameter |
-|---|---|---|
-| `Lab blocks 1D` | grid of marginal 1D histograms (32 bins per channel), concatenated in row-major order | `--blocks T` total cells, a perfect square (default 25 → 5×5) |
-| `Lab 2D` | same grid of cells; each cell is L as a 1D marginal (32 bins) plus the (a, b) pair as a joint 2D histogram (32 bins per axis), concatenated row-major | `--blocks T` (default 25 → 5×5) |
-| `Lab 3D` | same grid of cells; each cell is a joint 3D L-a-b histogram (32 bins per axis), concatenated row-major | `--blocks T` (default 25 → 5×5) |
-| `Lab pyramid` | hierarchy of 1D-block levels: level 1 is one block, each extra level doubles the number of blocks (1, 2, 4, 8 …) | `--levels K` (default 3) |
-
-Run `python .\src\methods_w2.py --list` to list them.
-
-### Task 2: Retrieval Comparison
-
-Run a W2 method on a museum/query pair (add `--ground-truth` to print mAP):
-```powershell
-python .\src\methods_w2.py --museum ..\..\datasets\BBDD --queries ..\..\datasets\qsd1_w2 --method "Lab blocks 1D" --blocks 25
-```
-
-`--method` is required: a descriptor name or `all` (evaluates the four methods
-in one pass). Use `--blocks`/`--levels` for the parametrized methods and
-`--distance` for the comparison (default L1).
-
-For example, on QSD1-W2:
-```powershell
-python .\src\methods_w2.py --museum data\BBDD --queries data\qsd1_w2 --ground-truth data\qsd1_w2\qsd1_w1\gt_corresps.pkl --method all
-```
-
-mAP on the 30 QSD1-W2 queries against the BBDD (L1):
-
-| Descriptor | Config | mAP@1 | mAP@5 |
-|---|---|---:|---:|
-| W1 HSV grid | 4×4 | 0.7667 | 0.8194 |
-| W1 HSV grid | 6×6 | 0.8000 | 0.8500 |
-| `Lab blocks 1D` | `--blocks 16` | 0.8333 | 0.8722 |
-| `Lab blocks 1D` | `--blocks 25` (default) | 0.8667 | 0.8944 |
-| `Lab blocks 1D` | `--blocks 36` | 0.8667 | 0.9000 |
-| `Lab pyramid` | `--levels 3` | 0.6333 | 0.6744 |
-| `Lab pyramid` | `--levels 4` | 0.7333 | 0.7778 |
-| `Lab 2D` | `--blocks 1` (1×1) | 0.5333 | 0.6028 |
-| `Lab 2D` | `--blocks 25` (default) | 0.8667 | 0.8917 |
-| `Lab 3D` | `--blocks 1` (1×1) | 0.4000 | 0.4833 |
-| `Lab 3D` | `--blocks 25` (default) | 0.7000 | 0.7472 |
-
-`Lab blocks 1D --blocks 36` gives the best mAP@5 on this set (tied with the
-default `--blocks 25` at rank 1). Evaluation with segmentation and blind
-queries is still pending.
-
-The extra experiments and their results are in
-[results/week2/color_experiments](results/week2/color_experiments).
-
-### Task 3: Background Removal
-
-Method:
-1. The outer 4% of the image is used as a sample of the wall.
-2. A smooth color model of the wall is fitted in CIE-Lab (a polynomial surface,
-   so uneven lighting is handled; frame corners or labels in the strip are
-   down-weighted).
-3. Each pixel's Mahalanobis distance to that wall model is computed; pixels far
-   from the wall are foreground. The threshold is chosen per image (Otsu,
-   clipped to 3-12).
-4. Cleanup: morphology, keep the largest connected blob, fill holes, and replace
-   the blob by its bounding box (paintings are rectangles). Use
-   `BGParams(use_bbox=False)` for the pure color mask.
-
-No edge, contour or object detector is used. Masks are saved with the same name
-as the image and a `.png` extension (`00001.jpg` -> `00001.png`), values 0
-(background) / 255 (painting). `--viz` saves one overlay per image plus
-`overview.jpg` (dimmed = removed background, red = our mask, green =
-ground truth, F1 on every tile). If the ground-truth masks sit next to the
-images (QSD2), the mean P/R/F1 is printed.
-
-### Task 4: Segmentation Evaluation
-
-Run after generating the masks from Task 3:
-```powershell
-python src\methods_w2.py --segment data\qsd2_w2 --out results\week2\QSD2\masks --viz results\week2\QSD2\viz 
-```
-
-The script matches PNG masks by numeric filename ID and computes foreground
-precision, recall and F1 for each query. Masks must have the same dimensions
-as their reference, with 0 for background and nonzero pixels for foreground.
-
-The table shows the scores for each query and their mean. Use `--save` to
-write it to a text file.
-
-Add `--viz` to also draw the masks over the images (`--images` if the `.jpg`
-files are not in the ground-truth folder):
-```powershell
-python src\methods_w2.py --segmentation results\week2\QSD2\masks data\qsd2_w2 --viz results\week2\QSD2\viz --save results\week2\QSD2\mask_metrics.txt
-```
-
-Result of Task 3 on the 30 QSD2 images:
-
-| | Precision | Recall | F1 |
+| SIFT distance | Selected minimum inliers | mAP@1 | Unknown F1 |
 |---|---:|---:|---:|
-| Mean over the 30 images | 0.9370 | 0.9827 | **0.9569** |
+| L2 | 8 | 0.9231 | 0.9091 |
+| L1 | 8 | 0.9231 | 0.9091 |
 
-19 of 30 masks have F1 >= 0.95. The weakest are 00020 (white painting on a
-light wall, 0.84), 00026, 00014, 00000 and 00013. Most of the lost precision is
-the shadow or lighter strip of wall just below a painting.
+Both give the same final metrics, so we keep the original L2 configuration.
+Use `--distance L1` in the matching command to repeat the alternative.
 
-### Task 5: Retrieval on QSD2 with Background Removal
-
-Add `--background-removal` to the retrieval command: each query is segmented
-with Task 3 and the descriptor only counts the painting pixels.
-```powershell
-python src\methods_w2.py --museum data\BBDD --queries data\qsd2_w2 --ground-truth data\qsd2_w2\qsd2_w1\gt_corresps.pkl --method "Lab pyramid" --levels 7 --background-removal
+```bash
+python src/batch_matching_w4.py match --museum-features results/week4/sift/museum --query-features results/week4/sift/qsd1_w4_threshold4 --output results/week4/batch/matching_scores.json
+python src/batch_matching_w4.py tune --scores results/week4/batch/matching_scores.json --ground-truth data/qsd1_w4/gt_corresps.pkl --output results/week4/batch/calibration.json
 ```
 
-Museum images contain only the painting, but a query has wall around it. The
-block grid is laid over the image, so cell (i, j) of the query would cover a
-different part of the painting than cell (i, j) of the museum image, even when
-the wall pixels are masked out. The query is therefore **cropped to the
-bounding box of its mask** before the descriptor is computed. `--no-crop` turns
-this off.
+The original feature indices contain image paths from the computer on which
+they were extracted. To draw matches locally, pass `--query-images data/qsd1_w4`
+and `--museum-images data/BBDD` to `matching_w4.py`.
 
-mAP@1 / mAP@5 on QSD2 (L1):
+### From SIFT to ORB
 
-| Descriptor | **Mask + crop** | Ground-truth mask + crop |
-|---|---:|---:|
-| `Lab pyramid --levels 7` | **0.8333 / 0.8483** | 0.8667 / 0.8750 |
-| `Lab blocks 1D --blocks 36` | 0.7667 / 0.8139 | 0.8667 / 0.8844 |
-| `Lab blocks 1D --blocks 16` | 0.7000 / 0.7556 | 0.7333 / 0.7890 |
+#### Starting point and motivation
 
-The last column uses the ground-truth masks (`--query-masks data\qsd2_w1`) and is
-a comparison with the annotated masks. `--background-removal` and
-`--query-masks` cannot be used together.
+With SIFT, the system reaches mAP@1 0.9231 and unknown F1 0.9091 on QSD1-W4
+(Task 3 below), a large improvement over the Week 3 texture method. Its
+remaining problems suggested what a second method should address:
 
-### Task 6: Blind Submission (QST1 and QST2)
+- **Two known paintings are rejected as unknown.** With the selected threshold
+  of 8 verified matches, the noisy painting of query 00008 (museum 128) has only
+  6 inliers and is returned as `[-1]`.
+- **Some crops give no keypoints at all.** In query 00016 the left crop has no
+  SIFT keypoints, so it cannot match anything and is rejected.
+- **SIFT descriptors are heavy.** Each one is 128 floating-point values
+  (512 bytes) compared with an L2 distance; a query crop is matched against 287
+  museum images, so matching cost is dominated by these float distances.
 
-```powershell
-python src\methods_w2.py --museum data\BBDD --qst1 data\qst_w2\qst1_w2 --qst2 data\qst_w2\qst2_w2
-```
+The task statement lists several local descriptors and asks us to test at most
+three. We chose **ORB (oriented FAST + rotated BRIEF)** as the second method for
+three reasons. It belongs to a different family from SIFT, so a comparison is
+informative: a corner detector with binary descriptors against a scale-space
+blob detector with gradient histograms. Its descriptor is a 256-bit string
+(32 bytes, 16 times smaller than SIFT's) compared with the Hamming distance,
+which is much cheaper than the L2 distance. And it is included in OpenCV's main
+module, so it needs no extra packages.
 
-Give `--qst1` and/or `--qst2` (the folders must contain the `.jpg` files
-directly). Use `--submit-out` to change the output folder (default
-`results/week2`) and `--distance` to change the comparison.
+#### How ORB works
 
-| Output under `results/week2/` | Content |
+1. **Keypoint detection (oriented FAST).** FAST marks a pixel as a corner when
+   a contiguous arc of pixels on a circle around it is all brighter or all
+   darker than the centre by more than a *threshold* (OpenCV default 20 gray
+   levels). Candidates are ranked with the Harris corner measure and only the
+   best 1000 are kept. To handle scale, detection runs on an 8-level image
+   pyramid with a factor of 1.2 between levels, so a painting seen at a different
+   size still produces corners at one of the levels.
+2. **Orientation.** The angle of each keypoint is the direction from the patch
+   centre to its intensity centroid, which makes the descriptor rotation
+   invariant.
+3. **Descriptor (rotated BRIEF).** The patch (31x31 pixels) is smoothed and 256
+   pairs of pixels are compared (is the first darker than the second?). The
+   pairs are rotated by the keypoint angle, and the 256 binary outcomes form the
+   descriptor.
+4. **Distance.** Two descriptors are compared by the Hamming distance, the
+   number of differing bits. L1 and L2 are not meaningful for bit strings.
+
+There are two trade-offs relative to SIFT: the scale handling is a coarse
+pyramid rather than a continuous scale space, and FAST depends on an absolute
+intensity difference, so low-contrast regions produce few corners. The second
+point turned out to matter (see ORB v2).
+
+#### Implementation
+
+Only the feature extractor and the distance change; everything else is shared
+with the SIFT pipeline, so that differences in the results come from the
+features:
+
+| Step | SIFT | ORB |
+|---|---|---|
+| Crops | `segment_paintings`, fixed threshold 4, whole-image fallback | identical |
+| Keypoints per crop | 1000, native resolution | 1000, crop resized to a longest side of 384 px (never enlarged) and mapped back |
+| Descriptor | 128 floats, L2 | 256 bits (32 bytes), Hamming |
+| Ratio test | 0.75, one-to-one | identical |
+| Verification | RANSAC homography, tolerance 5 at reference size 1000, at least 8 tentative matches | identical |
+| Ranking and rejection | verified, tentative, ID; threshold maximising unknown F1 | identical |
+| Feature index | `index.json` + one `.npz` per painting | identical layout |
+
+![ORB v2 pipeline diagram](results/week4/figures/pipeline_orb.svg)
+
+*Figure: ORB v2 pipeline. Gray boxes are shared by the three methods; colored boxes are specific to the method.*
+
+| File | Content |
 |---|---|
-| `QST1/method1/result.pkl` | `Lab blocks 1D`, 6x6 cells (`--blocks 36`), L1, whole image |
-| `QST1/method2/result.pkl` | `Lab pyramid`, 7 levels (`--levels 7`), L1, whole image |
-| `QST2/method1/result.pkl`, `QST2/method2/result.pkl` | same methods on the painting only (Task 3 mask + crop) |
-| `QST2/method1/*.png`, `QST2/method2/*.png` | background masks, same name as the query, 0/255 |
+| `keypoints_orb.py` | `extract_orb` (keypoints and descriptors of one image, for both variants: `--variant v1` or `v2`) and a single-image drawing |
+| `matching_orb.py` | `match_orb` (ratio test with Hamming distance, one-to-one matches, RANSAC), with the same output as `match_sift` |
+| `extract_features_orb.py` | batch extraction for the museum and the query crops, `--variant v1` or `--variant v2` (default) |
+| `batch_matching_orb.py` | `match`, `tune` and `predict`, as for SIFT; refuses museum and query features extracted with different variants |
 
-Each `result.pkl` is a Python list of lists with exactly 10 unique integer
-museum IDs per query, best first. After writing, the script reads every file
-back and checks the IDs, and that each mask exists, has the size of its query
-and contains only 0 and 255. The methods are defined in `SUBMISSION_METHODS`
-in `methods_w2.py`.
+Resizing the crops to 384 px gives the detector the same working scale for every
+crop, and the keypoint coordinates are mapped back to the crop's resolution so
+that the RANSAC tolerance behaves as in the SIFT pipeline.
 
----
+```bash
+python src/extract_features_orb.py --museum data/BBDD --output results/week4/orb/museum --variant v1
+python src/extract_features_orb.py --queries data/qsd1_w4 --output results/week4/orb/qsd1_w4 --variant v1
+python src/batch_matching_orb.py match --museum-features results/week4/orb/museum --query-features results/week4/orb/qsd1_w4 --output results/week4/orb/scores_qsd1_w4.json
+python src/batch_matching_orb.py tune --scores results/week4/orb/scores_qsd1_w4.json --ground-truth data/qsd1_w4/gt_corresps.pkl --output results/week4/orb/calibration.json
+```
+
+#### ORB v1: default settings
+
+With OpenCV's default FAST threshold, the unknown-rejection sweep selects 6
+verified matches:
+
+| Min. inliers | Unknown precision | Unknown recall | Unknown F1 | mAP@1 |
+|---:|---:|---:|---:|---:|
+| 1 | 0.8571 | 0.6000 | 0.7059 | 0.8205 |
+| 5 | 0.9000 | 0.9000 | 0.9000 | 0.8974 |
+| **6** | 0.8333 | 1.0000 | **0.9091** | **0.9231** |
+| 22 | 0.7692 | 1.0000 | 0.8696 | 0.8974 |
+
+ORB v1 therefore matches SIFT (mAP@1 0.9231, unknown F1 0.9091), but with
+cheaper descriptors. It also shows the same kind of error: 2 known paintings are
+rejected as unknown.
+
+#### Error analysis: why known paintings are rejected
+
+Instead of only tuning the threshold, we looked at the best inlier count of each
+query painting. The queries whose best match has 0 inliers are also the ones
+with very few ORB keypoints in their crop:
+
+| Query | 00000 | 00007 | 00016 | 00017 | 00021 | 00029 |
+|---|---:|---:|---:|---:|---:|---:|
+| ORB v1 keypoints in the crop | 23 | 34 | 0 | 128 | 193 | 164 |
+| Best verified matches | 0 | 0 | 0 | 0 | 0 | 0 |
+
+A normal crop gives 700-1000 keypoints. Of these six queries, five (00000,
+00007, 00017, 00021, 00029) are genuine unknown paintings, for which 0 inliers
+is the right outcome. The sixth, 00016, contains a known painting (the left
+one, museum 11): its crop has no ORB keypoints, so there is nothing to verify
+and it is rejected as unknown whatever threshold is chosen. The other known
+painting rejected by v1 is the noisy painting of 00008 (museum 128). It is not
+a keypoint-starvation case: it reaches 5 verified matches, one below the v1
+threshold of 6. QSD1-W4 includes paintings with
+colour changes, and a washed-out painting has weak local contrast. Our
+hypothesis was that the FAST threshold (20 gray levels) is too strict for
+them. We checked this on a Week 1 query image with its contrast artificially
+reduced to 15%: the default detector found 0 keypoints, a threshold of 7 found
+57, and a threshold of 7 combined with CLAHE (contrast-limited adaptive
+histogram equalisation, which stretches the local contrast) found 658. The
+result on QSD1-W4 below is the real test of the hypothesis.
+
+#### ORB v2: low FAST threshold and CLAHE
+
+| Variant | FAST threshold | Contrast equalisation | Folder |
+|---|---:|---|---|
+| ORB v1 | 20 (OpenCV default) | no | `results/week4/orb` |
+| **ORB v2** | **7** | **CLAHE (clip limit 3, 8x8 tiles) on the grayscale crop** | `results/week4/orb_v2` |
+
+Both variants use the same code, selected with `--variant v1` or `--variant v2`
+(the default). `--fast-threshold N` and `--clahe/--no-clahe` override a single
+setting; the index then records the variant as `custom`. The settings must be
+the same for the museum images and for the queries: if only the queries were
+equalised, the same painting would be described from two different images, and
+its descriptors would be less similar. `extract_features_orb.py` stores the
+variant, FAST threshold and CLAHE in `index.json`; `match` stops if the museum
+and query folders differ, and `predict` stops if the calibration was made with
+different settings.
+
+```bash
+python src/extract_features_orb.py --museum data/BBDD --output results/week4/orb_v2/museum --variant v2
+python src/extract_features_orb.py --queries data/qsd1_w4 --output results/week4/orb_v2/qsd1_w4 --variant v2
+python src/batch_matching_orb.py match --museum-features results/week4/orb_v2/museum --query-features results/week4/orb_v2/qsd1_w4 --output results/week4/orb_v2/scores_qsd1_w4.json
+python src/batch_matching_orb.py tune --scores results/week4/orb_v2/scores_qsd1_w4.json --ground-truth data/qsd1_w4/gt_corresps.pkl --output results/week4/orb_v2/calibration.json
+```
+
+A single crop can be inspected with
+`python src/keypoints_orb.py --image data/qsd1_w4/00000.jpg --output results/week4/orb_v2/00000_kp.jpg --variant v2`.
+
+| Min. inliers | Unknown precision | Unknown recall | Unknown F1 | mAP@1 |
+|---:|---:|---:|---:|---:|
+| 1 | 1.0000 | 0.2000 | 0.3333 | 0.7692 |
+| 5 | 1.0000 | 0.5000 | 0.6667 | 0.8462 |
+| **6** | **1.0000** | **1.0000** | **1.0000** | **0.9744** |
+| 8 | 0.8333 | 1.0000 | 0.9091 | 0.9231 |
+| 19 | 0.7692 | 1.0000 | 0.8696 | 0.8974 |
+
+The two known paintings that v1 rejected (00008 and the left painting of 00016)
+are now matched, and the separation between known and unknown paintings is
+clean: the best match of every unknown painting has at most 5 verified matches
+and the weakest known painting has 7, so thresholds 6 and 7 give the same result
+on this set. The gap is narrow (a ratio of 1.4), and the threshold was tuned on
+these same 30 queries. The low-contrast hypothesis is supported for 00016, whose
+crop goes from no keypoints to 7 verified matches, but the gains are small: both
+recovered paintings pass the threshold by a single match.
+
+#### Evaluation
+
+Each variant has its own features, scores and calibration (`results/week4/orb`
+for v1 and `results/week4/orb_v2` for v2, created by the `extract`, `match` and
+`tune` commands above). Development predictions of each variant, with the
+calibrated rejection threshold:
+
+```bash
+# ORB v1
+python src/batch_matching_orb.py predict --scores results/week4/orb/scores_qsd1_w4.json --calibration results/week4/orb/calibration.json --output results/week4/orb/qsd1_w4_result.pkl
+# ORB v2
+python src/batch_matching_orb.py predict --scores results/week4/orb_v2/scores_qsd1_w4.json --calibration results/week4/orb_v2/calibration.json --output results/week4/orb_v2/qsd1_w4_result.pkl
+```
+
+To evaluate both variants and compare them with the Week 3 system in one run,
+from the project root (`--queries` must be given, because its default is a Week 3
+folder):
+
+```bash
+python src/evaluate_orb.py --queries data/qsd1_w4 --with-v1 --rematch
+```
+
+`--rematch` recomputes the matching from the saved features. To skip this slow
+step, drop `--rematch` and the saved scores are reused (`--scores` for v2 and
+`--scores-v1` for v1, which default to
+`results/week4/orb_v2/scores_qsd1_w4.json` and
+`results/week4/orb/scores_qsd1_w4.json`).
+
+ORB v2 is always evaluated and `--with-v1` adds ORB v1 as a second row. The
+rejection threshold of each variant is calibrated on the unknown paintings with
+the same F1 sweep as for the other methods, and `--skip-w3` leaves out the slow
+Week 3 baseline. Outputs are under `evaluations/orb/` (`--output`):
+
+| File | Content |
+|---|---|
+| `orb_v1/`, `orb_v2/` | `matching_scores.json` (verified and tentative match counts), `calibration.json` (threshold sweep) and `result.pkl` (evaluated development predictions, including unknowns) for each variant |
+| `comparison.md`, `comparison.json` | Overall and known-only metrics, settings and versions |
+| `per_painting.csv`, `predictions.json` | Rankings, scores and errors for each painting and method |
+| `w3_baseline/` | W3 predictions, masks and retrieval report on QSD1-W4 |
+| `errors_orb_v1.png`, `errors_orb_v2.png` | Predicted crops and expected museum paintings for the remaining errors |
+
+### SuperPoint + LightGlue
+
+#### Motivation
+
+The task statement allows up to three local descriptors, so as a third method we
+tested a **learned** pipeline: **SuperPoint** as detector and descriptor, and
+**LightGlue** as matcher. It is a different family from both SIFT (hand-designed
+blobs and gradient histograms) and ORB (hand-designed corners and binary
+strings): the detector and the descriptor are trained, and the matching is a
+learned assignment instead of a nearest-neighbour ratio test. The two problems
+left by the other methods (a noisy painting rejected as unknown, and crops with
+too few keypoints) are the ones where a learned detector might help, but this is
+a hypothesis; the comparison below is the test.
+
+#### Implementation
+
+As for ORB, only the features and the matcher change. The crops, the RANSAC
+verification, the ranking and the rejection threshold are the same, so
+differences in the results come from the features and the matching:
+
+| Step | SIFT | ORB (v2) | SuperPoint + LightGlue |
+|---|---|---|---|
+| Crops | `segment_paintings`, fixed threshold 4, whole-image fallback | identical | identical |
+| Keypoints per crop | 1000, native resolution | 1000, crop resized to a longest side of 384 px | up to 1024, crop resized to a longest side of 960 px (never enlarged) and mapped back |
+| Input | grayscale | grayscale (+ CLAHE) | grayscale, no denoising |
+| Descriptor | 128 floats, L2 | 256 bits, Hamming | 256 floats |
+| Tentative matches | ratio test 0.75, one-to-one | identical | LightGlue assignment (no ratio test) |
+| Verification | RANSAC homography, tolerance 5 at reference size 1000, at least 8 tentative matches | identical | identical |
+| Ranking and rejection | verified, tentative, ID; threshold maximising unknown F1 | identical | identical |
+| Feature index | `index.json` + one `.npz` per painting | identical layout | identical layout |
+
+![SuperPoint + LightGlue pipeline diagram](results/week4/figures/pipeline_superpoint_lightglue.svg)
+
+*Figure: SuperPoint + LightGlue pipeline. Gray boxes are shared by the three methods; colored boxes are specific to the method.*
+
+| File | Content |
+|---|---|
+| `keypoints_superpoint.py` | `extract_superpoint` (keypoints and descriptors of one image, returned as `cv2.KeyPoint` for parity with SIFT), `match_superpoint` (LightGlue + RANSAC, same output keys as `match_sift`) and a single-image drawing |
+| `extract_features_sp.py` | batch extraction for the museum and the query crops (`--max-keypoints`, `--image-size`, `--segmentation-threshold`, `--no-segmentation`, `--device`) |
+| `batch_matching_sp.py` | `match`, `tune` and `predict`, as for SIFT; refuses features that are not SuperPoint |
+| `evaluate_sp.py` | full Task 3 evaluation (W3 + SP with/without rejection) with the same outputs as the SIFT and ORB evaluations |
+
+The keypoint coordinates are mapped back to the resolution of each crop, and the
+LightGlue input uses the size of the crop box, so the RANSAC tolerance behaves
+as in the SIFT pipeline. SuperPoint features need the `lightglue` package and
+PyTorch (`python -m pip install git+https://github.com/cvg/LightGlue.git`); the
+weights are downloaded the first time the models run. The device is CUDA if
+available, otherwise CPU (`--device` forces one).
+
+```bash
+python src/extract_features_sp.py --museum data/BBDD --output results/week4/sp/museum
+python src/extract_features_sp.py --queries data/qsd1_w4 --output results/week4/sp/qsd1_w4
+python src/batch_matching_sp.py match --museum-features results/week4/sp/museum --query-features results/week4/sp/qsd1_w4 --output results/week4/sp/qsd1_w4_scores.json
+python src/batch_matching_sp.py tune --scores results/week4/sp/qsd1_w4_scores.json --ground-truth data/qsd1_w4/gt_corresps.pkl --output results/week4/sp/qsd1_w4_calibration.json
+python src/batch_matching_sp.py predict --scores results/week4/sp/qsd1_w4_scores.json --calibration results/week4/sp/qsd1_w4_calibration.json --output results/week4/sp/qsd1_w4_result.pkl
+```
+
+A single crop can be inspected with
+`python src/keypoints_superpoint.py --image data/qsd1_w4/00000.jpg --output results/week4/sp/00000_kp.jpg`.
+
+To evaluate SuperPoint + LightGlue in one run, from the project root:
+
+```bash
+python src/evaluate_sp.py --queries data/qsd1_w4
+```
+
+This validates the saved matching scores (`--scores`, default
+`results/week4/sp/qsd1_w4_scores.json`), calibrates rejection with the same F1
+sweep as the other methods, and evaluates W3 + SP with/without rejection. The
+W3 baseline is reused from `results/week4/evaluation/w3_baseline/` unless
+`--run-w3` recomputes it; `--rematch` recomputes matching from the saved SP
+features (`--museum-features`, `--query-features`, `--device`). Everything is
+written under `evaluations/superpoint/` (`--output`):
+
+| File | Content |
+|---|---|
+| `comparison.md`, `comparison.json` | Overall and known-only metrics, settings and versions |
+| `per_painting.csv`, `predictions.json` | Rankings, scores and errors for each painting |
+| `errors.png` | Predicted crops and expected museum paintings for the remaining errors |
+| `sp/` | `matching_scores.json`, `calibration.json` and `result.pkl` |
+| `w3_baseline/` | Reused W3 predictions, masks and retrieval report on QSD1-W4 |
+
+#### Results
+
+With the same F1 sweep as for the other methods, the selected threshold is
+**21 verified matches**:
+
+| Min. inliers | Unknown precision | Unknown recall | Unknown F1 | mAP@1 |
+|---:|---:|---:|---:|---:|
+| 1 | 0.0000 | 0.0000 | 0.0000 | 0.6923 |
+| 8 | 0.0000 | 0.0000 | 0.0000 | 0.6923 |
+| 14 | 0.8750 | 0.7000 | 0.7778 | 0.8718 |
+| 18 | 0.9000 | 0.9000 | 0.9000 | 0.9231 |
+| **21** | **0.9091** | **1.0000** | **0.9524** | **0.9487** |
+| 71 | 0.8333 | 1.0000 | 0.9091 | 0.9231 |
+
+SuperPoint + LightGlue reaches mAP@1 0.9487 (37 of 39 painting slots), unknown
+F1 0.9524 and the correct number of paintings for 29 of 30 queries. Without
+rejection it scores 0.6923, because the 10 unknown paintings count as errors.
+With rejection it returns `[-1]` for all 10 unknown paintings and for one known
+painting.
+
+The separation between known and unknown paintings is wide: the best match of
+each unknown painting has between 9 and 20 verified matches, while every known
+painting that is matched correctly has at least 70. All thresholds from 21 to 70
+therefore give the same predictions, and the sweep keeps the smallest. Match
+counts are on a different scale for each method, but the relative margin is much
+larger than for ORB v2 (at most 5 for unknown paintings against 7 for the
+weakest known one). The threshold was tuned on the same 30 queries, so this is a
+development result.
+
+It fixes the noisy painting of query 00008 that SIFT rejected (museum 128, 122
+verified matches against 6 with SIFT). Both remaining errors are in query 00016:
+
+- **Left painting (museum 11):** the best candidate (museum 13) has only 7
+  verified matches (12 tentative), the correct painting is not among the ten
+  candidates, and the painting is returned as unknown.
+- **Right painting (museum 280):** segmentation keeps only the left painting, as
+  for the other methods, so it is missing from the predictions.
+
+The development files are `qsd1_w4_scores.json`, `qsd1_w4_calibration.json` and
+`qsd1_w4_result.pkl` (with a `.json` copy) in `results/week4/sp/`.
+
+
+### Task 3: Evaluation and Comparison with W3
+
+Run from the project root:
+
+```bash
+python src/evaluate_orb.py --queries data/qsd1_w4 --rematch
+```
+
+This recomputes the ORB (v2) matching from the saved features, calibrates
+rejection, and runs the best W3 configuration on the same queries: Texture
+fusion, L1, 3x3 median on query crops and the original adaptive W3
+segmentation (`--skip-w3` leaves out this slow step). `--with-v1` adds ORB v1 as
+a second row. To reuse saved matching scores, drop `--rematch`: `--scores`
+(v2) and `--scores-v1` (v1) default to
+`results/week4/orb_v2/scores_qsd1_w4.json` and
+`results/week4/orb/scores_qsd1_w4.json`, and the results are written to
+`evaluations/orb/` (`--output`). The SuperPoint + LightGlue rows
+come from `evaluations/superpoint/` (see the previous section).
+
+| Method | mAP@1 | mAP@5 | mAP@10 | Prediction count correct | Unknown F1 |
+|---|---:|---:|---:|---:|---:|
+| W3 Texture fusion | 0.5385 | 0.5513 | 0.5556 | 27/30 | 0.0000 |
+| SIFT without rejection | 0.6667 | 0.6752 | 0.6752 | 29/30 | 0.0000 |
+| SIFT with rejection | 0.9231 | 0.9231 | 0.9231 | 29/30 | 0.9091 |
+| ORB v1 without rejection | 0.6667 | 0.6667 | 0.6699 | 29/30 | 0.0000 |
+| ORB v1 with rejection | 0.9231 | 0.9231 | 0.9231 | 29/30 | 0.9091 |
+| ORB (v2) without rejection | 0.7179 | 0.7179 | 0.7179 | 29/30 | 0.0000 |
+| **ORB (v2) with rejection** | **0.9744** | **0.9744** | **0.9744** | **29/30** | **1.0000** |
+| SuperPoint + LightGlue without rejection | 0.6923 | 0.6923 | 0.6923 | 29/30 | 0.0000 |
+| SuperPoint + LightGlue with rejection | 0.9487 | 0.9487 | 0.9487 | 29/30 | 0.9524 |
+
+The selected rejection threshold is **8 verified matches** for SIFT,
+**6** for ORB (v1 and v2) and **21** for SuperPoint + LightGlue (whose match counts
+are on a different scale): fewer than that returns `[-1]` for that painting. SIFT rejects all 10 unknown paintings and 2 known ones (precision
+0.8333, recall 1.0000, F1 0.9091), and so does ORB v1 (00008 and the left
+painting of 00016). ORB v2 rejects the 10 unknown paintings and no known one. SuperPoint + LightGlue rejects the 10 unknown paintings and one known
+one (precision 0.9091, recall 1.0000, F1 0.9524).
+
+We compute AP per painting in reading order, with zero for missing or extra
+crops. A correct `[-1]` prediction scores one for an unknown target. W3 has no
+rejection mechanism, so its score includes zero for all 10 unknowns. On the
+29 annotated known paintings alone, mAP@1 is **0.7241 for W3 (21/29)**,
+**0.8966 for SIFT (26/29)**, **0.8966 for ORB v1 (26/29)**, **0.9655 for ORB v2 (28/29)** and **0.9310 for
+SuperPoint + LightGlue (27/29)**. The full-system
+comparison also includes the segmentation change; it does not isolate the
+effect of the descriptor.
+
+Reading the results:
+
+- Rejection of unknown paintings is the largest single gain for all three local
+  methods: without it each loses the 10 unknown slots (SIFT 0.6667, ORB 0.7179,
+  SuperPoint + LightGlue 0.6923).
+- ORB v1 gives the same score as SIFT (36/39 slots) and rejects the same number
+  of known paintings (two), with a much cheaper descriptor.
+- ORB v2 is ahead of SIFT by two painting slots (38/39 against 36/39), with a
+  smaller descriptor and a cheaper distance. The gain over ORB v1 comes from the
+  lower FAST threshold and CLAHE, which turned the two paintings that v1
+  rejected (00008, and the left painting of 00016) into matches. Both end up
+  with exactly 7 verified matches, one above the threshold of 6.
+- SuperPoint + LightGlue is ahead of SIFT by one painting slot (37/39 against
+  36/39) and behind ORB v2 by one (38/39). It has the widest margin between
+  known and unknown paintings of the three, and it matches the noisy painting of
+  00008 that SIFT rejects, but it does not recover the left painting of 00016.
+- All three local methods are well above the Week 3 texture descriptor, which
+  cannot reject unknown paintings; on the 29 known paintings alone it reaches
+  0.7241 mAP@1, against 0.8966 for SIFT, 0.9655 for ORB v2 and 0.9310 for
+  SuperPoint + LightGlue.
+
+The three remaining SIFT errors are in two queries:
+
+- **00008:** one noisy painting, museum ID 128. Its best match has 6 inliers,
+  below the rejection threshold, and the system returns unknown.
+- **00016:** two paintings, museum IDs 11 and 280. Segmentation keeps only the
+  left painting. That crop has no SIFT keypoints and is rejected; the right
+  painting is missing from the predictions.
+
+ORB v2 has one remaining error, in query 00016: segmentation keeps only the
+left painting (museum 11, matched correctly at rank 1 with 7 verified matches),
+so the right painting (museum 280) is missing from the predictions. This is the
+same segmentation failure as for the other methods, not a retrieval error (its
+known mAP@5 and mAP@10 equal its mAP@1, 0.9655).
+
+SuperPoint + LightGlue has two remaining errors, both in query 00016 (the left
+painting is rejected with 7 verified matches, and the right one is lost in
+segmentation); see its section above.
+
+![SIFT errors: predicted crops and expected museum paintings](evaluations/sift/errors.png)
+*Figure: SIFT errors*
+![ORB v1 errors: predicted crops and expected museum paintings](evaluations/orb/errors_orb_v1.png)
+*Figure: ORB v1 errors*
+![ORB v2 errors: predicted crops and expected museum paintings](evaluations/orb/errors_orb_v2.png)
+*Figure: ORB v2 errors*
+![SuperPoint + LightGlue errors: predicted crops and expected museum paintings](evaluations/superpoint/errors.png)
+*Figure: SuperPoint + LightGlue errors*
+
+The segmentation setting, the FAST threshold and CLAHE choice, and both
+rejection thresholds were selected on QSD1-W4, the same 30 queries used to report
+the scores. The saved SIFT features were extracted with OpenCV
+4.13.0; this matching run used 5.0.0. The DCT in the W3 baseline keeps its
+original 51x51 blocks. For OpenCV builds that do not support odd-size DCTs, the
+same orthonormal DCT-II is calculated with NumPy.
+
+#### How the methods behave
+
+The three methods share the segmentation, the geometric verification and the
+rejection rule, so the differences below come from the features and the
+matching. The segmentation is also the only cause of the error in 00016 (right
+painting), which no descriptor can fix.
+
+- **Difficult crops decide the result.** Every descriptor error on a known
+  painting comes from two crops: the noisy painting of 00008 and the left painting of 00016.
+  SIFT gets 6 verified matches on 00008 and no keypoints on 00016 (left). ORB v1
+  behaves the same way (5 matches, no keypoints), because a fixed FAST threshold
+  needs a contrast that these crops do not have. ORB v2 recovers both, but with
+  7 matches each. SuperPoint + LightGlue gets 122 matches on 00008, the largest
+  gain of any change, but it fails on 00016 (left): its best candidate is a
+  wrong painting (museum 13, 7 matches) and the correct one is not among the ten
+  candidates. A learned detector therefore helps with the noisy painting but not
+  with the other crop, while ORB with contrast enhancement helps with both,
+  narrowly.
+- **Margin between known and unknown paintings.** Rejection works only if the
+  best match of an unknown painting is clearly below that of a known one. For
+  ORB v2 the unknown paintings reach at most 5 matches and the known ones at
+  least 7 (a ratio of 1.4, only thresholds 6 and 7 work). For SuperPoint +
+  LightGlue the unknown paintings reach 9-20 and the known paintings that are
+  matched correctly have at least 70 (a ratio of 3.5, every threshold from 21
+  to 70 gives the same predictions). The counts are on a different scale for
+  each method, so only the ratio can be compared. With a narrow gap, one
+  painting with a slightly different count changes the result, so ORB v2 is the
+  more fragile of the two despite its higher score.
+- **Settings tuned on this set.** The ORB v2 gain depends on two settings (FAST
+  threshold 7 and CLAHE) that were chosen on QSD1-W4 after looking at which crops
+  failed. SuperPoint + LightGlue uses its default detector without enhancement,
+  and only its rejection threshold is calibrated. A score that depends on more
+  choices made on the same 30 queries says less about the method.
+- **Cost.** ORB is the cheapest: a 32-byte descriptor and a Hamming distance.
+  SIFT uses 128 floats with an L2 distance. SuperPoint + LightGlue uses 256
+  floats and a learned matcher, needs PyTorch and is slow without a GPU.
+
+ORB v2 has the highest development score and is the cheapest to compute (a
+32-byte descriptor, a Hamming distance, no PyTorch or GPU), so it is the method
+we submit. Its lead over SuperPoint + LightGlue is one painting slot out of 39,
+which a single crop can change, so the choice rests on cost and simplicity as
+much as on the score. The risks of its development settings are described next.
+
+#### Risks of the ORB v2 settings
+
+We submit ORB v2 with its development settings (FAST threshold 7, CLAHE,
+rejection threshold 6). The development score does not show the risks of these
+settings. However, this could change if they were applied to other images:
+
+- **The gain comes from two crops.** The only difference between the v1 and v2
+  predictions is that 00008 (5 to 7 verified matches) and the left painting of
+  00016 (0 to 7) are now accepted. The score of 0.9744 depends on two paintings
+  landing one match above the threshold.
+- **The settings raise the matches of unknown paintings too.** The best verified
+  count of the 10 unknown paintings has a mean of 1.7 with v1 and 3.7 with v2,
+  and the number of unknown paintings with at least 4 matches goes from 4 to 8;
+  five of them end at exactly 5, one below the threshold. A lower FAST threshold
+  keeps weaker corners, which also appear on noise and texture, and CLAHE
+  amplifies local contrast, noise included. More keypoints give more chance
+  matches that can pass RANSAC. This is a plausible explanation that we did not
+  isolate with a separate experiment.
+- **A small shift is expensive.** If the unknown paintings of other images reached
+  one more match than here, the five paintings at 5 would pass the threshold.
+  The sweep shows the effect: with a threshold of 5, recall of unknown paintings
+  falls to 0.5000 and mAP@1 from 0.9744 to 0.8462 (5 slots). In the other
+  direction, a known painting like 00008 or 00016 (left) with two fewer matches
+  would be rejected, as with a threshold of 8: mAP@1 0.9231 and unknown F1
+  0.9091, the level of SIFT and ORB v1. A change of one or two matches moves the
+  result by 2 to 5 of 39 slots (0.05 to 0.13 mAP@1).
+- **The calibration cannot show this risk.** The threshold was chosen on the same
+  30 queries that are scored and the sweep reports its best point, so the unknown
+  F1 of 1.0000 is an upper bound. It says nothing about how often chance matches
+  reach 6.
+- **The alternative has more room.** SuperPoint + LightGlue separates the classes
+  by a larger factor: its unknown paintings reach 9-20 matches and the known ones
+  at least 70, a ratio of 3.5 against 1.4. However, is more computationally expensive.
+
+Outputs are under `evaluations/sift/`:
+
+| File | Content |
+|---|---|
+| `comparison.md`, `comparison.json` | Overall and known-only metrics, settings and versions |
+| `per_painting.csv`, `predictions.json` | Rankings, scores and errors for each painting and method |
+| `sift/matching_scores.json`, `sift/calibration.json` | Verified match counts and the F1 threshold sweep (SIFT) |
+| `../orb/orb_v1/`, `../orb/orb_v2/` | `matching_scores.json`, `calibration.json` and `result.pkl` of each ORB variant (with `evaluate_orb.py --with-v1`) |
+| `distance_comparison/` | L1 match scores, calibration and comparison with L2 |
+| `sift/result.pkl` | Evaluated development predictions of SIFT, including unknowns |
+| `w3_baseline/` | W3 predictions, masks and retrieval report on QSD1-W4 |
+| `segmentation.txt`, `errors.png` | Segmentation comparison and remaining SIFT errors |
+| `../orb/errors_orb_v1.png`, `../orb/errors_orb_v2.png` | Remaining ORB errors (`per_painting.csv`, `comparison.*` and `predictions.json` of the ORB run are in the same folder) |
+| `../superpoint/` | Full SuperPoint + LightGlue Task 3 report (`comparison.*`, `per_painting.csv`, `predictions.json`, `errors.png`, `sp/` scores and `w3_baseline/`) |
+
+The original W4 feature files and matching results are kept in place. The
+files above are for development evaluation.
+
+### Task 4: Blind submission (QST1-W4)
+
+We submit **ORB v2** as final method1. It has the highest development score 
+(mAP@1 0.9744, against 0.9487 for SuperPoint + LightGlue and 0.9231 for SIFT) 
+and the lowest computational cost.
+The risks of its settings are discussed in Task 3. The queries are processed with
+exactly the development settings (variant v2: FAST threshold 7 and CLAHE, up to
+1000 keypoints on crops resized to a longest side of 384 px, fixed segmentation
+threshold 4, RANSAC tolerance 5), the museum features and the calibration from
+the development run (6 verified matches). The segmentation keeps up to two
+paintings per image, as in QSD1-W4.
+
+The format is the one in the assignment: one list per query with one ranking per
+painting, and `[-1]` for an unknown painting, so a query with a single unknown
+painting is `[[-1]]`.
+
+```bash
+python src/extract_features_orb.py --queries data/qst1_w4 --output results/week4/orb_v2/qst1_w4 --variant v2
+python src/batch_matching_orb.py match --museum-features results/week4/orb_v2/museum --query-features results/week4/orb_v2/qst1_w4 --output results/week4/orb_v2/scores_qst1_w4.json
+python src/batch_matching_orb.py predict --scores results/week4/orb_v2/scores_qst1_w4.json --calibration evaluations/orb/orb_v2/calibration.json --output Team1/week4/QST1/method1/result.pkl
+```
 
 ## Week 3
 
@@ -777,641 +1185,239 @@ same folders are for our own records.
 
 ---
 
-## Week 4
+## Week 2
 
-QSD1-W4 contains 30 queries and 39 paintings: 29 belong to the museum and
-10 are unknown (`-1`). We use the JPG files directly in `data/qsd1_w4`,
-not the clean copies in `non_augmented/`. Museum images are in `data/BBDD`.
+### Task 1: Color Histograms
 
-Week 4 replaces the global descriptors of Weeks 1-3 by **local features**:
-keypoints and local descriptors are computed on the museum images and on every
-query painting, tentative matches are found by comparing descriptors, and the
-matches are verified geometrically. We built the full system with **SIFT**,
-then developed a second method with **ORB** and a third one with learned
-**SuperPoint + LightGlue** features, keeping every other step of the pipeline
-fixed so that the descriptors can be compared. These are the three descriptors
-the assignment allows at most (ORB v1 and v2 are two settings of the same
-descriptor). The sections below follow that path: SIFT (Tasks 1-2), the step
-from SIFT to ORB, SuperPoint + LightGlue, the evaluation with a discussion of how
-the methods behave (Task 3) and the submission (Task 4). The submitted method is
-ORB v2, which has the best development score and the lowest cost; the discussion
-also weighs the risks of that choice.
+`methods_w2.py` keeps four Lab descriptors (all L1-normalized, with an
+optional foreground mask):
 
-### Tasks 1 and 2: SIFT and Matching
-
-`keypoints_w4.py` extracts SIFT descriptors from grayscale images, with
-`nfeatures=1000`. `extract_features_w4.py` processes the museum and each
-detected query crop, saving descriptors, keypoint coordinates and crop boxes.
-Query segmentation reuses the W3 wall model with a fixed distance threshold
-of 4. The original adaptive threshold and fixed thresholds 3, 4, 5 and 6 were
-compared on QSD1-W4:
-
-| Segmentation | Mask precision | Mask recall | Mask F1 | Correct painting count |
-|---|---:|---:|---:|---:|
-| W3 adaptive | 0.9036 | 0.8020 | 0.8358 | 25/30 |
-| Fixed threshold 3 | 0.8724 | 0.9630 | 0.9140 | 27/30 |
-| **Fixed threshold 4** | **0.9103** | **0.9424** | **0.9244** | **28/30** |
-| Fixed threshold 5 | 0.9267 | 0.8961 | 0.9050 | 26/30 |
-| Fixed threshold 6 | 0.8991 | 0.7786 | 0.8099 | 22/30 |
-
-Threshold 4 gives the best mask F1 and painting count among these settings.
-If no painting is found, the whole image is used as a fallback. This happens
-on query 00026. A fallback is still a prediction, so retrieval count accuracy
-can differ from the segmentation count in this table.
-
-```bash
-python src/extract_features_w4.py --museum data/BBDD --output results/week4/sift/museum
-python src/extract_features_w4.py --queries data/qsd1_w4 --segmentation-threshold 4 --output results/week4/sift/qsd1_w4_threshold4
-```
-
-`matching_w4.py` compares SIFT vectors with L2 distance and a nearest-neighbour
-ratio test of 0.75. A museum descriptor can be matched only once. Pairs with
-at least 8 tentative matches are checked with a RANSAC homography. Coordinates
-are scaled to a reference longest side of 1000 pixels, with a RANSAC tolerance
-of 5. Museum candidates are ranked by verified matches, then tentative matches,
-then museum ID to break ties.
-
-![SIFT pipeline diagram](results/week4/figures/pipeline_sift.svg)
-
-*Figure: SIFT pipeline (Tasks 1 and 2). Gray boxes are shared by the three methods; colored boxes are specific to the method.*
-
-`batch_matching_w4.py` runs this over all crops. It also selects an unknown
-rejection threshold by maximizing unknown-positive F1 on the development set.
-Every threshold that changes a prediction is considered; equal-F1 ties use
-the smaller threshold. Prediction uses this saved calibration without reading GT.
-
-We also compared L1 and L2 descriptor distances with the same ratio test,
-RANSAC settings and crops. Each distance has its own F1 threshold sweep:
-
-| SIFT distance | Selected minimum inliers | mAP@1 | Unknown F1 |
-|---|---:|---:|---:|
-| L2 | 8 | 0.9231 | 0.9091 |
-| L1 | 8 | 0.9231 | 0.9091 |
-
-Both give the same final metrics, so we keep the original L2 configuration.
-Use `--distance L1` in the matching command to repeat the alternative.
-
-```bash
-python src/batch_matching_w4.py match --museum-features results/week4/sift/museum --query-features results/week4/sift/qsd1_w4_threshold4 --output results/week4/batch/matching_scores.json
-python src/batch_matching_w4.py tune --scores results/week4/batch/matching_scores.json --ground-truth data/qsd1_w4/gt_corresps.pkl --output results/week4/batch/calibration.json
-```
-
-The original feature indices contain image paths from the computer on which
-they were extracted. To draw matches locally, pass `--query-images data/qsd1_w4`
-and `--museum-images data/BBDD` to `matching_w4.py`.
-
-### From SIFT to ORB
-
-#### Starting point and motivation
-
-With SIFT, the system reaches mAP@1 0.9231 and unknown F1 0.9091 on QSD1-W4
-(Task 3 below), a large improvement over the Week 3 texture method. Its
-remaining problems suggested what a second method should address:
-
-- **Two known paintings are rejected as unknown.** With the selected threshold
-  of 8 verified matches, the noisy painting of query 00008 (museum 128) has only
-  6 inliers and is returned as `[-1]`.
-- **Some crops give no keypoints at all.** In query 00016 the left crop has no
-  SIFT keypoints, so it cannot match anything and is rejected.
-- **SIFT descriptors are heavy.** Each one is 128 floating-point values
-  (512 bytes) compared with an L2 distance; a query crop is matched against 287
-  museum images, so matching cost is dominated by these float distances.
-
-The task statement lists several local descriptors and asks us to test at most
-three. We chose **ORB (oriented FAST + rotated BRIEF)** as the second method for
-three reasons. It belongs to a different family from SIFT, so a comparison is
-informative: a corner detector with binary descriptors against a scale-space
-blob detector with gradient histograms. Its descriptor is a 256-bit string
-(32 bytes, 16 times smaller than SIFT's) compared with the Hamming distance,
-which is much cheaper than the L2 distance. And it is included in OpenCV's main
-module, so it needs no extra packages.
-
-#### How ORB works
-
-1. **Keypoint detection (oriented FAST).** FAST marks a pixel as a corner when
-   a contiguous arc of pixels on a circle around it is all brighter or all
-   darker than the centre by more than a *threshold* (OpenCV default 20 gray
-   levels). Candidates are ranked with the Harris corner measure and only the
-   best 1000 are kept. To handle scale, detection runs on an 8-level image
-   pyramid with a factor of 1.2 between levels, so a painting seen at a different
-   size still produces corners at one of the levels.
-2. **Orientation.** The angle of each keypoint is the direction from the patch
-   centre to its intensity centroid, which makes the descriptor rotation
-   invariant.
-3. **Descriptor (rotated BRIEF).** The patch (31x31 pixels) is smoothed and 256
-   pairs of pixels are compared (is the first darker than the second?). The
-   pairs are rotated by the keypoint angle, and the 256 binary outcomes form the
-   descriptor.
-4. **Distance.** Two descriptors are compared by the Hamming distance, the
-   number of differing bits. L1 and L2 are not meaningful for bit strings.
-
-There are two trade-offs relative to SIFT: the scale handling is a coarse
-pyramid rather than a continuous scale space, and FAST depends on an absolute
-intensity difference, so low-contrast regions produce few corners. The second
-point turned out to matter (see ORB v2).
-
-#### Implementation
-
-Only the feature extractor and the distance change; everything else is shared
-with the SIFT pipeline, so that differences in the results come from the
-features:
-
-| Step | SIFT | ORB |
+| Method | Description | Parameter |
 |---|---|---|
-| Crops | `segment_paintings`, fixed threshold 4, whole-image fallback | identical |
-| Keypoints per crop | 1000, native resolution | 1000, crop resized to a longest side of 384 px (never enlarged) and mapped back |
-| Descriptor | 128 floats, L2 | 256 bits (32 bytes), Hamming |
-| Ratio test | 0.75, one-to-one | identical |
-| Verification | RANSAC homography, tolerance 5 at reference size 1000, at least 8 tentative matches | identical |
-| Ranking and rejection | verified, tentative, ID; threshold maximising unknown F1 | identical |
-| Feature index | `index.json` + one `.npz` per painting | identical layout |
+| `Lab blocks 1D` | grid of marginal 1D histograms (32 bins per channel), concatenated in row-major order | `--blocks T` total cells, a perfect square (default 25 → 5×5) |
+| `Lab 2D` | same grid of cells; each cell is L as a 1D marginal (32 bins) plus the (a, b) pair as a joint 2D histogram (32 bins per axis), concatenated row-major | `--blocks T` (default 25 → 5×5) |
+| `Lab 3D` | same grid of cells; each cell is a joint 3D L-a-b histogram (32 bins per axis), concatenated row-major | `--blocks T` (default 25 → 5×5) |
+| `Lab pyramid` | hierarchy of 1D-block levels: level 1 is one block, each extra level doubles the number of blocks (1, 2, 4, 8 …) | `--levels K` (default 3) |
 
-![ORB v2 pipeline diagram](results/week4/figures/pipeline_orb.svg)
+Run `python .\src\methods_w2.py --list` to list them.
 
-*Figure: ORB v2 pipeline. Gray boxes are shared by the three methods; colored boxes are specific to the method.*
+### Task 2: Retrieval Comparison
 
-| File | Content |
+Run a W2 method on a museum/query pair (add `--ground-truth` to print mAP):
+```powershell
+python .\src\methods_w2.py --museum ..\..\datasets\BBDD --queries ..\..\datasets\qsd1_w2 --method "Lab blocks 1D" --blocks 25
+```
+
+`--method` is required: a descriptor name or `all` (evaluates the four methods
+in one pass). Use `--blocks`/`--levels` for the parametrized methods and
+`--distance` for the comparison (default L1).
+
+For example, on QSD1-W2:
+```powershell
+python .\src\methods_w2.py --museum data\BBDD --queries data\qsd1_w2 --ground-truth data\qsd1_w2\qsd1_w1\gt_corresps.pkl --method all
+```
+
+mAP on the 30 QSD1-W2 queries against the BBDD (L1):
+
+| Descriptor | Config | mAP@1 | mAP@5 |
+|---|---|---:|---:|
+| W1 HSV grid | 4×4 | 0.7667 | 0.8194 |
+| W1 HSV grid | 6×6 | 0.8000 | 0.8500 |
+| `Lab blocks 1D` | `--blocks 16` | 0.8333 | 0.8722 |
+| `Lab blocks 1D` | `--blocks 25` (default) | 0.8667 | 0.8944 |
+| `Lab blocks 1D` | `--blocks 36` | 0.8667 | 0.9000 |
+| `Lab pyramid` | `--levels 3` | 0.6333 | 0.6744 |
+| `Lab pyramid` | `--levels 4` | 0.7333 | 0.7778 |
+| `Lab 2D` | `--blocks 1` (1×1) | 0.5333 | 0.6028 |
+| `Lab 2D` | `--blocks 25` (default) | 0.8667 | 0.8917 |
+| `Lab 3D` | `--blocks 1` (1×1) | 0.4000 | 0.4833 |
+| `Lab 3D` | `--blocks 25` (default) | 0.7000 | 0.7472 |
+
+`Lab blocks 1D --blocks 36` gives the best mAP@5 on this set (tied with the
+default `--blocks 25` at rank 1). Evaluation with segmentation and blind
+queries is still pending.
+
+The extra experiments and their results are in
+[results/week2/color_experiments](results/week2/color_experiments).
+
+### Task 3: Background Removal
+
+Method:
+1. The outer 4% of the image is used as a sample of the wall.
+2. A smooth color model of the wall is fitted in CIE-Lab (a polynomial surface,
+   so uneven lighting is handled; frame corners or labels in the strip are
+   down-weighted).
+3. Each pixel's Mahalanobis distance to that wall model is computed; pixels far
+   from the wall are foreground. The threshold is chosen per image (Otsu,
+   clipped to 3-12).
+4. Cleanup: morphology, keep the largest connected blob, fill holes, and replace
+   the blob by its bounding box (paintings are rectangles). Use
+   `BGParams(use_bbox=False)` for the pure color mask.
+
+No edge, contour or object detector is used. Masks are saved with the same name
+as the image and a `.png` extension (`00001.jpg` -> `00001.png`), values 0
+(background) / 255 (painting). `--viz` saves one overlay per image plus
+`overview.jpg` (dimmed = removed background, red = our mask, green =
+ground truth, F1 on every tile). If the ground-truth masks sit next to the
+images (QSD2), the mean P/R/F1 is printed.
+
+### Task 4: Segmentation Evaluation
+
+Run after generating the masks from Task 3:
+```powershell
+python src\methods_w2.py --segment data\qsd2_w2 --out results\week2\QSD2\masks --viz results\week2\QSD2\viz 
+```
+
+The script matches PNG masks by numeric filename ID and computes foreground
+precision, recall and F1 for each query. Masks must have the same dimensions
+as their reference, with 0 for background and nonzero pixels for foreground.
+
+The table shows the scores for each query and their mean. Use `--save` to
+write it to a text file.
+
+Add `--viz` to also draw the masks over the images (`--images` if the `.jpg`
+files are not in the ground-truth folder):
+```powershell
+python src\methods_w2.py --segmentation results\week2\QSD2\masks data\qsd2_w2 --viz results\week2\QSD2\viz --save results\week2\QSD2\mask_metrics.txt
+```
+
+Result of Task 3 on the 30 QSD2 images:
+
+| | Precision | Recall | F1 |
+|---|---:|---:|---:|
+| Mean over the 30 images | 0.9370 | 0.9827 | **0.9569** |
+
+19 of 30 masks have F1 >= 0.95. The weakest are 00020 (white painting on a
+light wall, 0.84), 00026, 00014, 00000 and 00013. Most of the lost precision is
+the shadow or lighter strip of wall just below a painting.
+
+### Task 5: Retrieval on QSD2 with Background Removal
+
+Add `--background-removal` to the retrieval command: each query is segmented
+with Task 3 and the descriptor only counts the painting pixels.
+```powershell
+python src\methods_w2.py --museum data\BBDD --queries data\qsd2_w2 --ground-truth data\qsd2_w2\qsd2_w1\gt_corresps.pkl --method "Lab pyramid" --levels 7 --background-removal
+```
+
+Museum images contain only the painting, but a query has wall around it. The
+block grid is laid over the image, so cell (i, j) of the query would cover a
+different part of the painting than cell (i, j) of the museum image, even when
+the wall pixels are masked out. The query is therefore **cropped to the
+bounding box of its mask** before the descriptor is computed. `--no-crop` turns
+this off.
+
+mAP@1 / mAP@5 on QSD2 (L1):
+
+| Descriptor | **Mask + crop** | Ground-truth mask + crop |
+|---|---:|---:|
+| `Lab pyramid --levels 7` | **0.8333 / 0.8483** | 0.8667 / 0.8750 |
+| `Lab blocks 1D --blocks 36` | 0.7667 / 0.8139 | 0.8667 / 0.8844 |
+| `Lab blocks 1D --blocks 16` | 0.7000 / 0.7556 | 0.7333 / 0.7890 |
+
+The last column uses the ground-truth masks (`--query-masks data\qsd2_w1`) and is
+a comparison with the annotated masks. `--background-removal` and
+`--query-masks` cannot be used together.
+
+### Task 6: Blind Submission (QST1 and QST2)
+
+```powershell
+python src\methods_w2.py --museum data\BBDD --qst1 data\qst_w2\qst1_w2 --qst2 data\qst_w2\qst2_w2
+```
+
+Give `--qst1` and/or `--qst2` (the folders must contain the `.jpg` files
+directly). Use `--submit-out` to change the output folder (default
+`results/week2`) and `--distance` to change the comparison.
+
+| Output under `results/week2/` | Content |
 |---|---|
-| `keypoints_orb.py` | `extract_orb` (keypoints and descriptors of one image, for both variants: `--variant v1` or `v2`) and a single-image drawing |
-| `matching_orb.py` | `match_orb` (ratio test with Hamming distance, one-to-one matches, RANSAC), with the same output as `match_sift` |
-| `extract_features_orb.py` | batch extraction for the museum and the query crops, `--variant v1` or `--variant v2` (default) |
-| `batch_matching_orb.py` | `match`, `tune` and `predict`, as for SIFT; refuses museum and query features extracted with different variants |
+| `QST1/method1/result.pkl` | `Lab blocks 1D`, 6x6 cells (`--blocks 36`), L1, whole image |
+| `QST1/method2/result.pkl` | `Lab pyramid`, 7 levels (`--levels 7`), L1, whole image |
+| `QST2/method1/result.pkl`, `QST2/method2/result.pkl` | same methods on the painting only (Task 3 mask + crop) |
+| `QST2/method1/*.png`, `QST2/method2/*.png` | background masks, same name as the query, 0/255 |
 
-Resizing the crops to 384 px gives the detector the same working scale for every
-crop, and the keypoint coordinates are mapped back to the crop's resolution so
-that the RANSAC tolerance behaves as in the SIFT pipeline.
+Each `result.pkl` is a Python list of lists with exactly 10 unique integer
+museum IDs per query, best first. After writing, the script reads every file
+back and checks the IDs, and that each mask exists, has the size of its query
+and contains only 0 and 255. The methods are defined in `SUBMISSION_METHODS`
+in `methods_w2.py`.
 
-```bash
-python src/extract_features_orb.py --museum data/BBDD --output results/week4/orb/museum --variant v1
-python src/extract_features_orb.py --queries data/qsd1_w4 --output results/week4/orb/qsd1_w4 --variant v1
-python src/batch_matching_orb.py match --museum-features results/week4/orb/museum --query-features results/week4/orb/qsd1_w4 --output results/week4/orb/scores_qsd1_w4.json
-python src/batch_matching_orb.py tune --scores results/week4/orb/scores_qsd1_w4.json --ground-truth data/qsd1_w4/gt_corresps.pkl --output results/week4/orb/calibration.json
+---
+
+## Week 1
+
+### Task 1: Image Descriptors
+
+Run:
+```powershell
+python .\src\methods_w1.py --list
 ```
 
-#### ORB v1: default settings
+The W1 descriptors live in `methods_w1.py` (`METHODS_W1`), with the histogram
+implementations in `utils.py`:
+- Grayscale
+- RGB
+- HSV (one component per histogram)
+- HSV grid (4×4 cells, 512 values)
 
-With OpenCV's default FAST threshold, the unknown-rejection sweep selects 6
-verified matches:
+### Task 2: Similarity Functions
 
-| Min. inliers | Unknown precision | Unknown recall | Unknown F1 | mAP@1 |
-|---:|---:|---:|---:|---:|
-| 1 | 0.8571 | 0.6000 | 0.7059 | 0.8205 |
-| 5 | 0.9000 | 0.9000 | 0.9000 | 0.8974 |
-| **6** | 0.8333 | 1.0000 | **0.9091** | **0.9231** |
-| 22 | 0.7692 | 1.0000 | 0.8696 | 0.8974 |
+All similarity formulas are implemented in `k_similarity.py`, and fall into two groups:
 
-ORB v1 therefore matches SIFT (mAP@1 0.9231, unknown F1 0.9091), but with
-cheaper descriptors. It also shows the same kind of error: 2 known paintings are
-rejected as unknown.
+| Type | Functions | Interpretation |
+|------|-----------|----------------|
+| Distances | Euclidean, L1, Chi-square | Lower value = more similar |
+| Similarities | Histogram Intersection, Hellinger kernel, Cosine, Correlation | Higher value = more similar |
 
-#### Error analysis: why known paintings are rejected
+### Task 3: Retrieval and Evaluation
 
-Instead of only tuning the threshold, we looked at the best inlier count of each
-query painting. The queries whose best match has 0 inliers are also the ones
-with very few ORB keypoints in their crop:
-
-| Query | 00000 | 00007 | 00016 | 00017 | 00021 | 00029 |
-|---|---:|---:|---:|---:|---:|---:|
-| ORB v1 keypoints in the crop | 23 | 34 | 0 | 128 | 193 | 164 |
-| Best verified matches | 0 | 0 | 0 | 0 | 0 | 0 |
-
-A normal crop gives 700-1000 keypoints. Of these six queries, five (00000,
-00007, 00017, 00021, 00029) are genuine unknown paintings, for which 0 inliers
-is the right outcome. The sixth, 00016, contains a known painting (the left
-one, museum 11): its crop has no ORB keypoints, so there is nothing to verify
-and it is rejected as unknown whatever threshold is chosen. The other known
-painting rejected by v1 is the noisy painting of 00008 (museum 128). It is not
-a keypoint-starvation case: it reaches 5 verified matches, one below the v1
-threshold of 6. QSD1-W4 includes paintings with
-colour changes, and a washed-out painting has weak local contrast. Our
-hypothesis was that the FAST threshold (20 gray levels) is too strict for
-them. We checked this on a Week 1 query image with its contrast artificially
-reduced to 15%: the default detector found 0 keypoints, a threshold of 7 found
-57, and a threshold of 7 combined with CLAHE (contrast-limited adaptive
-histogram equalisation, which stretches the local contrast) found 658. The
-result on QSD1-W4 below is the real test of the hypothesis.
-
-#### ORB v2: low FAST threshold and CLAHE
-
-| Variant | FAST threshold | Contrast equalisation | Folder |
-|---|---:|---|---|
-| ORB v1 | 20 (OpenCV default) | no | `results/week4/orb` |
-| **ORB v2** | **7** | **CLAHE (clip limit 3, 8x8 tiles) on the grayscale crop** | `results/week4/orb_v2` |
-
-Both variants use the same code, selected with `--variant v1` or `--variant v2`
-(the default). `--fast-threshold N` and `--clahe/--no-clahe` override a single
-setting; the index then records the variant as `custom`. The settings must be
-the same for the museum images and for the queries: if only the queries were
-equalised, the same painting would be described from two different images, and
-its descriptors would be less similar. `extract_features_orb.py` stores the
-variant, FAST threshold and CLAHE in `index.json`; `match` stops if the museum
-and query folders differ, and `predict` stops if the calibration was made with
-different settings.
-
-```bash
-python src/extract_features_orb.py --museum data/BBDD --output results/week4/orb_v2/museum --variant v2
-python src/extract_features_orb.py --queries data/qsd1_w4 --output results/week4/orb_v2/qsd1_w4 --variant v2
-python src/batch_matching_orb.py match --museum-features results/week4/orb_v2/museum --query-features results/week4/orb_v2/qsd1_w4 --output results/week4/orb_v2/scores_qsd1_w4.json
-python src/batch_matching_orb.py tune --scores results/week4/orb_v2/scores_qsd1_w4.json --ground-truth data/qsd1_w4/gt_corresps.pkl --output results/week4/orb_v2/calibration.json
+Run:
+```powershell
+python .\src\k_similarity.py
 ```
 
-A single crop can be inspected with
-`python src/keypoints_orb.py --image data/qsd1_w4/00000.jpg --output results/week4/orb_v2/00000_kp.jpg --variant v2`.
+This script retrieves the top K museum images for each query by comparing image descriptors (Grayscale, HSV, RGB, HSV grid) using the similarity functions.
 
-| Min. inliers | Unknown precision | Unknown recall | Unknown F1 | mAP@1 |
-|---:|---:|---:|---:|---:|
-| 1 | 1.0000 | 0.2000 | 0.3333 | 0.7692 |
-| 5 | 1.0000 | 0.5000 | 0.6667 | 0.8462 |
-| **6** | **1.0000** | **1.0000** | **1.0000** | **0.9744** |
-| 8 | 0.8333 | 1.0000 | 0.9091 | 0.9231 |
-| 19 | 0.7692 | 1.0000 | 0.8696 | 0.8974 |
+**Ranking order**
+- Distances are sorted in ascending order.
+- Similarities (Histogram Intersection and Hellinger kernel) are sorted in descending order. They are listed in the `SIMILARITY_FUNCTIONS` constant, used by `rank_museum_images`.
 
-The two known paintings that v1 rejected (00008 and the left painting of 00016)
-are now matched, and the separation between known and unknown paintings is
-clean: the best match of every unknown painting has at most 5 verified matches
-and the weakest known painting has 7, so thresholds 6 and 7 give the same result
-on this set. The gap is narrow (a ratio of 1.4), and the threshold was tuned on
-these same 30 queries. The low-contrast hypothesis is supported for 00016, whose
-crop goes from no keypoints to 7 verified matches, but the gains are small: both
-recovered paintings pass the threshold by a single match.
+Sorting a similarity in ascending order would return the least similar images first (scores of 0), which is why this distinction is needed.
 
-#### Evaluation
+**Evaluation metrics**
+- **AP@K** measures how accurately the relevant museum images are ranked within the top K results for a single query, using the ground-truth correspondences.
+- **mAP@K** averages AP@K across all queries, allowing retrieval performance to be compared across descriptor methods and distance functions for K=1 and K=5.
 
-Each variant has its own features, scores and calibration (`results/week4/orb`
-for v1 and `results/week4/orb_v2` for v2, created by the `extract`, `match` and
-`tune` commands above). Development predictions of each variant, with the
-calibrated rejection threshold:
+### Task 4: Blind QST1 submission
 
+From the project directory, give the folders containing the museum and test images:
 ```bash
-# ORB v1
-python src/batch_matching_orb.py predict --scores results/week4/orb/scores_qsd1_w4.json --calibration results/week4/orb/calibration.json --output results/week4/orb/qsd1_w4_result.pkl
-# ORB v2
-python src/batch_matching_orb.py predict --scores results/week4/orb_v2/scores_qsd1_w4.json --calibration results/week4/orb_v2/calibration.json --output results/week4/orb_v2/qsd1_w4_result.pkl
+python .\src\methods_w2.py --museum .\data\BBDD --queries .\data\qsd1_w2 --method "Lab blocks 1D" --blocks 25 
 ```
 
-To evaluate both variants and compare them with the Week 3 system in one run,
-from the project root (`--queries` must be given, because its default is a Week 3
-folder):
+Both arguments accept relative or absolute image-folder paths. Only JPG/JPEG
+files directly inside each folder are read. Queries are ordered by numeric filename ID. Museum IDs come from
+filenames: `bbdd_00007.jpg` becomes integer `7`.
 
+Each `result.pkl` contains a Python list of lists, with exactly 10 unique Python
+integer museum IDs per query, ranked best first.
+
+| Output under `results/week1/QST1/` | Descriptor | Default comparison |
+|---|---|---|
+| `method1/result.pkl` | HSV | L1 |
+| `method2/result.pkl` | HSV grid | L1 |
+
+At most two methods are allowed (statement), so only HSV and HSV grid are
+submitted; Grayscale and RGB remain in `METHODS_W1` for validation only.
+
+To override the comparison for both methods or change the output location:
 ```bash
-python src/evaluate_orb.py --queries data/qsd1_w4 --with-v1 --rematch
+python src/methods_w1.py --museum data/BBDD --queries data/qst1_w1 --distance Hellinger --output-dir results/hellinger/week1/QST1
 ```
 
-`--rematch` recomputes the matching from the saved features. To skip this slow
-step, drop `--rematch` and the saved scores are reused (`--scores` for v2 and
-`--scores-v1` for v1, which default to
-`results/week4/orb_v2/scores_qsd1_w4.json` and
-`results/week4/orb/scores_qsd1_w4.json`).
+Available comparisons: `Euclidean`, `L1`, `Chi-square`, `Histogram Intersection`,
+`Hellinger`, `Cosine`, and `Correlation`. Quote names containing spaces.
 
-ORB v2 is always evaluated and `--with-v1` adds ORB v1 as a second row. The
-rejection threshold of each variant is calibrated on the unknown paintings with
-the same F1 sweep as for the other methods, and `--skip-w3` leaves out the slow
-Week 3 baseline. Outputs are under `results/week4/evaluation_orb/` (`--output`):
-
-| File | Content |
-|---|---|
-| `orb_v1/`, `orb_v2/` | `matching_scores.json` (verified and tentative match counts), `calibration.json` (threshold sweep) and `result.pkl` (evaluated development predictions, including unknowns) for each variant |
-| `comparison.md`, `comparison.json` | Overall and known-only metrics, settings and versions |
-| `per_painting.csv`, `predictions.json` | Rankings, scores and errors for each painting and method |
-| `w3_baseline/` | W3 predictions, masks and retrieval report on QSD1-W4 |
-| `errors_orb_v1.png`, `errors_orb_v2.png` | Predicted crops and expected museum paintings for the remaining errors |
-
-### SuperPoint + LightGlue
-
-#### Motivation
-
-The task statement allows up to three local descriptors, so as a third method we
-tested a **learned** pipeline: **SuperPoint** as detector and descriptor, and
-**LightGlue** as matcher. It is a different family from both SIFT (hand-designed
-blobs and gradient histograms) and ORB (hand-designed corners and binary
-strings): the detector and the descriptor are trained, and the matching is a
-learned assignment instead of a nearest-neighbour ratio test. The two problems
-left by the other methods (a noisy painting rejected as unknown, and crops with
-too few keypoints) are the ones where a learned detector might help, but this is
-a hypothesis; the comparison below is the test.
-
-#### Implementation
-
-As for ORB, only the features and the matcher change. The crops, the RANSAC
-verification, the ranking and the rejection threshold are the same, so
-differences in the results come from the features and the matching:
-
-| Step | SIFT | ORB (v2) | SuperPoint + LightGlue |
-|---|---|---|---|
-| Crops | `segment_paintings`, fixed threshold 4, whole-image fallback | identical | identical |
-| Keypoints per crop | 1000, native resolution | 1000, crop resized to a longest side of 384 px | up to 1024, crop resized to a longest side of 960 px (never enlarged) and mapped back |
-| Input | grayscale | grayscale (+ CLAHE) | grayscale, no denoising |
-| Descriptor | 128 floats, L2 | 256 bits, Hamming | 256 floats |
-| Tentative matches | ratio test 0.75, one-to-one | identical | LightGlue assignment (no ratio test) |
-| Verification | RANSAC homography, tolerance 5 at reference size 1000, at least 8 tentative matches | identical | identical |
-| Ranking and rejection | verified, tentative, ID; threshold maximising unknown F1 | identical | identical |
-| Feature index | `index.json` + one `.npz` per painting | identical layout | identical layout |
-
-![SuperPoint + LightGlue pipeline diagram](results/week4/figures/pipeline_superpoint_lightglue.svg)
-
-*Figure: SuperPoint + LightGlue pipeline. Gray boxes are shared by the three methods; colored boxes are specific to the method.*
-
-| File | Content |
-|---|---|
-| `keypoints_superpoint.py` | `extract_superpoint` (keypoints and descriptors of one image, returned as `cv2.KeyPoint` for parity with SIFT), `match_superpoint` (LightGlue + RANSAC, same output keys as `match_sift`) and a single-image drawing |
-| `extract_features_sp.py` | batch extraction for the museum and the query crops (`--max-keypoints`, `--image-size`, `--segmentation-threshold`, `--no-segmentation`, `--device`) |
-| `batch_matching_sp.py` | `match`, `tune` and `predict`, as for SIFT; refuses features that are not SuperPoint |
-| `evaluate_sp.py` | evaluation of SuperPoint + LightGlue, optionally against SIFT, with the same metrics and calibration as Week 4 |
-
-The keypoint coordinates are mapped back to the resolution of each crop, and the
-LightGlue input uses the size of the crop box, so the RANSAC tolerance behaves
-as in the SIFT pipeline. SuperPoint features need the `lightglue` package and
-PyTorch (`python -m pip install git+https://github.com/cvg/LightGlue.git`); the
-weights are downloaded the first time the models run. The device is CUDA if
-available, otherwise CPU (`--device` forces one).
-
-```bash
-python src/extract_features_sp.py --museum data/BBDD --output results/week4/sp/museum
-python src/extract_features_sp.py --queries data/qsd1_w4 --output results/week4/sp/qsd1_w4
-python src/batch_matching_sp.py match --museum-features results/week4/sp/museum --query-features results/week4/sp/qsd1_w4 --output results/week4/sp/qsd1_w4_scores.json
-python src/batch_matching_sp.py tune --scores results/week4/sp/qsd1_w4_scores.json --ground-truth data/qsd1_w4/gt_corresps.pkl --output results/week4/sp/qsd1_w4_calibration.json
-python src/batch_matching_sp.py predict --scores results/week4/sp/qsd1_w4_scores.json --calibration results/week4/sp/qsd1_w4_calibration.json --output results/week4/sp/qsd1_w4_result.pkl
-```
-
-A single crop can be inspected with
-`python src/keypoints_superpoint.py --image data/qsd1_w4/00000.jpg --output results/week4/sp/00000_kp.jpg`.
-
-To evaluate SuperPoint + LightGlue and compare it with SIFT in one run, from the
-project root (`--queries` must be given, because its default is a Week 3 folder):
-
-```bash
-python src/evaluate_sp.py --queries data/qsd1_w4 --sp-museum results/week4/sp/museum --sp-queries results/week4/sp/qsd1_w4 --sift-scores results/week4/evaluation/sift/matching_scores.json
-```
-
-SuperPoint + LightGlue is always re-matched. SIFT scores are reused with
-`--sift-scores`, or recomputed with `--sift-museum` and `--sift-queries`. If the
-ground truth contains unknown paintings, the rejection threshold is calibrated
-on them with the same F1 sweep as the other methods. Outputs are under
-`results/week4/sp/evaluation/`:
-
-| File | Content |
-|---|---|
-| `matching_scores.json` | Verified and tentative match counts of the top-K candidates per painting |
-| `comparison_sp.json` | Metrics, settings and calibration threshold (SuperPoint + LightGlue, and SIFT if given) |
-| `predictions_sp.pkl` | Evaluated development predictions, including unknowns |
-
-#### Results
-
-With the same F1 sweep as for the other methods, the selected threshold is
-**21 verified matches**:
-
-| Min. inliers | Unknown precision | Unknown recall | Unknown F1 | mAP@1 |
-|---:|---:|---:|---:|---:|
-| 1 | 0.0000 | 0.0000 | 0.0000 | 0.6923 |
-| 8 | 0.0000 | 0.0000 | 0.0000 | 0.6923 |
-| 14 | 0.8750 | 0.7000 | 0.7778 | 0.8718 |
-| 18 | 0.9000 | 0.9000 | 0.9000 | 0.9231 |
-| **21** | **0.9091** | **1.0000** | **0.9524** | **0.9487** |
-| 71 | 0.8333 | 1.0000 | 0.9091 | 0.9231 |
-
-SuperPoint + LightGlue reaches mAP@1 0.9487 (37 of 39 painting slots), unknown
-F1 0.9524 and the correct number of paintings for 29 of 30 queries. Without
-rejection it scores 0.6923, because the 10 unknown paintings count as errors.
-With rejection it returns `[-1]` for all 10 unknown paintings and for one known
-painting.
-
-The separation between known and unknown paintings is wide: the best match of
-each unknown painting has between 9 and 20 verified matches, while every known
-painting that is matched correctly has at least 70. All thresholds from 21 to 70
-therefore give the same predictions, and the sweep keeps the smallest. Match
-counts are on a different scale for each method, but the relative margin is much
-larger than for ORB v2 (at most 5 for unknown paintings against 7 for the
-weakest known one). The threshold was tuned on the same 30 queries, so this is a
-development result.
-
-It fixes the noisy painting of query 00008 that SIFT rejected (museum 128, 122
-verified matches against 6 with SIFT). Both remaining errors are in query 00016:
-
-- **Left painting (museum 11):** the best candidate (museum 13) has only 7
-  verified matches (12 tentative), the correct painting is not among the ten
-  candidates, and the painting is returned as unknown.
-- **Right painting (museum 280):** segmentation keeps only the left painting, as
-  for the other methods, so it is missing from the predictions.
-
-The development files are `qsd1_w4_scores.json`, `qsd1_w4_calibration.json` and
-`qsd1_w4_result.pkl` (with a `.json` copy) in `results/week4/sp/`.
-
-
-### Task 3: Evaluation and Comparison with W3
-
-Run from the project root:
-
-```bash
-python src/evaluate_orb.py --queries data/qsd1_w4 --rematch
-```
-
-This recomputes the ORB (v2) matching from the saved features, calibrates
-rejection, and runs the best W3 configuration on the same queries: Texture
-fusion, L1, 3x3 median on query crops and the original adaptive W3
-segmentation (`--skip-w3` leaves out this slow step). `--with-v1` adds ORB v1 as
-a second row. To reuse saved matching scores, drop `--rematch`: `--scores`
-(v2) and `--scores-v1` (v1) default to
-`results/week4/orb_v2/scores_qsd1_w4.json` and
-`results/week4/orb/scores_qsd1_w4.json`, and the results are written to
-`results/week4/evaluation_orb/` (`--output`). The SuperPoint + LightGlue rows
-come from the files in `results/week4/sp/` (see the previous section).
-
-| Method | mAP@1 | mAP@5 | mAP@10 | Prediction count correct | Unknown F1 |
-|---|---:|---:|---:|---:|---:|
-| W3 Texture fusion | 0.5385 | 0.5513 | 0.5556 | 27/30 | 0.0000 |
-| SIFT without rejection | 0.6667 | 0.6752 | 0.6752 | 29/30 | 0.0000 |
-| SIFT with rejection | 0.9231 | 0.9231 | 0.9231 | 29/30 | 0.9091 |
-| ORB v1 without rejection | 0.6667 | 0.6667 | 0.6699 | 29/30 | 0.0000 |
-| ORB v1 with rejection | 0.9231 | 0.9231 | 0.9231 | 29/30 | 0.9091 |
-| ORB (v2) without rejection | 0.7179 | 0.7179 | 0.7179 | 29/30 | 0.0000 |
-| **ORB (v2) with rejection** | **0.9744** | **0.9744** | **0.9744** | **29/30** | **1.0000** |
-| SuperPoint + LightGlue without rejection | 0.6923 | 0.6923 | 0.6923 | 29/30 | 0.0000 |
-| SuperPoint + LightGlue with rejection | 0.9487 | 0.9487 | 0.9487 | 29/30 | 0.9524 |
-
-The selected rejection threshold is **8 verified matches** for SIFT,
-**6** for ORB (v1 and v2) and **21** for SuperPoint + LightGlue (whose match counts
-are on a different scale): fewer than that returns `[-1]` for that painting. SIFT rejects all 10 unknown paintings and 2 known ones (precision
-0.8333, recall 1.0000, F1 0.9091), and so does ORB v1 (00008 and the left
-painting of 00016). ORB v2 rejects the 10 unknown paintings and no known one. SuperPoint + LightGlue rejects the 10 unknown paintings and one known
-one (precision 0.9091, recall 1.0000, F1 0.9524).
-
-We compute AP per painting in reading order, with zero for missing or extra
-crops. A correct `[-1]` prediction scores one for an unknown target. W3 has no
-rejection mechanism, so its score includes zero for all 10 unknowns. On the
-29 annotated known paintings alone, mAP@1 is **0.7241 for W3 (21/29)**,
-**0.8966 for SIFT (26/29)**, **0.8966 for ORB v1 (26/29)**, **0.9655 for ORB v2 (28/29)** and **0.9310 for
-SuperPoint + LightGlue (27/29)**. The full-system
-comparison also includes the segmentation change; it does not isolate the
-effect of the descriptor.
-
-Reading the results:
-
-- Rejection of unknown paintings is the largest single gain for all three local
-  methods: without it each loses the 10 unknown slots (SIFT 0.6667, ORB 0.7179,
-  SuperPoint + LightGlue 0.6923).
-- ORB v1 gives the same score as SIFT (36/39 slots) and rejects the same number
-  of known paintings (two), with a much cheaper descriptor.
-- ORB v2 is ahead of SIFT by two painting slots (38/39 against 36/39), with a
-  smaller descriptor and a cheaper distance. The gain over ORB v1 comes from the
-  lower FAST threshold and CLAHE, which turned the two paintings that v1
-  rejected (00008, and the left painting of 00016) into matches. Both end up
-  with exactly 7 verified matches, one above the threshold of 6.
-- SuperPoint + LightGlue is ahead of SIFT by one painting slot (37/39 against
-  36/39) and behind ORB v2 by one (38/39). It has the widest margin between
-  known and unknown paintings of the three, and it matches the noisy painting of
-  00008 that SIFT rejects, but it does not recover the left painting of 00016.
-- All three local methods are well above the Week 3 texture descriptor, which
-  cannot reject unknown paintings; on the 29 known paintings alone it reaches
-  0.7241 mAP@1, against 0.8966 for SIFT, 0.9655 for ORB v2 and 0.9310 for
-  SuperPoint + LightGlue.
-
-The three remaining SIFT errors are in two queries:
-
-- **00008:** one noisy painting, museum ID 128. Its best match has 6 inliers,
-  below the rejection threshold, and the system returns unknown.
-- **00016:** two paintings, museum IDs 11 and 280. Segmentation keeps only the
-  left painting. That crop has no SIFT keypoints and is rejected; the right
-  painting is missing from the predictions.
-
-ORB v2 has one remaining error, in query 00016: segmentation keeps only the
-left painting (museum 11, matched correctly at rank 1 with 7 verified matches),
-so the right painting (museum 280) is missing from the predictions. This is the
-same segmentation failure as for the other methods, not a retrieval error (its
-known mAP@5 and mAP@10 equal its mAP@1, 0.9655).
-
-SuperPoint + LightGlue has two remaining errors, both in query 00016 (the left
-painting is rejected with 7 verified matches, and the right one is lost in
-segmentation); see its section above.
-
-![SIFT errors: predicted crops and expected museum paintings](results/week4/evaluation/errors.png)
-*Figure: SIFT errors*
-![ORB v1 errors: predicted crops and expected museum paintings](results/week4/evaluation_orb/errors_orb_v1.png)
-*Figure: ORB v1 errors*
-![ORB v2 errors: predicted crops and expected museum paintings](results/week4/evaluation_orb/errors_orb_v2.png)
-*Figure: ORB v2 errors*
-
-The segmentation setting, the FAST threshold and CLAHE choice, and both
-rejection thresholds were selected on QSD1-W4, the same 30 queries used to report
-the scores. The saved SIFT features were extracted with OpenCV
-4.13.0; this matching run used 5.0.0. The DCT in the W3 baseline keeps its
-original 51x51 blocks. For OpenCV builds that do not support odd-size DCTs, the
-same orthonormal DCT-II is calculated with NumPy.
-
-#### How the methods behave
-
-The three methods share the segmentation, the geometric verification and the
-rejection rule, so the differences below come from the features and the
-matching. The segmentation is also the only cause of the error in 00016 (right
-painting), which no descriptor can fix.
-
-- **Difficult crops decide the result.** Every descriptor error on a known
-  painting comes from two crops: the noisy painting of 00008 and the left painting of 00016.
-  SIFT gets 6 verified matches on 00008 and no keypoints on 00016 (left). ORB v1
-  behaves the same way (5 matches, no keypoints), because a fixed FAST threshold
-  needs a contrast that these crops do not have. ORB v2 recovers both, but with
-  7 matches each. SuperPoint + LightGlue gets 122 matches on 00008, the largest
-  gain of any change, but it fails on 00016 (left): its best candidate is a
-  wrong painting (museum 13, 7 matches) and the correct one is not among the ten
-  candidates. A learned detector therefore helps with the noisy painting but not
-  with the other crop, while ORB with contrast enhancement helps with both,
-  narrowly.
-- **Margin between known and unknown paintings.** Rejection works only if the
-  best match of an unknown painting is clearly below that of a known one. For
-  ORB v2 the unknown paintings reach at most 5 matches and the known ones at
-  least 7 (a ratio of 1.4, only thresholds 6 and 7 work). For SuperPoint +
-  LightGlue the unknown paintings reach 9-20 and the known paintings that are
-  matched correctly have at least 70 (a ratio of 3.5, every threshold from 21
-  to 70 gives the same predictions). The counts are on a different scale for
-  each method, so only the ratio can be compared. With a narrow gap, one
-  painting with a slightly different count changes the result, so ORB v2 is the
-  more fragile of the two despite its higher score.
-- **Settings tuned on this set.** The ORB v2 gain depends on two settings (FAST
-  threshold 7 and CLAHE) that were chosen on QSD1-W4 after looking at which crops
-  failed. SuperPoint + LightGlue uses its default detector without enhancement,
-  and only its rejection threshold is calibrated. A score that depends on more
-  choices made on the same 30 queries says less about the method.
-- **Cost.** ORB is the cheapest: a 32-byte descriptor and a Hamming distance.
-  SIFT uses 128 floats with an L2 distance. SuperPoint + LightGlue uses 256
-  floats and a learned matcher, needs PyTorch and is slow without a GPU.
-
-ORB v2 has the highest development score and is the cheapest to compute (a
-32-byte descriptor, a Hamming distance, no PyTorch or GPU), so it is the method
-we submit. Its lead over SuperPoint + LightGlue is one painting slot out of 39,
-which a single crop can change, so the choice rests on cost and simplicity as
-much as on the score. The risks of its development settings are described next.
-
-#### Risks of the ORB v2 settings
-
-We submit ORB v2 with its development settings (FAST threshold 7, CLAHE,
-rejection threshold 6). The development score does not show the risks of these
-settings. However, this could change if they were applied to other images:
-
-- **The gain comes from two crops.** The only difference between the v1 and v2
-  predictions is that 00008 (5 to 7 verified matches) and the left painting of
-  00016 (0 to 7) are now accepted. The score of 0.9744 depends on two paintings
-  landing one match above the threshold.
-- **The settings raise the matches of unknown paintings too.** The best verified
-  count of the 10 unknown paintings has a mean of 1.7 with v1 and 3.7 with v2,
-  and the number of unknown paintings with at least 4 matches goes from 4 to 8;
-  five of them end at exactly 5, one below the threshold. A lower FAST threshold
-  keeps weaker corners, which also appear on noise and texture, and CLAHE
-  amplifies local contrast, noise included. More keypoints give more chance
-  matches that can pass RANSAC. This is a plausible explanation that we did not
-  isolate with a separate experiment.
-- **A small shift is expensive.** If the unknown paintings of other images reached
-  one more match than here, the five paintings at 5 would pass the threshold.
-  The sweep shows the effect: with a threshold of 5, recall of unknown paintings
-  falls to 0.5000 and mAP@1 from 0.9744 to 0.8462 (5 slots). In the other
-  direction, a known painting like 00008 or 00016 (left) with two fewer matches
-  would be rejected, as with a threshold of 8: mAP@1 0.9231 and unknown F1
-  0.9091, the level of SIFT and ORB v1. A change of one or two matches moves the
-  result by 2 to 5 of 39 slots (0.05 to 0.13 mAP@1).
-- **The calibration cannot show this risk.** The threshold was chosen on the same
-  30 queries that are scored and the sweep reports its best point, so the unknown
-  F1 of 1.0000 is an upper bound. It says nothing about how often chance matches
-  reach 6.
-- **The alternative has more room.** SuperPoint + LightGlue separates the classes
-  by a larger factor: its unknown paintings reach 9-20 matches and the known ones
-  at least 70, a ratio of 3.5 against 1.4. However, is more computationally expensive.
-
-Outputs are under `results/week4/evaluation/`:
-
-| File | Content |
-|---|---|
-| `comparison.md`, `comparison.json` | Overall and known-only metrics, settings and versions |
-| `per_painting.csv`, `predictions.json` | Rankings, scores and errors for each painting and method |
-| `sift/matching_scores.json`, `sift/calibration.json` | Verified match counts and the F1 threshold sweep (SIFT) |
-| `../evaluation_orb/orb_v1/`, `../evaluation_orb/orb_v2/` | `matching_scores.json`, `calibration.json` and `result.pkl` of each ORB variant (with `evaluate_orb.py --with-v1`) |
-| `distance_comparison/` | L1 match scores, calibration and comparison with L2 |
-| `sift/result.pkl` | Evaluated development predictions of SIFT, including unknowns |
-| `w3_baseline/` | W3 predictions, masks and retrieval report on QSD1-W4 |
-| `segmentation.txt`, `errors.png` | Segmentation comparison and remaining SIFT errors |
-| `../evaluation_orb/errors_orb_v1.png`, `../evaluation_orb/errors_orb_v2.png` | Remaining ORB errors (`per_painting.csv`, `comparison.*` and `predictions.json` of the ORB run are in the same folder) |
-
-The original W4 feature files and matching results are kept in place. The
-files above are for development evaluation.
-
-### Task 4: Blind submission (QST1-W4)
-
-We submit **ORB v2** as final method1. It has the highest development score 
-(mAP@1 0.9744, against 0.9487 for SuperPoint + LightGlue and 0.9231 for SIFT) 
-and the lowest computational cost.
-The risks of its settings are discussed in Task 3. The queries are processed with
-exactly the development settings (variant v2: FAST threshold 7 and CLAHE, up to
-1000 keypoints on crops resized to a longest side of 384 px, fixed segmentation
-threshold 4, RANSAC tolerance 5), the museum features and the calibration from
-the development run (6 verified matches). The segmentation keeps up to two
-paintings per image, as in QSD1-W4.
-
-The format is the one in the assignment: one list per query with one ranking per
-painting, and `[-1]` for an unknown painting, so a query with a single unknown
-painting is `[[-1]]`.
-
-```bash
-python src/extract_features_orb.py --queries data/qst1_w4 --output results/week4/orb_v2/qst1_w4 --variant v2
-python src/batch_matching_orb.py match --museum-features results/week4/orb_v2/museum --query-features results/week4/orb_v2/qst1_w4 --output results/week4/orb_v2/scores_qst1_w4.json
-python src/batch_matching_orb.py predict --scores results/week4/orb_v2/scores_qst1_w4.json --calibration results/week4/evaluation_orb/orb_v2/calibration.json --output Team1/week4/QST1/method1/result.pkl
-```
+---
 
 ### PRESENTATION
 
