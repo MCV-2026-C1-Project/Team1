@@ -1,0 +1,196 @@
+query_id,painting,ground_truth,method,top1,rank_of_truth,ap1,ap5,ap10,count_correct,best_inliers,segmentation_fallback
+00000,0,-1,W3 Texture fusion,40,,0.0,0.0,0.0,True,,
+00000,0,-1,ORB v1 without rejection,10,,0.0,0.0,0.0,True,0,False
+00000,0,-1,ORB v1 with rejection,-1,1,1.0,1.0,1.0,True,0,False
+00000,0,-1,ORB v2 without rejection,194,,0.0,0.0,0.0,True,5,False
+00000,0,-1,ORB v2 with rejection,-1,1,1.0,1.0,1.0,True,5,False
+00001,0,150,W3 Texture fusion,150,1,1.0,1.0,1.0,True,,
+00001,0,150,ORB v1 without rejection,150,1,1.0,1.0,1.0,True,74,False
+00001,0,150,ORB v1 with rejection,150,1,1.0,1.0,1.0,True,74,False
+00001,0,150,ORB v2 without rejection,150,1,1.0,1.0,1.0,True,74,False
+00001,0,150,ORB v2 with rejection,150,1,1.0,1.0,1.0,True,74,False
+00002,0,48,W3 Texture fusion,274,,0.0,0.0,0.0,True,,
+00002,1,251,W3 Texture fusion,251,1,1.0,1.0,1.0,True,,
+00002,0,48,ORB v1 without rejection,48,1,1.0,1.0,1.0,True,348,False
+00002,1,251,ORB v1 without rejection,251,1,1.0,1.0,1.0,True,111,False
+00002,0,48,ORB v1 with rejection,48,1,1.0,1.0,1.0,True,348,False
+00002,1,251,ORB v1 with rejection,251,1,1.0,1.0,1.0,True,111,False
+00002,0,48,ORB v2 without rejection,48,1,1.0,1.0,1.0,True,370,False
+00002,1,251,ORB v2 without rejection,251,1,1.0,1.0,1.0,True,197,False
+00002,0,48,ORB v2 with rejection,48,1,1.0,1.0,1.0,True,370,False
+00002,1,251,ORB v2 with rejection,251,1,1.0,1.0,1.0,True,197,False
+00003,0,32,W3 Texture fusion,32,1,1.0,1.0,1.0,True,,
+00003,0,32,ORB v1 without rejection,32,1,1.0,1.0,1.0,True,80,False
+00003,0,32,ORB v1 with rejection,32,1,1.0,1.0,1.0,True,80,False
+00003,0,32,ORB v2 without rejection,32,1,1.0,1.0,1.0,True,131,False
+00003,0,32,ORB v2 with rejection,32,1,1.0,1.0,1.0,True,131,False
+00004,0,161,W3 Texture fusion,161,1,1.0,1.0,1.0,True,,
+00004,0,161,ORB v1 without rejection,161,1,1.0,1.0,1.0,True,440,False
+00004,0,161,ORB v1 with rejection,161,1,1.0,1.0,1.0,True,440,False
+00004,0,161,ORB v2 without rejection,161,1,1.0,1.0,1.0,True,312,False
+00004,0,161,ORB v2 with rejection,161,1,1.0,1.0,1.0,True,312,False
+00005,0,81,W3 Texture fusion,81,1,1.0,1.0,1.0,True,,
+00005,0,81,ORB v1 without rejection,81,1,1.0,1.0,1.0,True,385,False
+00005,0,81,ORB v1 with rejection,81,1,1.0,1.0,1.0,True,385,False
+00005,0,81,ORB v2 without rejection,81,1,1.0,1.0,1.0,True,349,False
+00005,0,81,ORB v2 with rejection,81,1,1.0,1.0,1.0,True,349,False
+00006,0,62,W3 Texture fusion,276,6,0.0,0.0,0.16666666666666666,True,,
+00006,1,38,W3 Texture fusion,38,1,1.0,1.0,1.0,True,,
+00006,0,62,ORB v1 without rejection,62,1,1.0,1.0,1.0,True,248,False
+00006,1,38,ORB v1 without rejection,38,1,1.0,1.0,1.0,True,49,False
+00006,0,62,ORB v1 with rejection,62,1,1.0,1.0,1.0,True,248,False
+00006,1,38,ORB v1 with rejection,38,1,1.0,1.0,1.0,True,49,False
+00006,0,62,ORB v2 without rejection,62,1,1.0,1.0,1.0,True,174,False
+00006,1,38,ORB v2 without rejection,38,1,1.0,1.0,1.0,True,74,False
+00006,0,62,ORB v2 with rejection,62,1,1.0,1.0,1.0,True,174,False
+00006,1,38,ORB v2 with rejection,38,1,1.0,1.0,1.0,True,74,False
+00007,0,-1,W3 Texture fusion,254,,0.0,0.0,0.0,True,,
+00007,0,-1,ORB v1 without rejection,11,,0.0,0.0,0.0,True,0,False
+00007,0,-1,ORB v1 with rejection,-1,1,1.0,1.0,1.0,True,0,False
+00007,0,-1,ORB v2 without rejection,257,,0.0,0.0,0.0,True,5,False
+00007,0,-1,ORB v2 with rejection,-1,1,1.0,1.0,1.0,True,5,False
+00008,0,128,W3 Texture fusion,174,2,0.0,0.5,0.5,True,,
+00008,0,128,ORB v1 without rejection,98,8,0.0,0.0,0.125,True,5,False
+00008,0,128,ORB v1 with rejection,-1,,0.0,0.0,0.0,True,5,False
+00008,0,128,ORB v2 without rejection,128,1,1.0,1.0,1.0,True,7,False
+00008,0,128,ORB v2 with rejection,128,1,1.0,1.0,1.0,True,7,False
+00009,0,155,W3 Texture fusion,155,1,1.0,1.0,1.0,False,,
+00009,1,258,W3 Texture fusion,,,0.0,0.0,0.0,False,,
+00009,0,155,ORB v1 without rejection,155,1,1.0,1.0,1.0,True,345,False
+00009,1,258,ORB v1 without rejection,258,1,1.0,1.0,1.0,True,199,False
+00009,0,155,ORB v1 with rejection,155,1,1.0,1.0,1.0,True,345,False
+00009,1,258,ORB v1 with rejection,258,1,1.0,1.0,1.0,True,199,False
+00009,0,155,ORB v2 without rejection,155,1,1.0,1.0,1.0,True,292,False
+00009,1,258,ORB v2 without rejection,258,1,1.0,1.0,1.0,True,134,False
+00009,0,155,ORB v2 with rejection,155,1,1.0,1.0,1.0,True,292,False
+00009,1,258,ORB v2 with rejection,258,1,1.0,1.0,1.0,True,134,False
+00010,0,136,W3 Texture fusion,136,1,1.0,1.0,1.0,True,,
+00010,1,76,W3 Texture fusion,81,,0.0,0.0,0.0,True,,
+00010,0,136,ORB v1 without rejection,136,1,1.0,1.0,1.0,True,127,False
+00010,1,76,ORB v1 without rejection,76,1,1.0,1.0,1.0,True,348,False
+00010,0,136,ORB v1 with rejection,136,1,1.0,1.0,1.0,True,127,False
+00010,1,76,ORB v1 with rejection,76,1,1.0,1.0,1.0,True,348,False
+00010,0,136,ORB v2 without rejection,136,1,1.0,1.0,1.0,True,175,False
+00010,1,76,ORB v2 without rejection,76,1,1.0,1.0,1.0,True,290,False
+00010,0,136,ORB v2 with rejection,136,1,1.0,1.0,1.0,True,175,False
+00010,1,76,ORB v2 with rejection,76,1,1.0,1.0,1.0,True,290,False
+00011,0,-1,W3 Texture fusion,74,,0.0,0.0,0.0,True,,
+00011,0,-1,ORB v1 without rejection,253,,0.0,0.0,0.0,True,5,False
+00011,0,-1,ORB v1 with rejection,-1,1,1.0,1.0,1.0,True,5,False
+00011,0,-1,ORB v2 without rejection,141,,0.0,0.0,0.0,True,5,False
+00011,0,-1,ORB v2 with rejection,-1,1,1.0,1.0,1.0,True,5,False
+00012,0,-1,W3 Texture fusion,40,,0.0,0.0,0.0,True,,
+00012,0,-1,ORB v1 without rejection,30,,0.0,0.0,0.0,True,4,False
+00012,0,-1,ORB v1 with rejection,-1,1,1.0,1.0,1.0,True,4,False
+00012,0,-1,ORB v2 without rejection,4,,0.0,0.0,0.0,True,5,False
+00012,0,-1,ORB v2 with rejection,-1,1,1.0,1.0,1.0,True,5,False
+00013,0,53,W3 Texture fusion,53,1,1.0,1.0,1.0,True,,
+00013,0,53,ORB v1 without rejection,53,1,1.0,1.0,1.0,True,59,False
+00013,0,53,ORB v1 with rejection,53,1,1.0,1.0,1.0,True,59,False
+00013,0,53,ORB v2 without rejection,53,1,1.0,1.0,1.0,True,320,False
+00013,0,53,ORB v2 with rejection,53,1,1.0,1.0,1.0,True,320,False
+00014,0,-1,W3 Texture fusion,110,,0.0,0.0,0.0,True,,
+00014,0,-1,ORB v1 without rejection,30,,0.0,0.0,0.0,True,4,False
+00014,0,-1,ORB v1 with rejection,-1,1,1.0,1.0,1.0,True,4,False
+00014,0,-1,ORB v2 without rejection,165,,0.0,0.0,0.0,True,0,False
+00014,0,-1,ORB v2 with rejection,-1,1,1.0,1.0,1.0,True,0,False
+00015,0,12,W3 Texture fusion,12,1,1.0,1.0,1.0,True,,
+00015,0,12,ORB v1 without rejection,12,1,1.0,1.0,1.0,True,318,False
+00015,0,12,ORB v1 with rejection,12,1,1.0,1.0,1.0,True,318,False
+00015,0,12,ORB v2 without rejection,12,1,1.0,1.0,1.0,True,263,False
+00015,0,12,ORB v2 with rejection,12,1,1.0,1.0,1.0,True,263,False
+00016,0,11,W3 Texture fusion,11,1,1.0,1.0,1.0,False,,
+00016,1,280,W3 Texture fusion,,,0.0,0.0,0.0,False,,
+00016,0,11,ORB v1 without rejection,0,,0.0,0.0,0.0,False,0,False
+00016,1,280,ORB v1 without rejection,,,0.0,0.0,0.0,False,,
+00016,0,11,ORB v1 with rejection,-1,,0.0,0.0,0.0,False,0,False
+00016,1,280,ORB v1 with rejection,,,0.0,0.0,0.0,False,,
+00016,0,11,ORB v2 without rejection,11,1,1.0,1.0,1.0,False,7,False
+00016,1,280,ORB v2 without rejection,,,0.0,0.0,0.0,False,,
+00016,0,11,ORB v2 with rejection,11,1,1.0,1.0,1.0,False,7,False
+00016,1,280,ORB v2 with rejection,,,0.0,0.0,0.0,False,,
+00017,0,-1,W3 Texture fusion,37,,0.0,0.0,0.0,True,,
+00017,0,-1,ORB v1 without rejection,104,,0.0,0.0,0.0,True,0,False
+00017,0,-1,ORB v1 with rejection,-1,1,1.0,1.0,1.0,True,0,False
+00017,0,-1,ORB v2 without rejection,26,,0.0,0.0,0.0,True,4,False
+00017,0,-1,ORB v2 with rejection,-1,1,1.0,1.0,1.0,True,4,False
+00018,0,182,W3 Texture fusion,182,1,1.0,1.0,1.0,True,,
+00018,1,252,W3 Texture fusion,252,1,1.0,1.0,1.0,True,,
+00018,0,182,ORB v1 without rejection,182,1,1.0,1.0,1.0,True,295,False
+00018,1,252,ORB v1 without rejection,252,1,1.0,1.0,1.0,True,148,False
+00018,0,182,ORB v1 with rejection,182,1,1.0,1.0,1.0,True,295,False
+00018,1,252,ORB v1 with rejection,252,1,1.0,1.0,1.0,True,148,False
+00018,0,182,ORB v2 without rejection,182,1,1.0,1.0,1.0,True,250,False
+00018,1,252,ORB v2 without rejection,252,1,1.0,1.0,1.0,True,141,False
+00018,0,182,ORB v2 with rejection,182,1,1.0,1.0,1.0,True,250,False
+00018,1,252,ORB v2 with rejection,252,1,1.0,1.0,1.0,True,141,False
+00019,0,-1,W3 Texture fusion,16,,0.0,0.0,0.0,True,,
+00019,0,-1,ORB v1 without rejection,83,,0.0,0.0,0.0,True,0,False
+00019,0,-1,ORB v1 with rejection,-1,1,1.0,1.0,1.0,True,0,False
+00019,0,-1,ORB v2 without rejection,26,,0.0,0.0,0.0,True,0,False
+00019,0,-1,ORB v2 with rejection,-1,1,1.0,1.0,1.0,True,0,False
+00020,0,272,W3 Texture fusion,272,1,1.0,1.0,1.0,True,,
+00020,1,117,W3 Texture fusion,117,1,1.0,1.0,1.0,True,,
+00020,0,272,ORB v1 without rejection,272,1,1.0,1.0,1.0,True,111,False
+00020,1,117,ORB v1 without rejection,117,1,1.0,1.0,1.0,True,348,False
+00020,0,272,ORB v1 with rejection,272,1,1.0,1.0,1.0,True,111,False
+00020,1,117,ORB v1 with rejection,117,1,1.0,1.0,1.0,True,348,False
+00020,0,272,ORB v2 without rejection,272,1,1.0,1.0,1.0,True,197,False
+00020,1,117,ORB v2 without rejection,117,1,1.0,1.0,1.0,True,352,False
+00020,0,272,ORB v2 with rejection,272,1,1.0,1.0,1.0,True,197,False
+00020,1,117,ORB v2 with rejection,117,1,1.0,1.0,1.0,True,352,False
+00021,0,-1,W3 Texture fusion,138,,0.0,0.0,0.0,True,,
+00021,0,-1,ORB v1 without rejection,201,,0.0,0.0,0.0,True,0,False
+00021,0,-1,ORB v1 with rejection,-1,1,1.0,1.0,1.0,True,0,False
+00021,0,-1,ORB v2 without rejection,284,,0.0,0.0,0.0,True,4,False
+00021,0,-1,ORB v2 with rejection,-1,1,1.0,1.0,1.0,True,4,False
+00022,0,242,W3 Texture fusion,242,1,1.0,1.0,1.0,True,,
+00022,0,242,ORB v1 without rejection,242,1,1.0,1.0,1.0,True,262,False
+00022,0,242,ORB v1 with rejection,242,1,1.0,1.0,1.0,True,262,False
+00022,0,242,ORB v2 without rejection,242,1,1.0,1.0,1.0,True,231,False
+00022,0,242,ORB v2 with rejection,242,1,1.0,1.0,1.0,True,231,False
+00023,0,260,W3 Texture fusion,260,1,1.0,1.0,1.0,True,,
+00023,0,260,ORB v1 without rejection,260,1,1.0,1.0,1.0,True,393,False
+00023,0,260,ORB v1 with rejection,260,1,1.0,1.0,1.0,True,393,False
+00023,0,260,ORB v2 without rejection,260,1,1.0,1.0,1.0,True,360,False
+00023,0,260,ORB v2 with rejection,260,1,1.0,1.0,1.0,True,360,False
+00024,0,94,W3 Texture fusion,94,1,1.0,1.0,1.0,True,,
+00024,1,132,W3 Texture fusion,132,1,1.0,1.0,1.0,True,,
+00024,0,94,ORB v1 without rejection,94,1,1.0,1.0,1.0,True,203,False
+00024,1,132,ORB v1 without rejection,132,1,1.0,1.0,1.0,True,408,False
+00024,0,94,ORB v1 with rejection,94,1,1.0,1.0,1.0,True,203,False
+00024,1,132,ORB v1 with rejection,132,1,1.0,1.0,1.0,True,408,False
+00024,0,94,ORB v2 without rejection,94,1,1.0,1.0,1.0,True,171,False
+00024,1,132,ORB v2 without rejection,132,1,1.0,1.0,1.0,True,373,False
+00024,0,94,ORB v2 with rejection,94,1,1.0,1.0,1.0,True,171,False
+00024,1,132,ORB v2 with rejection,132,1,1.0,1.0,1.0,True,373,False
+00025,0,223,W3 Texture fusion,223,1,1.0,1.0,1.0,True,,
+00025,0,223,ORB v1 without rejection,223,1,1.0,1.0,1.0,True,21,False
+00025,0,223,ORB v1 with rejection,223,1,1.0,1.0,1.0,True,21,False
+00025,0,223,ORB v2 without rejection,223,1,1.0,1.0,1.0,True,18,False
+00025,0,223,ORB v2 with rejection,223,1,1.0,1.0,1.0,True,18,False
+00026,0,-1,W3 Texture fusion,16,,0.0,0.0,0.0,True,,
+00026,0,-1,ORB v1 without rejection,83,,0.0,0.0,0.0,True,4,True
+00026,0,-1,ORB v1 with rejection,-1,1,1.0,1.0,1.0,True,4,True
+00026,0,-1,ORB v2 without rejection,76,,0.0,0.0,0.0,True,4,True
+00026,0,-1,ORB v2 with rejection,-1,1,1.0,1.0,1.0,True,4,True
+00027,0,127,W3 Texture fusion,127,1,1.0,1.0,1.0,True,,
+00027,0,127,ORB v1 without rejection,127,1,1.0,1.0,1.0,True,352,False
+00027,0,127,ORB v1 with rejection,127,1,1.0,1.0,1.0,True,352,False
+00027,0,127,ORB v2 without rejection,127,1,1.0,1.0,1.0,True,201,False
+00027,0,127,ORB v2 with rejection,127,1,1.0,1.0,1.0,True,201,False
+00028,0,47,W3 Texture fusion,13,,0.0,0.0,0.0,False,,
+00028,1,13,W3 Texture fusion,,,0.0,0.0,0.0,False,,
+00028,0,47,ORB v1 without rejection,47,1,1.0,1.0,1.0,True,22,False
+00028,1,13,ORB v1 without rejection,13,1,1.0,1.0,1.0,True,102,False
+00028,0,47,ORB v1 with rejection,47,1,1.0,1.0,1.0,True,22,False
+00028,1,13,ORB v1 with rejection,13,1,1.0,1.0,1.0,True,102,False
+00028,0,47,ORB v2 without rejection,47,1,1.0,1.0,1.0,True,89,False
+00028,1,13,ORB v2 without rejection,13,1,1.0,1.0,1.0,True,257,False
+00028,0,47,ORB v2 with rejection,47,1,1.0,1.0,1.0,True,89,False
+00028,1,13,ORB v2 with rejection,13,1,1.0,1.0,1.0,True,257,False
+00029,0,-1,W3 Texture fusion,40,,0.0,0.0,0.0,True,,
+00029,0,-1,ORB v1 without rejection,151,,0.0,0.0,0.0,True,0,False
+00029,0,-1,ORB v1 with rejection,-1,1,1.0,1.0,1.0,True,0,False
+00029,0,-1,ORB v2 without rejection,26,,0.0,0.0,0.0,True,5,False
+00029,0,-1,ORB v2 with rejection,-1,1,1.0,1.0,1.0,True,5,False

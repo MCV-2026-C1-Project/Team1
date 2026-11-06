@@ -1,0 +1,2534 @@
+{
+  "settings": {
+    "method": "ORB",
+    "distance": "Hamming",
+    "ratio": 0.75,
+    "ransac_threshold": 5.0,
+    "museum_nfeatures": 1000,
+    "query_nfeatures": 1000,
+    "museum_preprocessing": "grayscale; crop resized to longest side 384 px (never upscaled); ORB scaleFactor 1.2, 8 levels, fastThreshold 7, CLAHE on",
+    "query_preprocessing": "grayscale; crop resized to longest side 384 px (never upscaled); ORB scaleFactor 1.2, 8 levels, fastThreshold 7, CLAHE on",
+    "matching_opencv_version": "5.0.0",
+    "museum_feature_opencv_version": "5.0.0",
+    "query_feature_opencv_version": "5.0.0",
+    "query_segmentation": {
+      "border": 0.02,
+      "blur": 5,
+      "thr_min": 4.0,
+      "thr_max": 4.0,
+      "open_frac": 0.004,
+      "close_frac": 0.02,
+      "use_bbox": true,
+      "poly_degree": 1,
+      "max_side": 400,
+      "min_area_frac": 0.02,
+      "max_paintings": 2
+    },
+    "orb_variant": "v2",
+    "orb_fast_threshold": 7,
+    "orb_clahe": true
+  },
+  "top_k": 10,
+  "query_features": "C:\\Users\\larar\\OneDrive\\Documentos\\Escritorio\\STUDYING\\0. MASTER\\C1\\project\\week4\\Team1\\results\\week4\\orb_v2\\qst1_w4",
+  "museum_features": "C:\\Users\\larar\\OneDrive\\Documentos\\Escritorio\\STUDYING\\0. MASTER\\C1\\project\\week4\\Team1\\results\\week4\\orb_v2\\museum",
+  "images": [
+    {
+      "image_id": 0,
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            24,
+            8,
+            415,
+            381
+          ],
+          "candidates": [
+            {
+              "museum_id": 223,
+              "verified": 53,
+              "tentative": 69
+            },
+            {
+              "museum_id": 211,
+              "verified": 6,
+              "tentative": 12
+            },
+            {
+              "museum_id": 239,
+              "verified": 5,
+              "tentative": 10
+            },
+            {
+              "museum_id": 187,
+              "verified": 4,
+              "tentative": 12
+            },
+            {
+              "museum_id": 191,
+              "verified": 4,
+              "tentative": 10
+            },
+            {
+              "museum_id": 203,
+              "verified": 4,
+              "tentative": 10
+            },
+            {
+              "museum_id": 273,
+              "verified": 4,
+              "tentative": 10
+            },
+            {
+              "museum_id": 77,
+              "verified": 4,
+              "tentative": 9
+            },
+            {
+              "museum_id": 111,
+              "verified": 4,
+              "tentative": 9
+            },
+            {
+              "museum_id": 128,
+              "verified": 4,
+              "tentative": 9
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "image_id": 1,
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            47,
+            10,
+            531,
+            655
+          ],
+          "candidates": [
+            {
+              "museum_id": 35,
+              "verified": 312,
+              "tentative": 356
+            },
+            {
+              "museum_id": 62,
+              "verified": 5,
+              "tentative": 11
+            },
+            {
+              "museum_id": 86,
+              "verified": 5,
+              "tentative": 8
+            },
+            {
+              "museum_id": 190,
+              "verified": 4,
+              "tentative": 11
+            },
+            {
+              "museum_id": 109,
+              "verified": 4,
+              "tentative": 9
+            },
+            {
+              "museum_id": 154,
+              "verified": 4,
+              "tentative": 9
+            },
+            {
+              "museum_id": 246,
+              "verified": 4,
+              "tentative": 9
+            },
+            {
+              "museum_id": 43,
+              "verified": 4,
+              "tentative": 8
+            },
+            {
+              "museum_id": 85,
+              "verified": 4,
+              "tentative": 8
+            },
+            {
+              "museum_id": 132,
+              "verified": 4,
+              "tentative": 8
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "image_id": 2,
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            46,
+            66,
+            498,
+            441
+          ],
+          "candidates": [
+            {
+              "museum_id": 203,
+              "verified": 333,
+              "tentative": 433
+            },
+            {
+              "museum_id": 225,
+              "verified": 5,
+              "tentative": 11
+            },
+            {
+              "museum_id": 183,
+              "verified": 5,
+              "tentative": 8
+            },
+            {
+              "museum_id": 17,
+              "verified": 4,
+              "tentative": 11
+            },
+            {
+              "museum_id": 103,
+              "verified": 4,
+              "tentative": 9
+            },
+            {
+              "museum_id": 140,
+              "verified": 4,
+              "tentative": 9
+            },
+            {
+              "museum_id": 229,
+              "verified": 4,
+              "tentative": 9
+            },
+            {
+              "museum_id": 244,
+              "verified": 4,
+              "tentative": 9
+            },
+            {
+              "museum_id": 8,
+              "verified": 4,
+              "tentative": 8
+            },
+            {
+              "museum_id": 49,
+              "verified": 4,
+              "tentative": 8
+            }
+          ]
+        },
+        {
+          "painting_index": 1,
+          "box": [
+            811,
+            36,
+            1323,
+            448
+          ],
+          "candidates": [
+            {
+              "museum_id": 211,
+              "verified": 436,
+              "tentative": 506
+            },
+            {
+              "museum_id": 244,
+              "verified": 5,
+              "tentative": 20
+            },
+            {
+              "museum_id": 2,
+              "verified": 5,
+              "tentative": 14
+            },
+            {
+              "museum_id": 53,
+              "verified": 5,
+              "tentative": 11
+            },
+            {
+              "museum_id": 49,
+              "verified": 5,
+              "tentative": 10
+            },
+            {
+              "museum_id": 135,
+              "verified": 5,
+              "tentative": 10
+            },
+            {
+              "museum_id": 235,
+              "verified": 5,
+              "tentative": 9
+            },
+            {
+              "museum_id": 265,
+              "verified": 5,
+              "tentative": 8
+            },
+            {
+              "museum_id": 173,
+              "verified": 4,
+              "tentative": 14
+            },
+            {
+              "museum_id": 242,
+              "verified": 4,
+              "tentative": 14
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "image_id": 3,
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            296,
+            7,
+            694,
+            337
+          ],
+          "candidates": [
+            {
+              "museum_id": 272,
+              "verified": 213,
+              "tentative": 293
+            },
+            {
+              "museum_id": 123,
+              "verified": 6,
+              "tentative": 11
+            },
+            {
+              "museum_id": 152,
+              "verified": 5,
+              "tentative": 15
+            },
+            {
+              "museum_id": 172,
+              "verified": 5,
+              "tentative": 15
+            },
+            {
+              "museum_id": 75,
+              "verified": 5,
+              "tentative": 13
+            },
+            {
+              "museum_id": 214,
+              "verified": 5,
+              "tentative": 13
+            },
+            {
+              "museum_id": 32,
+              "verified": 5,
+              "tentative": 12
+            },
+            {
+              "museum_id": 40,
+              "verified": 5,
+              "tentative": 12
+            },
+            {
+              "museum_id": 99,
+              "verified": 5,
+              "tentative": 12
+            },
+            {
+              "museum_id": 136,
+              "verified": 5,
+              "tentative": 12
+            }
+          ]
+        },
+        {
+          "painting_index": 1,
+          "box": [
+            49,
+            370,
+            696,
+            762
+          ],
+          "candidates": [
+            {
+              "museum_id": 117,
+              "verified": 332,
+              "tentative": 388
+            },
+            {
+              "museum_id": 35,
+              "verified": 5,
+              "tentative": 10
+            },
+            {
+              "museum_id": 115,
+              "verified": 5,
+              "tentative": 8
+            },
+            {
+              "museum_id": 167,
+              "verified": 5,
+              "tentative": 8
+            },
+            {
+              "museum_id": 182,
+              "verified": 5,
+              "tentative": 8
+            },
+            {
+              "museum_id": 32,
+              "verified": 4,
+              "tentative": 11
+            },
+            {
+              "museum_id": 160,
+              "verified": 4,
+              "tentative": 11
+            },
+            {
+              "museum_id": 39,
+              "verified": 4,
+              "tentative": 10
+            },
+            {
+              "museum_id": 56,
+              "verified": 4,
+              "tentative": 10
+            },
+            {
+              "museum_id": 80,
+              "verified": 4,
+              "tentative": 10
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "image_id": 4,
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            87,
+            99,
+            2244,
+            2198
+          ],
+          "candidates": [
+            {
+              "museum_id": 224,
+              "verified": 5,
+              "tentative": 11
+            },
+            {
+              "museum_id": 165,
+              "verified": 5,
+              "tentative": 10
+            },
+            {
+              "museum_id": 109,
+              "verified": 5,
+              "tentative": 8
+            },
+            {
+              "museum_id": 135,
+              "verified": 5,
+              "tentative": 8
+            },
+            {
+              "museum_id": 236,
+              "verified": 5,
+              "tentative": 8
+            },
+            {
+              "museum_id": 26,
+              "verified": 4,
+              "tentative": 13
+            },
+            {
+              "museum_id": 229,
+              "verified": 4,
+              "tentative": 12
+            },
+            {
+              "museum_id": 242,
+              "verified": 4,
+              "tentative": 12
+            },
+            {
+              "museum_id": 131,
+              "verified": 4,
+              "tentative": 11
+            },
+            {
+              "museum_id": 204,
+              "verified": 4,
+              "tentative": 11
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "image_id": 5,
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            186,
+            178,
+            1883,
+            2891
+          ],
+          "candidates": [
+            {
+              "museum_id": 191,
+              "verified": 5,
+              "tentative": 11
+            },
+            {
+              "museum_id": 254,
+              "verified": 5,
+              "tentative": 11
+            },
+            {
+              "museum_id": 70,
+              "verified": 5,
+              "tentative": 10
+            },
+            {
+              "museum_id": 181,
+              "verified": 5,
+              "tentative": 10
+            },
+            {
+              "museum_id": 154,
+              "verified": 5,
+              "tentative": 9
+            },
+            {
+              "museum_id": 29,
+              "verified": 4,
+              "tentative": 13
+            },
+            {
+              "museum_id": 286,
+              "verified": 4,
+              "tentative": 12
+            },
+            {
+              "museum_id": 98,
+              "verified": 4,
+              "tentative": 11
+            },
+            {
+              "museum_id": 148,
+              "verified": 4,
+              "tentative": 11
+            },
+            {
+              "museum_id": 23,
+              "verified": 4,
+              "tentative": 10
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "image_id": 6,
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            65,
+            35,
+            2346,
+            2298
+          ],
+          "candidates": [
+            {
+              "museum_id": 248,
+              "verified": 5,
+              "tentative": 12
+            },
+            {
+              "museum_id": 275,
+              "verified": 5,
+              "tentative": 11
+            },
+            {
+              "museum_id": 165,
+              "verified": 5,
+              "tentative": 10
+            },
+            {
+              "museum_id": 70,
+              "verified": 5,
+              "tentative": 8
+            },
+            {
+              "museum_id": 181,
+              "verified": 4,
+              "tentative": 12
+            },
+            {
+              "museum_id": 39,
+              "verified": 4,
+              "tentative": 11
+            },
+            {
+              "museum_id": 96,
+              "verified": 4,
+              "tentative": 10
+            },
+            {
+              "museum_id": 167,
+              "verified": 4,
+              "tentative": 10
+            },
+            {
+              "museum_id": 172,
+              "verified": 4,
+              "tentative": 10
+            },
+            {
+              "museum_id": 221,
+              "verified": 4,
+              "tentative": 10
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "image_id": 7,
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            14,
+            10,
+            1264,
+            1423
+          ],
+          "candidates": [
+            {
+              "museum_id": 85,
+              "verified": 6,
+              "tentative": 9
+            },
+            {
+              "museum_id": 165,
+              "verified": 5,
+              "tentative": 11
+            },
+            {
+              "museum_id": 130,
+              "verified": 5,
+              "tentative": 10
+            },
+            {
+              "museum_id": 210,
+              "verified": 5,
+              "tentative": 8
+            },
+            {
+              "museum_id": 3,
+              "verified": 4,
+              "tentative": 11
+            },
+            {
+              "museum_id": 43,
+              "verified": 4,
+              "tentative": 11
+            },
+            {
+              "museum_id": 214,
+              "verified": 4,
+              "tentative": 11
+            },
+            {
+              "museum_id": 62,
+              "verified": 4,
+              "tentative": 10
+            },
+            {
+              "museum_id": 237,
+              "verified": 4,
+              "tentative": 10
+            },
+            {
+              "museum_id": 17,
+              "verified": 4,
+              "tentative": 9
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "image_id": 8,
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            69,
+            86,
+            512,
+            648
+          ],
+          "candidates": [
+            {
+              "museum_id": 150,
+              "verified": 45,
+              "tentative": 120
+            },
+            {
+              "museum_id": 149,
+              "verified": 6,
+              "tentative": 10
+            },
+            {
+              "museum_id": 159,
+              "verified": 6,
+              "tentative": 9
+            },
+            {
+              "museum_id": 95,
+              "verified": 5,
+              "tentative": 47
+            },
+            {
+              "museum_id": 66,
+              "verified": 5,
+              "tentative": 15
+            },
+            {
+              "museum_id": 210,
+              "verified": 5,
+              "tentative": 15
+            },
+            {
+              "museum_id": 46,
+              "verified": 5,
+              "tentative": 11
+            },
+            {
+              "museum_id": 227,
+              "verified": 5,
+              "tentative": 11
+            },
+            {
+              "museum_id": 225,
+              "verified": 5,
+              "tentative": 10
+            },
+            {
+              "museum_id": 268,
+              "verified": 5,
+              "tentative": 10
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "image_id": 9,
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            27,
+            39,
+            267,
+            340
+          ],
+          "candidates": [
+            {
+              "museum_id": 258,
+              "verified": 117,
+              "tentative": 184
+            },
+            {
+              "museum_id": 84,
+              "verified": 5,
+              "tentative": 8
+            },
+            {
+              "museum_id": 26,
+              "verified": 4,
+              "tentative": 10
+            },
+            {
+              "museum_id": 128,
+              "verified": 4,
+              "tentative": 10
+            },
+            {
+              "museum_id": 140,
+              "verified": 4,
+              "tentative": 8
+            },
+            {
+              "museum_id": 181,
+              "verified": 4,
+              "tentative": 8
+            },
+            {
+              "museum_id": 54,
+              "verified": 0,
+              "tentative": 7
+            },
+            {
+              "museum_id": 64,
+              "verified": 0,
+              "tentative": 7
+            },
+            {
+              "museum_id": 151,
+              "verified": 0,
+              "tentative": 7
+            },
+            {
+              "museum_id": 259,
+              "verified": 0,
+              "tentative": 7
+            }
+          ]
+        },
+        {
+          "painting_index": 1,
+          "box": [
+            432,
+            14,
+            705,
+            372
+          ],
+          "candidates": [
+            {
+              "museum_id": 35,
+              "verified": 270,
+              "tentative": 325
+            },
+            {
+              "museum_id": 276,
+              "verified": 4,
+              "tentative": 12
+            },
+            {
+              "museum_id": 114,
+              "verified": 4,
+              "tentative": 10
+            },
+            {
+              "museum_id": 25,
+              "verified": 4,
+              "tentative": 8
+            },
+            {
+              "museum_id": 26,
+              "verified": 4,
+              "tentative": 8
+            },
+            {
+              "museum_id": 195,
+              "verified": 4,
+              "tentative": 8
+            },
+            {
+              "museum_id": 221,
+              "verified": 4,
+              "tentative": 8
+            },
+            {
+              "museum_id": 56,
+              "verified": 0,
+              "tentative": 7
+            },
+            {
+              "museum_id": 85,
+              "verified": 0,
+              "tentative": 7
+            },
+            {
+              "museum_id": 90,
+              "verified": 0,
+              "tentative": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "image_id": 10,
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            48,
+            86,
+            473,
+            286
+          ],
+          "candidates": [
+            {
+              "museum_id": 182,
+              "verified": 256,
+              "tentative": 283
+            },
+            {
+              "museum_id": 38,
+              "verified": 4,
+              "tentative": 9
+            },
+            {
+              "museum_id": 173,
+              "verified": 4,
+              "tentative": 9
+            },
+            {
+              "museum_id": 234,
+              "verified": 4,
+              "tentative": 9
+            },
+            {
+              "museum_id": 167,
+              "verified": 4,
+              "tentative": 8
+            },
+            {
+              "museum_id": 248,
+              "verified": 4,
+              "tentative": 8
+            },
+            {
+              "museum_id": 256,
+              "verified": 4,
+              "tentative": 8
+            },
+            {
+              "museum_id": 18,
+              "verified": 3,
+              "tentative": 8
+            },
+            {
+              "museum_id": 90,
+              "verified": 0,
+              "tentative": 7
+            },
+            {
+              "museum_id": 98,
+              "verified": 0,
+              "tentative": 7
+            }
+          ]
+        },
+        {
+          "painting_index": 1,
+          "box": [
+            628,
+            57,
+            948,
+            305
+          ],
+          "candidates": [
+            {
+              "museum_id": 252,
+              "verified": 181,
+              "tentative": 239
+            },
+            {
+              "museum_id": 146,
+              "verified": 5,
+              "tentative": 11
+            },
+            {
+              "museum_id": 248,
+              "verified": 5,
+              "tentative": 10
+            },
+            {
+              "museum_id": 172,
+              "verified": 5,
+              "tentative": 8
+            },
+            {
+              "museum_id": 156,
+              "verified": 4,
+              "tentative": 11
+            },
+            {
+              "museum_id": 43,
+              "verified": 4,
+              "tentative": 9
+            },
+            {
+              "museum_id": 165,
+              "verified": 4,
+              "tentative": 9
+            },
+            {
+              "museum_id": 10,
+              "verified": 4,
+              "tentative": 8
+            },
+            {
+              "museum_id": 104,
+              "verified": 4,
+              "tentative": 8
+            },
+            {
+              "museum_id": 203,
+              "verified": 4,
+              "tentative": 8
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "image_id": 11,
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            265,
+            197,
+            2465,
+            2990
+          ],
+          "candidates": [
+            {
+              "museum_id": 165,
+              "verified": 5,
+              "tentative": 8
+            },
+            {
+              "museum_id": 140,
+              "verified": 4,
+              "tentative": 9
+            },
+            {
+              "museum_id": 193,
+              "verified": 4,
+              "tentative": 8
+            },
+            {
+              "museum_id": 272,
+              "verified": 4,
+              "tentative": 8
+            },
+            {
+              "museum_id": 36,
+              "verified": 0,
+              "tentative": 7
+            },
+            {
+              "museum_id": 40,
+              "verified": 0,
+              "tentative": 7
+            },
+            {
+              "museum_id": 73,
+              "verified": 0,
+              "tentative": 7
+            },
+            {
+              "museum_id": 104,
+              "verified": 0,
+              "tentative": 7
+            },
+            {
+              "museum_id": 156,
+              "verified": 0,
+              "tentative": 7
+            },
+            {
+              "museum_id": 215,
+              "verified": 0,
+              "tentative": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "image_id": 12,
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            194,
+            114,
+            425,
+            366
+          ],
+          "candidates": [
+            {
+              "museum_id": 62,
+              "verified": 165,
+              "tentative": 212
+            },
+            {
+              "museum_id": 128,
+              "verified": 5,
+              "tentative": 9
+            },
+            {
+              "museum_id": 165,
+              "verified": 5,
+              "tentative": 9
+            },
+            {
+              "museum_id": 201,
+              "verified": 4,
+              "tentative": 10
+            },
+            {
+              "museum_id": 206,
+              "verified": 4,
+              "tentative": 10
+            },
+            {
+              "museum_id": 34,
+              "verified": 4,
+              "tentative": 9
+            },
+            {
+              "museum_id": 63,
+              "verified": 4,
+              "tentative": 9
+            },
+            {
+              "museum_id": 109,
+              "verified": 4,
+              "tentative": 9
+            },
+            {
+              "museum_id": 145,
+              "verified": 4,
+              "tentative": 9
+            },
+            {
+              "museum_id": 3,
+              "verified": 4,
+              "tentative": 8
+            }
+          ]
+        },
+        {
+          "painting_index": 1,
+          "box": [
+            37,
+            423,
+            464,
+            816
+          ],
+          "candidates": [
+            {
+              "museum_id": 38,
+              "verified": 89,
+              "tentative": 109
+            },
+            {
+              "museum_id": 229,
+              "verified": 5,
+              "tentative": 13
+            },
+            {
+              "museum_id": 183,
+              "verified": 5,
+              "tentative": 12
+            },
+            {
+              "museum_id": 111,
+              "verified": 5,
+              "tentative": 11
+            },
+            {
+              "museum_id": 209,
+              "verified": 5,
+              "tentative": 11
+            },
+            {
+              "museum_id": 48,
+              "verified": 5,
+              "tentative": 10
+            },
+            {
+              "museum_id": 102,
+              "verified": 5,
+              "tentative": 9
+            },
+            {
+              "museum_id": 211,
+              "verified": 5,
+              "tentative": 9
+            },
+            {
+              "museum_id": 75,
+              "verified": 5,
+              "tentative": 8
+            },
+            {
+              "museum_id": 130,
+              "verified": 4,
+              "tentative": 13
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "image_id": 13,
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            68,
+            48,
+            809,
+            1081
+          ],
+          "candidates": [
+            {
+              "museum_id": 218,
+              "verified": 235,
+              "tentative": 275
+            },
+            {
+              "museum_id": 24,
+              "verified": 5,
+              "tentative": 10
+            },
+            {
+              "museum_id": 146,
+              "verified": 4,
+              "tentative": 11
+            },
+            {
+              "museum_id": 3,
+              "verified": 4,
+              "tentative": 10
+            },
+            {
+              "museum_id": 160,
+              "verified": 4,
+              "tentative": 9
+            },
+            {
+              "museum_id": 7,
+              "verified": 4,
+              "tentative": 8
+            },
+            {
+              "museum_id": 17,
+              "verified": 4,
+              "tentative": 8
+            },
+            {
+              "museum_id": 74,
+              "verified": 4,
+              "tentative": 8
+            },
+            {
+              "museum_id": 98,
+              "verified": 4,
+              "tentative": 8
+            },
+            {
+              "museum_id": 103,
+              "verified": 4,
+              "tentative": 8
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "image_id": 14,
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            30,
+            49,
+            444,
+            436
+          ],
+          "candidates": [
+            {
+              "museum_id": 222,
+              "verified": 356,
+              "tentative": 451
+            },
+            {
+              "museum_id": 4,
+              "verified": 5,
+              "tentative": 16
+            },
+            {
+              "museum_id": 175,
+              "verified": 5,
+              "tentative": 14
+            },
+            {
+              "museum_id": 225,
+              "verified": 5,
+              "tentative": 13
+            },
+            {
+              "museum_id": 163,
+              "verified": 5,
+              "tentative": 12
+            },
+            {
+              "museum_id": 165,
+              "verified": 5,
+              "tentative": 12
+            },
+            {
+              "museum_id": 244,
+              "verified": 5,
+              "tentative": 11
+            },
+            {
+              "museum_id": 271,
+              "verified": 5,
+              "tentative": 11
+            },
+            {
+              "museum_id": 64,
+              "verified": 5,
+              "tentative": 10
+            },
+            {
+              "museum_id": 204,
+              "verified": 5,
+              "tentative": 10
+            }
+          ]
+        },
+        {
+          "painting_index": 1,
+          "box": [
+            38,
+            506,
+            479,
+            843
+          ],
+          "candidates": [
+            {
+              "museum_id": 277,
+              "verified": 321,
+              "tentative": 372
+            },
+            {
+              "museum_id": 184,
+              "verified": 4,
+              "tentative": 9
+            },
+            {
+              "museum_id": 177,
+              "verified": 4,
+              "tentative": 8
+            },
+            {
+              "museum_id": 66,
+              "verified": 0,
+              "tentative": 7
+            },
+            {
+              "museum_id": 112,
+              "verified": 0,
+              "tentative": 7
+            },
+            {
+              "museum_id": 160,
+              "verified": 0,
+              "tentative": 7
+            },
+            {
+              "museum_id": 165,
+              "verified": 0,
+              "tentative": 7
+            },
+            {
+              "museum_id": 235,
+              "verified": 0,
+              "tentative": 7
+            },
+            {
+              "museum_id": 18,
+              "verified": 0,
+              "tentative": 6
+            },
+            {
+              "museum_id": 43,
+              "verified": 0,
+              "tentative": 6
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "image_id": 15,
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            27,
+            18,
+            3563,
+            2351
+          ],
+          "candidates": [
+            {
+              "museum_id": 14,
+              "verified": 0,
+              "tentative": 7
+            },
+            {
+              "museum_id": 40,
+              "verified": 0,
+              "tentative": 7
+            },
+            {
+              "museum_id": 111,
+              "verified": 0,
+              "tentative": 7
+            },
+            {
+              "museum_id": 138,
+              "verified": 0,
+              "tentative": 7
+            },
+            {
+              "museum_id": 165,
+              "verified": 0,
+              "tentative": 7
+            },
+            {
+              "museum_id": 61,
+              "verified": 0,
+              "tentative": 6
+            },
+            {
+              "museum_id": 87,
+              "verified": 0,
+              "tentative": 6
+            },
+            {
+              "museum_id": 109,
+              "verified": 0,
+              "tentative": 6
+            },
+            {
+              "museum_id": 24,
+              "verified": 0,
+              "tentative": 5
+            },
+            {
+              "museum_id": 46,
+              "verified": 0,
+              "tentative": 5
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "image_id": 16,
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            25,
+            35,
+            799,
+            665
+          ],
+          "candidates": [
+            {
+              "museum_id": 94,
+              "verified": 272,
+              "tentative": 339
+            },
+            {
+              "museum_id": 4,
+              "verified": 5,
+              "tentative": 18
+            },
+            {
+              "museum_id": 194,
+              "verified": 5,
+              "tentative": 13
+            },
+            {
+              "museum_id": 165,
+              "verified": 5,
+              "tentative": 12
+            },
+            {
+              "museum_id": 114,
+              "verified": 5,
+              "tentative": 11
+            },
+            {
+              "museum_id": 230,
+              "verified": 5,
+              "tentative": 9
+            },
+            {
+              "museum_id": 245,
+              "verified": 5,
+              "tentative": 9
+            },
+            {
+              "museum_id": 201,
+              "verified": 4,
+              "tentative": 13
+            },
+            {
+              "museum_id": 26,
+              "verified": 4,
+              "tentative": 11
+            },
+            {
+              "museum_id": 248,
+              "verified": 4,
+              "tentative": 11
+            }
+          ]
+        },
+        {
+          "painting_index": 1,
+          "box": [
+            1051,
+            10,
+            1967,
+            700
+          ],
+          "candidates": [
+            {
+              "museum_id": 132,
+              "verified": 438,
+              "tentative": 498
+            },
+            {
+              "museum_id": 43,
+              "verified": 5,
+              "tentative": 11
+            },
+            {
+              "museum_id": 165,
+              "verified": 5,
+              "tentative": 10
+            },
+            {
+              "museum_id": 35,
+              "verified": 4,
+              "tentative": 11
+            },
+            {
+              "museum_id": 184,
+              "verified": 4,
+              "tentative": 11
+            },
+            {
+              "museum_id": 193,
+              "verified": 4,
+              "tentative": 11
+            },
+            {
+              "museum_id": 70,
+              "verified": 4,
+              "tentative": 10
+            },
+            {
+              "museum_id": 154,
+              "verified": 4,
+              "tentative": 10
+            },
+            {
+              "museum_id": 242,
+              "verified": 4,
+              "tentative": 10
+            },
+            {
+              "museum_id": 249,
+              "verified": 4,
+              "tentative": 10
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "image_id": 17,
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            70,
+            83,
+            2518,
+            1854
+          ],
+          "candidates": [
+            {
+              "museum_id": 132,
+              "verified": 5,
+              "tentative": 11
+            },
+            {
+              "museum_id": 203,
+              "verified": 5,
+              "tentative": 11
+            },
+            {
+              "museum_id": 24,
+              "verified": 4,
+              "tentative": 9
+            },
+            {
+              "museum_id": 34,
+              "verified": 4,
+              "tentative": 8
+            },
+            {
+              "museum_id": 74,
+              "verified": 4,
+              "tentative": 8
+            },
+            {
+              "museum_id": 187,
+              "verified": 4,
+              "tentative": 8
+            },
+            {
+              "museum_id": 242,
+              "verified": 4,
+              "tentative": 8
+            },
+            {
+              "museum_id": 286,
+              "verified": 4,
+              "tentative": 8
+            },
+            {
+              "museum_id": 29,
+              "verified": 0,
+              "tentative": 7
+            },
+            {
+              "museum_id": 32,
+              "verified": 0,
+              "tentative": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "image_id": 18,
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            81,
+            74,
+            2624,
+            2629
+          ],
+          "candidates": [
+            {
+              "museum_id": 26,
+              "verified": 5,
+              "tentative": 15
+            },
+            {
+              "museum_id": 75,
+              "verified": 5,
+              "tentative": 11
+            },
+            {
+              "museum_id": 184,
+              "verified": 5,
+              "tentative": 11
+            },
+            {
+              "museum_id": 20,
+              "verified": 5,
+              "tentative": 9
+            },
+            {
+              "museum_id": 50,
+              "verified": 5,
+              "tentative": 9
+            },
+            {
+              "museum_id": 51,
+              "verified": 4,
+              "tentative": 15
+            },
+            {
+              "museum_id": 242,
+              "verified": 4,
+              "tentative": 14
+            },
+            {
+              "museum_id": 43,
+              "verified": 4,
+              "tentative": 12
+            },
+            {
+              "museum_id": 183,
+              "verified": 4,
+              "tentative": 12
+            },
+            {
+              "museum_id": 204,
+              "verified": 4,
+              "tentative": 12
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "image_id": 19,
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            44,
+            73,
+            2909,
+            2653
+          ],
+          "candidates": [
+            {
+              "museum_id": 9,
+              "verified": 370,
+              "tentative": 457
+            },
+            {
+              "museum_id": 214,
+              "verified": 5,
+              "tentative": 9
+            },
+            {
+              "museum_id": 235,
+              "verified": 4,
+              "tentative": 12
+            },
+            {
+              "museum_id": 24,
+              "verified": 4,
+              "tentative": 10
+            },
+            {
+              "museum_id": 259,
+              "verified": 4,
+              "tentative": 10
+            },
+            {
+              "museum_id": 173,
+              "verified": 4,
+              "tentative": 9
+            },
+            {
+              "museum_id": 185,
+              "verified": 4,
+              "tentative": 9
+            },
+            {
+              "museum_id": 254,
+              "verified": 4,
+              "tentative": 9
+            },
+            {
+              "museum_id": 257,
+              "verified": 4,
+              "tentative": 9
+            },
+            {
+              "museum_id": 74,
+              "verified": 4,
+              "tentative": 8
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "image_id": 20,
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            11,
+            64,
+            355,
+            506
+          ],
+          "candidates": [
+            {
+              "museum_id": 11,
+              "verified": 8,
+              "tentative": 15
+            },
+            {
+              "museum_id": 87,
+              "verified": 0,
+              "tentative": 7
+            },
+            {
+              "museum_id": 131,
+              "verified": 0,
+              "tentative": 6
+            },
+            {
+              "museum_id": 244,
+              "verified": 0,
+              "tentative": 6
+            },
+            {
+              "museum_id": 10,
+              "verified": 0,
+              "tentative": 5
+            },
+            {
+              "museum_id": 40,
+              "verified": 0,
+              "tentative": 5
+            },
+            {
+              "museum_id": 80,
+              "verified": 0,
+              "tentative": 5
+            },
+            {
+              "museum_id": 138,
+              "verified": 0,
+              "tentative": 5
+            },
+            {
+              "museum_id": 155,
+              "verified": 0,
+              "tentative": 5
+            },
+            {
+              "museum_id": 165,
+              "verified": 0,
+              "tentative": 5
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "image_id": 21,
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            11,
+            27,
+            408,
+            503
+          ],
+          "candidates": [
+            {
+              "museum_id": 251,
+              "verified": 93,
+              "tentative": 127
+            },
+            {
+              "museum_id": 176,
+              "verified": 5,
+              "tentative": 11
+            },
+            {
+              "museum_id": 234,
+              "verified": 5,
+              "tentative": 11
+            },
+            {
+              "museum_id": 221,
+              "verified": 5,
+              "tentative": 8
+            },
+            {
+              "museum_id": 152,
+              "verified": 4,
+              "tentative": 12
+            },
+            {
+              "museum_id": 130,
+              "verified": 4,
+              "tentative": 10
+            },
+            {
+              "museum_id": 154,
+              "verified": 4,
+              "tentative": 10
+            },
+            {
+              "museum_id": 4,
+              "verified": 4,
+              "tentative": 9
+            },
+            {
+              "museum_id": 32,
+              "verified": 4,
+              "tentative": 9
+            },
+            {
+              "museum_id": 39,
+              "verified": 4,
+              "tentative": 9
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "image_id": 22,
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            30,
+            56,
+            384,
+            480
+          ],
+          "candidates": [
+            {
+              "museum_id": 92,
+              "verified": 191,
+              "tentative": 252
+            },
+            {
+              "museum_id": 165,
+              "verified": 5,
+              "tentative": 8
+            },
+            {
+              "museum_id": 169,
+              "verified": 4,
+              "tentative": 9
+            },
+            {
+              "museum_id": 185,
+              "verified": 4,
+              "tentative": 8
+            },
+            {
+              "museum_id": 208,
+              "verified": 4,
+              "tentative": 8
+            },
+            {
+              "museum_id": 10,
+              "verified": 0,
+              "tentative": 7
+            },
+            {
+              "museum_id": 49,
+              "verified": 0,
+              "tentative": 7
+            },
+            {
+              "museum_id": 133,
+              "verified": 0,
+              "tentative": 7
+            },
+            {
+              "museum_id": 163,
+              "verified": 0,
+              "tentative": 7
+            },
+            {
+              "museum_id": 212,
+              "verified": 0,
+              "tentative": 7
+            }
+          ]
+        },
+        {
+          "painting_index": 1,
+          "box": [
+            391,
+            54,
+            737,
+            482
+          ],
+          "candidates": [
+            {
+              "museum_id": 202,
+              "verified": 254,
+              "tentative": 306
+            },
+            {
+              "museum_id": 4,
+              "verified": 4,
+              "tentative": 12
+            },
+            {
+              "museum_id": 32,
+              "verified": 4,
+              "tentative": 10
+            },
+            {
+              "museum_id": 93,
+              "verified": 4,
+              "tentative": 9
+            },
+            {
+              "museum_id": 193,
+              "verified": 4,
+              "tentative": 9
+            },
+            {
+              "museum_id": 232,
+              "verified": 4,
+              "tentative": 9
+            },
+            {
+              "museum_id": 14,
+              "verified": 4,
+              "tentative": 8
+            },
+            {
+              "museum_id": 147,
+              "verified": 4,
+              "tentative": 8
+            },
+            {
+              "museum_id": 187,
+              "verified": 4,
+              "tentative": 8
+            },
+            {
+              "museum_id": 214,
+              "verified": 4,
+              "tentative": 8
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "image_id": 23,
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            30,
+            18,
+            2403,
+            1386
+          ],
+          "candidates": [
+            {
+              "museum_id": 98,
+              "verified": 5,
+              "tentative": 10
+            },
+            {
+              "museum_id": 160,
+              "verified": 5,
+              "tentative": 8
+            },
+            {
+              "museum_id": 78,
+              "verified": 4,
+              "tentative": 11
+            },
+            {
+              "museum_id": 271,
+              "verified": 4,
+              "tentative": 11
+            },
+            {
+              "museum_id": 26,
+              "verified": 4,
+              "tentative": 10
+            },
+            {
+              "museum_id": 124,
+              "verified": 4,
+              "tentative": 10
+            },
+            {
+              "museum_id": 152,
+              "verified": 4,
+              "tentative": 10
+            },
+            {
+              "museum_id": 154,
+              "verified": 4,
+              "tentative": 10
+            },
+            {
+              "museum_id": 247,
+              "verified": 4,
+              "tentative": 10
+            },
+            {
+              "museum_id": 260,
+              "verified": 4,
+              "tentative": 10
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "image_id": 24,
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            47,
+            30,
+            1585,
+            1690
+          ],
+          "candidates": [
+            {
+              "museum_id": 104,
+              "verified": 343,
+              "tentative": 390
+            },
+            {
+              "museum_id": 233,
+              "verified": 4,
+              "tentative": 12
+            },
+            {
+              "museum_id": 94,
+              "verified": 4,
+              "tentative": 10
+            },
+            {
+              "museum_id": 230,
+              "verified": 4,
+              "tentative": 9
+            },
+            {
+              "museum_id": 51,
+              "verified": 4,
+              "tentative": 8
+            },
+            {
+              "museum_id": 227,
+              "verified": 4,
+              "tentative": 8
+            },
+            {
+              "museum_id": 231,
+              "verified": 4,
+              "tentative": 8
+            },
+            {
+              "museum_id": 242,
+              "verified": 4,
+              "tentative": 8
+            },
+            {
+              "museum_id": 253,
+              "verified": 4,
+              "tentative": 8
+            },
+            {
+              "museum_id": 26,
+              "verified": 0,
+              "tentative": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "image_id": 25,
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            30,
+            33,
+            1310,
+            1069
+          ],
+          "candidates": [
+            {
+              "museum_id": 23,
+              "verified": 223,
+              "tentative": 279
+            },
+            {
+              "museum_id": 51,
+              "verified": 5,
+              "tentative": 12
+            },
+            {
+              "museum_id": 214,
+              "verified": 4,
+              "tentative": 11
+            },
+            {
+              "museum_id": 43,
+              "verified": 4,
+              "tentative": 10
+            },
+            {
+              "museum_id": 17,
+              "verified": 4,
+              "tentative": 9
+            },
+            {
+              "museum_id": 161,
+              "verified": 4,
+              "tentative": 9
+            },
+            {
+              "museum_id": 165,
+              "verified": 4,
+              "tentative": 9
+            },
+            {
+              "museum_id": 216,
+              "verified": 4,
+              "tentative": 9
+            },
+            {
+              "museum_id": 18,
+              "verified": 4,
+              "tentative": 8
+            },
+            {
+              "museum_id": 60,
+              "verified": 4,
+              "tentative": 8
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "image_id": 26,
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            45,
+            67,
+            1125,
+            1388
+          ],
+          "candidates": [
+            {
+              "museum_id": 170,
+              "verified": 142,
+              "tentative": 168
+            },
+            {
+              "museum_id": 216,
+              "verified": 5,
+              "tentative": 11
+            },
+            {
+              "museum_id": 183,
+              "verified": 5,
+              "tentative": 9
+            },
+            {
+              "museum_id": 151,
+              "verified": 5,
+              "tentative": 8
+            },
+            {
+              "museum_id": 113,
+              "verified": 4,
+              "tentative": 12
+            },
+            {
+              "museum_id": 188,
+              "verified": 4,
+              "tentative": 12
+            },
+            {
+              "museum_id": 286,
+              "verified": 4,
+              "tentative": 12
+            },
+            {
+              "museum_id": 23,
+              "verified": 4,
+              "tentative": 11
+            },
+            {
+              "museum_id": 24,
+              "verified": 4,
+              "tentative": 11
+            },
+            {
+              "museum_id": 133,
+              "verified": 4,
+              "tentative": 11
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "image_id": 27,
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            7,
+            39,
+            308,
+            430
+          ],
+          "candidates": [
+            {
+              "museum_id": 67,
+              "verified": 155,
+              "tentative": 240
+            },
+            {
+              "museum_id": 26,
+              "verified": 5,
+              "tentative": 10
+            },
+            {
+              "museum_id": 33,
+              "verified": 4,
+              "tentative": 14
+            },
+            {
+              "museum_id": 184,
+              "verified": 4,
+              "tentative": 11
+            },
+            {
+              "museum_id": 225,
+              "verified": 4,
+              "tentative": 11
+            },
+            {
+              "museum_id": 101,
+              "verified": 4,
+              "tentative": 10
+            },
+            {
+              "museum_id": 126,
+              "verified": 4,
+              "tentative": 10
+            },
+            {
+              "museum_id": 188,
+              "verified": 4,
+              "tentative": 10
+            },
+            {
+              "museum_id": 248,
+              "verified": 4,
+              "tentative": 10
+            },
+            {
+              "museum_id": 4,
+              "verified": 4,
+              "tentative": 9
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "image_id": 28,
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            31,
+            0,
+            2520,
+            2005
+          ],
+          "candidates": [
+            {
+              "museum_id": 48,
+              "verified": 4,
+              "tentative": 9
+            },
+            {
+              "museum_id": 82,
+              "verified": 4,
+              "tentative": 9
+            },
+            {
+              "museum_id": 165,
+              "verified": 4,
+              "tentative": 9
+            },
+            {
+              "museum_id": 173,
+              "verified": 4,
+              "tentative": 8
+            },
+            {
+              "museum_id": 201,
+              "verified": 4,
+              "tentative": 8
+            },
+            {
+              "museum_id": 221,
+              "verified": 4,
+              "tentative": 8
+            },
+            {
+              "museum_id": 4,
+              "verified": 0,
+              "tentative": 7
+            },
+            {
+              "museum_id": 21,
+              "verified": 0,
+              "tentative": 7
+            },
+            {
+              "museum_id": 66,
+              "verified": 0,
+              "tentative": 7
+            },
+            {
+              "museum_id": 96,
+              "verified": 0,
+              "tentative": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "image_id": 29,
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            37,
+            51,
+            1869,
+            1553
+          ],
+          "candidates": [
+            {
+              "museum_id": 225,
+              "verified": 285,
+              "tentative": 342
+            },
+            {
+              "museum_id": 60,
+              "verified": 5,
+              "tentative": 12
+            },
+            {
+              "museum_id": 89,
+              "verified": 5,
+              "tentative": 11
+            },
+            {
+              "museum_id": 146,
+              "verified": 4,
+              "tentative": 13
+            },
+            {
+              "museum_id": 115,
+              "verified": 4,
+              "tentative": 12
+            },
+            {
+              "museum_id": 91,
+              "verified": 4,
+              "tentative": 11
+            },
+            {
+              "museum_id": 122,
+              "verified": 4,
+              "tentative": 11
+            },
+            {
+              "museum_id": 183,
+              "verified": 4,
+              "tentative": 11
+            },
+            {
+              "museum_id": 278,
+              "verified": 4,
+              "tentative": 11
+            },
+            {
+              "museum_id": 98,
+              "verified": 4,
+              "tentative": 10
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

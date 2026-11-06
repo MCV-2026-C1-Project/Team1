@@ -1,0 +1,807 @@
+{
+  "schema_version": 2,
+  "method": "ORB",
+  "nfeatures": 1000,
+  "opencv_version": "5.0.0",
+  "role": "queries",
+  "source_folder": "C:\\Users\\larar\\OneDrive\\Documentos\\Escritorio\\STUDYING\\0. MASTER\\C1\\project\\week4\\Team1\\data\\qst1_w4",
+  "preprocessing": "grayscale; crop resized to longest side 384 px (never upscaled); ORB scaleFactor 1.2, 8 levels, fastThreshold 7, CLAHE on",
+  "variant": "v2",
+  "fast_threshold": 7,
+  "clahe": true,
+  "max_side": 384,
+  "coordinate_system": "keypoints relative to each crop, at the crop's original resolution",
+  "segmentation": {
+    "border": 0.02,
+    "blur": 5,
+    "thr_min": 4.0,
+    "thr_max": 4.0,
+    "open_frac": 0.004,
+    "close_frac": 0.02,
+    "use_bbox": true,
+    "poly_degree": 1,
+    "max_side": 400,
+    "min_area_frac": 0.02,
+    "max_paintings": 2
+  },
+  "images": [
+    {
+      "image_id": 0,
+      "source_path": "C:\\Users\\larar\\OneDrive\\Documentos\\Escritorio\\STUDYING\\0. MASTER\\C1\\project\\week4\\Team1\\data\\qst1_w4\\00000.jpg",
+      "image_shape": [
+        403,
+        440,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            24,
+            8,
+            415,
+            381
+          ],
+          "feature_file": "00000_painting0.npz",
+          "keypoint_count": 1000
+        }
+      ]
+    },
+    {
+      "image_id": 1,
+      "source_path": "C:\\Users\\larar\\OneDrive\\Documentos\\Escritorio\\STUDYING\\0. MASTER\\C1\\project\\week4\\Team1\\data\\qst1_w4\\00001.jpg",
+      "image_shape": [
+        684,
+        558,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            47,
+            10,
+            531,
+            655
+          ],
+          "feature_file": "00001_painting0.npz",
+          "keypoint_count": 996
+        }
+      ]
+    },
+    {
+      "image_id": 2,
+      "source_path": "C:\\Users\\larar\\OneDrive\\Documentos\\Escritorio\\STUDYING\\0. MASTER\\C1\\project\\week4\\Team1\\data\\qst1_w4\\00002.jpg",
+      "image_shape": [
+        464,
+        1336,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            46,
+            66,
+            498,
+            441
+          ],
+          "feature_file": "00002_painting0.npz",
+          "keypoint_count": 1000
+        },
+        {
+          "painting_index": 1,
+          "box": [
+            811,
+            36,
+            1323,
+            448
+          ],
+          "feature_file": "00002_painting1.npz",
+          "keypoint_count": 989
+        }
+      ]
+    },
+    {
+      "image_id": 3,
+      "source_path": "C:\\Users\\larar\\OneDrive\\Documentos\\Escritorio\\STUDYING\\0. MASTER\\C1\\project\\week4\\Team1\\data\\qst1_w4\\00003.jpg",
+      "image_shape": [
+        797,
+        763,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            296,
+            7,
+            694,
+            337
+          ],
+          "feature_file": "00003_painting0.npz",
+          "keypoint_count": 996
+        },
+        {
+          "painting_index": 1,
+          "box": [
+            49,
+            370,
+            696,
+            762
+          ],
+          "feature_file": "00003_painting1.npz",
+          "keypoint_count": 925
+        }
+      ]
+    },
+    {
+      "image_id": 4,
+      "source_path": "C:\\Users\\larar\\OneDrive\\Documentos\\Escritorio\\STUDYING\\0. MASTER\\C1\\project\\week4\\Team1\\data\\qst1_w4\\00004.jpg",
+      "image_shape": [
+        2233,
+        2337,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            87,
+            99,
+            2244,
+            2198
+          ],
+          "feature_file": "00004_painting0.npz",
+          "keypoint_count": 917
+        }
+      ]
+    },
+    {
+      "image_id": 5,
+      "source_path": "C:\\Users\\larar\\OneDrive\\Documentos\\Escritorio\\STUDYING\\0. MASTER\\C1\\project\\week4\\Team1\\data\\qst1_w4\\00005.jpg",
+      "image_shape": [
+        3108,
+        2100,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            186,
+            178,
+            1883,
+            2891
+          ],
+          "feature_file": "00005_painting0.npz",
+          "keypoint_count": 940
+        }
+      ]
+    },
+    {
+      "image_id": 6,
+      "source_path": "C:\\Users\\larar\\OneDrive\\Documentos\\Escritorio\\STUDYING\\0. MASTER\\C1\\project\\week4\\Team1\\data\\qst1_w4\\00006.jpg",
+      "image_shape": [
+        2357,
+        2393,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            65,
+            35,
+            2346,
+            2298
+          ],
+          "feature_file": "00006_painting0.npz",
+          "keypoint_count": 1000
+        }
+      ]
+    },
+    {
+      "image_id": 7,
+      "source_path": "C:\\Users\\larar\\OneDrive\\Documentos\\Escritorio\\STUDYING\\0. MASTER\\C1\\project\\week4\\Team1\\data\\qst1_w4\\00007.jpg",
+      "image_shape": [
+        1466,
+        1285,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            14,
+            10,
+            1264,
+            1423
+          ],
+          "feature_file": "00007_painting0.npz",
+          "keypoint_count": 1000
+        }
+      ]
+    },
+    {
+      "image_id": 8,
+      "source_path": "C:\\Users\\larar\\OneDrive\\Documentos\\Escritorio\\STUDYING\\0. MASTER\\C1\\project\\week4\\Team1\\data\\qst1_w4\\00008.jpg",
+      "image_shape": [
+        736,
+        559,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            69,
+            86,
+            512,
+            648
+          ],
+          "feature_file": "00008_painting0.npz",
+          "keypoint_count": 998
+        }
+      ]
+    },
+    {
+      "image_id": 9,
+      "source_path": "C:\\Users\\larar\\OneDrive\\Documentos\\Escritorio\\STUDYING\\0. MASTER\\C1\\project\\week4\\Team1\\data\\qst1_w4\\00009.jpg",
+      "image_shape": [
+        399,
+        745,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            27,
+            39,
+            267,
+            340
+          ],
+          "feature_file": "00009_painting0.npz",
+          "keypoint_count": 914
+        },
+        {
+          "painting_index": 1,
+          "box": [
+            432,
+            14,
+            705,
+            372
+          ],
+          "feature_file": "00009_painting1.npz",
+          "keypoint_count": 975
+        }
+      ]
+    },
+    {
+      "image_id": 10,
+      "source_path": "C:\\Users\\larar\\OneDrive\\Documentos\\Escritorio\\STUDYING\\0. MASTER\\C1\\project\\week4\\Team1\\data\\qst1_w4\\00010.jpg",
+      "image_shape": [
+        336,
+        960,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            48,
+            86,
+            473,
+            286
+          ],
+          "feature_file": "00010_painting0.npz",
+          "keypoint_count": 850
+        },
+        {
+          "painting_index": 1,
+          "box": [
+            628,
+            57,
+            948,
+            305
+          ],
+          "feature_file": "00010_painting1.npz",
+          "keypoint_count": 935
+        }
+      ]
+    },
+    {
+      "image_id": 11,
+      "source_path": "C:\\Users\\larar\\OneDrive\\Documentos\\Escritorio\\STUDYING\\0. MASTER\\C1\\project\\week4\\Team1\\data\\qst1_w4\\00011.jpg",
+      "image_shape": [
+        3035,
+        2722,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            265,
+            197,
+            2465,
+            2990
+          ],
+          "feature_file": "00011_painting0.npz",
+          "keypoint_count": 1000
+        }
+      ]
+    },
+    {
+      "image_id": 12,
+      "source_path": "C:\\Users\\larar\\OneDrive\\Documentos\\Escritorio\\STUDYING\\0. MASTER\\C1\\project\\week4\\Team1\\data\\qst1_w4\\00012.jpg",
+      "image_shape": [
+        830,
+        497,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            194,
+            114,
+            425,
+            366
+          ],
+          "feature_file": "00012_painting0.npz",
+          "keypoint_count": 886
+        },
+        {
+          "painting_index": 1,
+          "box": [
+            37,
+            423,
+            464,
+            816
+          ],
+          "feature_file": "00012_painting1.npz",
+          "keypoint_count": 1000
+        }
+      ]
+    },
+    {
+      "image_id": 13,
+      "source_path": "C:\\Users\\larar\\OneDrive\\Documentos\\Escritorio\\STUDYING\\0. MASTER\\C1\\project\\week4\\Team1\\data\\qst1_w4\\00013.jpg",
+      "image_shape": [
+        1137,
+        956,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            68,
+            48,
+            809,
+            1081
+          ],
+          "feature_file": "00013_painting0.npz",
+          "keypoint_count": 979
+        }
+      ]
+    },
+    {
+      "image_id": 14,
+      "source_path": "C:\\Users\\larar\\OneDrive\\Documentos\\Escritorio\\STUDYING\\0. MASTER\\C1\\project\\week4\\Team1\\data\\qst1_w4\\00014.jpg",
+      "image_shape": [
+        862,
+        547,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            30,
+            49,
+            444,
+            436
+          ],
+          "feature_file": "00014_painting0.npz",
+          "keypoint_count": 987
+        },
+        {
+          "painting_index": 1,
+          "box": [
+            38,
+            506,
+            479,
+            843
+          ],
+          "feature_file": "00014_painting1.npz",
+          "keypoint_count": 970
+        }
+      ]
+    },
+    {
+      "image_id": 15,
+      "source_path": "C:\\Users\\larar\\OneDrive\\Documentos\\Escritorio\\STUDYING\\0. MASTER\\C1\\project\\week4\\Team1\\data\\qst1_w4\\00015.jpg",
+      "image_shape": [
+        2441,
+        3635,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            27,
+            18,
+            3563,
+            2351
+          ],
+          "feature_file": "00015_painting0.npz",
+          "keypoint_count": 965
+        }
+      ]
+    },
+    {
+      "image_id": 16,
+      "source_path": "C:\\Users\\larar\\OneDrive\\Documentos\\Escritorio\\STUDYING\\0. MASTER\\C1\\project\\week4\\Team1\\data\\qst1_w4\\00016.jpg",
+      "image_shape": [
+        710,
+        2022,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            25,
+            35,
+            799,
+            665
+          ],
+          "feature_file": "00016_painting0.npz",
+          "keypoint_count": 998
+        },
+        {
+          "painting_index": 1,
+          "box": [
+            1051,
+            10,
+            1967,
+            700
+          ],
+          "feature_file": "00016_painting1.npz",
+          "keypoint_count": 987
+        }
+      ]
+    },
+    {
+      "image_id": 17,
+      "source_path": "C:\\Users\\larar\\OneDrive\\Documentos\\Escritorio\\STUDYING\\0. MASTER\\C1\\project\\week4\\Team1\\data\\qst1_w4\\00017.jpg",
+      "image_shape": [
+        1892,
+        2562,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            70,
+            83,
+            2518,
+            1854
+          ],
+          "feature_file": "00017_painting0.npz",
+          "keypoint_count": 986
+        }
+      ]
+    },
+    {
+      "image_id": 18,
+      "source_path": "C:\\Users\\larar\\OneDrive\\Documentos\\Escritorio\\STUDYING\\0. MASTER\\C1\\project\\week4\\Team1\\data\\qst1_w4\\00018.jpg",
+      "image_shape": [
+        2696,
+        2705,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            81,
+            74,
+            2624,
+            2629
+          ],
+          "feature_file": "00018_painting0.npz",
+          "keypoint_count": 945
+        }
+      ]
+    },
+    {
+      "image_id": 19,
+      "source_path": "C:\\Users\\larar\\OneDrive\\Documentos\\Escritorio\\STUDYING\\0. MASTER\\C1\\project\\week4\\Team1\\data\\qst1_w4\\00019.jpg",
+      "image_shape": [
+        2697,
+        2953,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            44,
+            73,
+            2909,
+            2653
+          ],
+          "feature_file": "00019_painting0.npz",
+          "keypoint_count": 1000
+        }
+      ]
+    },
+    {
+      "image_id": 20,
+      "source_path": "C:\\Users\\larar\\OneDrive\\Documentos\\Escritorio\\STUDYING\\0. MASTER\\C1\\project\\week4\\Team1\\data\\qst1_w4\\00020.jpg",
+      "image_shape": [
+        559,
+        928,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            11,
+            64,
+            355,
+            506
+          ],
+          "feature_file": "00020_painting0.npz",
+          "keypoint_count": 861
+        }
+      ]
+    },
+    {
+      "image_id": 21,
+      "source_path": "C:\\Users\\larar\\OneDrive\\Documentos\\Escritorio\\STUDYING\\0. MASTER\\C1\\project\\week4\\Team1\\data\\qst1_w4\\00021.jpg",
+      "image_shape": [
+        532,
+        431,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            11,
+            27,
+            408,
+            503
+          ],
+          "feature_file": "00021_painting0.npz",
+          "keypoint_count": 1000
+        }
+      ]
+    },
+    {
+      "image_id": 22,
+      "source_path": "C:\\Users\\larar\\OneDrive\\Documentos\\Escritorio\\STUDYING\\0. MASTER\\C1\\project\\week4\\Team1\\data\\qst1_w4\\00022.jpg",
+      "image_shape": [
+        496,
+        807,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            30,
+            56,
+            384,
+            480
+          ],
+          "feature_file": "00022_painting0.npz",
+          "keypoint_count": 995
+        },
+        {
+          "painting_index": 1,
+          "box": [
+            391,
+            54,
+            737,
+            482
+          ],
+          "feature_file": "00022_painting1.npz",
+          "keypoint_count": 971
+        }
+      ]
+    },
+    {
+      "image_id": 23,
+      "source_path": "C:\\Users\\larar\\OneDrive\\Documentos\\Escritorio\\STUDYING\\0. MASTER\\C1\\project\\week4\\Team1\\data\\qst1_w4\\00023.jpg",
+      "image_shape": [
+        1404,
+        2427,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            30,
+            18,
+            2403,
+            1386
+          ],
+          "feature_file": "00023_painting0.npz",
+          "keypoint_count": 861
+        }
+      ]
+    },
+    {
+      "image_id": 24,
+      "source_path": "C:\\Users\\larar\\OneDrive\\Documentos\\Escritorio\\STUDYING\\0. MASTER\\C1\\project\\week4\\Team1\\data\\qst1_w4\\00024.jpg",
+      "image_shape": [
+        1733,
+        1680,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            47,
+            30,
+            1585,
+            1690
+          ],
+          "feature_file": "00024_painting0.npz",
+          "keypoint_count": 1000
+        }
+      ]
+    },
+    {
+      "image_id": 25,
+      "source_path": "C:\\Users\\larar\\OneDrive\\Documentos\\Escritorio\\STUDYING\\0. MASTER\\C1\\project\\week4\\Team1\\data\\qst1_w4\\00025.jpg",
+      "image_shape": [
+        1116,
+        1347,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            30,
+            33,
+            1310,
+            1069
+          ],
+          "feature_file": "00025_painting0.npz",
+          "keypoint_count": 1000
+        }
+      ]
+    },
+    {
+      "image_id": 26,
+      "source_path": "C:\\Users\\larar\\OneDrive\\Documentos\\Escritorio\\STUDYING\\0. MASTER\\C1\\project\\week4\\Team1\\data\\qst1_w4\\00026.jpg",
+      "image_shape": [
+        1416,
+        1142,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            45,
+            67,
+            1125,
+            1388
+          ],
+          "feature_file": "00026_painting0.npz",
+          "keypoint_count": 992
+        }
+      ]
+    },
+    {
+      "image_id": 27,
+      "source_path": "C:\\Users\\larar\\OneDrive\\Documentos\\Escritorio\\STUDYING\\0. MASTER\\C1\\project\\week4\\Team1\\data\\qst1_w4\\00027.jpg",
+      "image_shape": [
+        455,
+        336,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            7,
+            39,
+            308,
+            430
+          ],
+          "feature_file": "00027_painting0.npz",
+          "keypoint_count": 976
+        }
+      ]
+    },
+    {
+      "image_id": 28,
+      "source_path": "C:\\Users\\larar\\OneDrive\\Documentos\\Escritorio\\STUDYING\\0. MASTER\\C1\\project\\week4\\Team1\\data\\qst1_w4\\00028.jpg",
+      "image_shape": [
+        2036,
+        2545,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            31,
+            0,
+            2520,
+            2005
+          ],
+          "feature_file": "00028_painting0.npz",
+          "keypoint_count": 1000
+        }
+      ]
+    },
+    {
+      "image_id": 29,
+      "source_path": "C:\\Users\\larar\\OneDrive\\Documentos\\Escritorio\\STUDYING\\0. MASTER\\C1\\project\\week4\\Team1\\data\\qst1_w4\\00029.jpg",
+      "image_shape": [
+        1553,
+        1869,
+        3
+      ],
+      "segmentation_fallback": false,
+      "paintings": [
+        {
+          "painting_index": 0,
+          "box": [
+            37,
+            51,
+            1869,
+            1553
+          ],
+          "feature_file": "00029_painting0.npz",
+          "keypoint_count": 1000
+        }
+      ]
+    }
+  ]
+}
