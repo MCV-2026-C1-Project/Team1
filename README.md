@@ -27,13 +27,14 @@ Create a virtual environment to encapsulate the required installations.
 > ```
 
 ---
+
 ## Week 1
 
 ### Task 1: Image Descriptors
 
 Run:
 ```powershell
-python .\src\week1\methods_w1.py --list
+python .\src\methods_w1.py --list
 ```
 
 The W1 descriptors live in `methods_w1.py` (`METHODS_W1`), with the histogram
@@ -56,7 +57,7 @@ All similarity formulas are implemented in `k_similarity.py`, and fall into two 
 
 Run:
 ```powershell
-python .\src\common\k_similarity.py
+python .\src\k_similarity.py
 ```
 
 This script retrieves the top K museum images for each query by comparing image descriptors (Grayscale, HSV, RGB, HSV grid) using the similarity functions.
@@ -75,7 +76,7 @@ Sorting a similarity in ascending order would return the least similar images fi
 
 From the project directory, give the folders containing the museum and test images:
 ```bash
-python .\src\week2\methods_w2.py --museum .\data\BBDD --queries .\data\qsd1_w2 --method "Lab blocks 1D" --blocks 25 
+python .\src\methods_w2.py --museum .\data\BBDD --queries .\data\qsd1_w2 --method "Lab blocks 1D" --blocks 25 
 ```
 
 Both arguments accept relative or absolute image-folder paths. Only JPG/JPEG
@@ -95,7 +96,7 @@ submitted; Grayscale and RGB remain in `METHODS_W1` for validation only.
 
 To override the comparison for both methods or change the output location:
 ```bash
-python src/week1/methods_w1.py --museum data/BBDD --queries data/qst1_w1 --distance Hellinger --output-dir results/hellinger/week1/QST1
+python src/methods_w1.py --museum data/BBDD --queries data/qst1_w1 --distance Hellinger --output-dir results/hellinger/week1/QST1
 ```
 
 Available comparisons: `Euclidean`, `L1`, `Chi-square`, `Histogram Intersection`,
@@ -117,13 +118,13 @@ optional foreground mask):
 | `Lab 3D` | same grid of cells; each cell is a joint 3D L-a-b histogram (32 bins per axis), concatenated row-major | `--blocks T` (default 25 → 5×5) |
 | `Lab pyramid` | hierarchy of 1D-block levels: level 1 is one block, each extra level doubles the number of blocks (1, 2, 4, 8 …) | `--levels K` (default 3) |
 
-Run `python .\src\week2\methods_w2.py --list` to list them.
+Run `python .\src\methods_w2.py --list` to list them.
 
 ### Task 2: Retrieval Comparison
 
 Run a W2 method on a museum/query pair (add `--ground-truth` to print mAP):
 ```powershell
-python .\src\week2\methods_w2.py --museum ..\..\datasets\BBDD --queries ..\..\datasets\qsd1_w2 --method "Lab blocks 1D" --blocks 25
+python .\src\methods_w2.py --museum ..\..\datasets\BBDD --queries ..\..\datasets\qsd1_w2 --method "Lab blocks 1D" --blocks 25
 ```
 
 `--method` is required: a descriptor name or `all` (evaluates the four methods
@@ -132,7 +133,7 @@ in one pass). Use `--blocks`/`--levels` for the parametrized methods and
 
 For example, on QSD1-W2:
 ```powershell
-python .\src\week2\methods_w2.py --museum data\BBDD --queries data\qsd1_w2 --ground-truth data\qsd1_w2\qsd1_w1\gt_corresps.pkl --method all
+python .\src\methods_w2.py --museum data\BBDD --queries data\qsd1_w2 --ground-truth data\qsd1_w2\qsd1_w1\gt_corresps.pkl --method all
 ```
 
 mAP on the 30 QSD1-W2 queries against the BBDD (L1):
@@ -183,7 +184,7 @@ images (QSD2), the mean P/R/F1 is printed.
 
 Run after generating the masks from Task 3:
 ```powershell
-python src\week2\methods_w2.py --segment data\qsd2_w2 --out results\week2\QSD2\masks --viz results\week2\QSD2\viz 
+python src\methods_w2.py --segment data\qsd2_w2 --out results\week2\QSD2\masks --viz results\week2\QSD2\viz 
 ```
 
 The script matches PNG masks by numeric filename ID and computes foreground
@@ -196,7 +197,7 @@ write it to a text file.
 Add `--viz` to also draw the masks over the images (`--images` if the `.jpg`
 files are not in the ground-truth folder):
 ```powershell
-python src\week2\methods_w2.py --segmentation results\week2\QSD2\masks data\qsd2_w2 --viz results\week2\QSD2\viz --save results\week2\QSD2\mask_metrics.txt
+python src\methods_w2.py --segmentation results\week2\QSD2\masks data\qsd2_w2 --viz results\week2\QSD2\viz --save results\week2\QSD2\mask_metrics.txt
 ```
 
 Result of Task 3 on the 30 QSD2 images:
@@ -214,7 +215,7 @@ the shadow or lighter strip of wall just below a painting.
 Add `--background-removal` to the retrieval command: each query is segmented
 with Task 3 and the descriptor only counts the painting pixels.
 ```powershell
-python src\week2\methods_w2.py --museum data\BBDD --queries data\qsd2_w2 --ground-truth data\qsd2_w2\qsd2_w1\gt_corresps.pkl --method "Lab pyramid" --levels 7 --background-removal
+python src\methods_w2.py --museum data\BBDD --queries data\qsd2_w2 --ground-truth data\qsd2_w2\qsd2_w1\gt_corresps.pkl --method "Lab pyramid" --levels 7 --background-removal
 ```
 
 Museum images contain only the painting, but a query has wall around it. The
@@ -239,7 +240,7 @@ a comparison with the annotated masks. `--background-removal` and
 ### Task 6: Blind Submission (QST1 and QST2)
 
 ```powershell
-python src\week2\methods_w2.py --museum data\BBDD --qst1 data\qst_w2\qst1_w2 --qst2 data\qst_w2\qst2_w2
+python src\methods_w2.py --museum data\BBDD --qst1 data\qst_w2\qst1_w2 --qst2 data\qst_w2\qst2_w2
 ```
 
 Give `--qst1` and/or `--qst2` (the folders must contain the `.jpg` files
@@ -303,7 +304,7 @@ include the hue correction and cannot be compared with hue-invariant ones.
 kernel (hue-invariance is not available with `--method all`):
 
 ```powershell
-python src/week3/methods_w3.py --museum data/BBDD --queries data/qsd1_w3 --method all --kernel 5 --ground-truth data/qsd1_w3/gt_corresps.pkl
+python src/methods_w3.py --museum data/BBDD --queries data/qsd1_w3 --method all --kernel 5 --ground-truth data/qsd1_w3/gt_corresps.pkl
 ```
 
 | Method (kernel 5x5) | mAP@1 | mAP@5 |
@@ -322,7 +323,7 @@ sizes (`--kernel` is still required by the parser but the sweep uses its own
 grids):
 
 ```powershell
-python src/week3/methods_w3.py --museum data/BBDD --queries data/qsd1_w3 --sweep --kernel 3 --ground-truth data/qsd1_w3/gt_corresps.pkl
+python src/methods_w3.py --museum data/BBDD --queries data/qsd1_w3 --sweep --kernel 3 --ground-truth data/qsd1_w3/gt_corresps.pkl
 ```
 
 Best kernel per filter on QSD1-W3 (`Lab blocks 1D`, L1, 30 queries,
@@ -353,8 +354,8 @@ cache file per filter and kernel (a stale cache from another filter gives wrong
 numbers):
 
 ```powershell
-python src/week3/methods_w3.py --museum data/BBDD --queries data/qsd1_w3 --method "Lab blocks 1D open+close" --kernel 7 --filter-scope both --hue-invariant --hue-reference results/week3/hue_openclose7.npz --ground-truth data/qsd1_w3/gt_corresps.pkl
-python src/week3/methods_w3.py --museum data/BBDD --queries data/qsd1_w3 --method "Lab blocks 1D wavelet" --kernel 7 --wavelet-level 3 --filter-scope both --hue-invariant --hue-reference results/week3/hue_wavelet3.npz --ground-truth data/qsd1_w3/gt_corresps.pkl
+python src/methods_w3.py --museum data/BBDD --queries data/qsd1_w3 --method "Lab blocks 1D open+close" --kernel 7 --filter-scope both --hue-invariant --hue-reference results/week3/hue_openclose7.npz --ground-truth data/qsd1_w3/gt_corresps.pkl
+python src/methods_w3.py --museum data/BBDD --queries data/qsd1_w3 --method "Lab blocks 1D wavelet" --kernel 7 --wavelet-level 3 --filter-scope both --hue-invariant --hue-reference results/week3/hue_wavelet3.npz --ground-truth data/qsd1_w3/gt_corresps.pkl
 ```
 
 (`--kernel` is required by the parser but the wavelet filter ignores it and
@@ -448,13 +449,13 @@ median filter; any other Task 1 filter is selected with `--filter NAME
 --kernel K` (the wavelet needs no kernel).
 
 ```powershell
-python src/week3/paintings_w3.py --museum data/BBDD --queries data/qsd1_w3 --ground-truth data/qsd1_w3/gt_corresps.pkl --table --method all --distance all
-python src/week3/paintings_w3.py --museum data/BBDD --queries data/qsd1_w3 --ground-truth data/qsd1_w3/gt_corresps.pkl --table --method all --distance all --denoise 3
-python src/week3/paintings_w3.py --museum data/BBDD --queries data/qsd1_w3 --ground-truth data/qsd1_w3/gt_corresps.pkl --table --method all --distance all --denoise 5
-python src/week3/paintings_w3.py --museum data/BBDD --queries data/qsd1_w3 --ground-truth data/qsd1_w3/gt_corresps.pkl --table --method all --distance all --filter average --kernel 5
-python src/week3/paintings_w3.py --museum data/BBDD --queries data/qsd1_w3 --ground-truth data/qsd1_w3/gt_corresps.pkl --table --method all --distance all --filter gaussian --kernel 7
-python src/week3/paintings_w3.py --museum data/BBDD --queries data/qsd1_w3 --ground-truth data/qsd1_w3/gt_corresps.pkl --table --method all --distance all --filter wavelet_lowpass
-python src/week3/paintings_w3.py --museum data/BBDD --queries data/qsd1_w3 --ground-truth data/qsd1_w3/gt_corresps.pkl --table --method all --distance all --filter open+close --kernel 7
+python src/paintings_w3.py --museum data/BBDD --queries data/qsd1_w3 --ground-truth data/qsd1_w3/gt_corresps.pkl --table --method all --distance all
+python src/paintings_w3.py --museum data/BBDD --queries data/qsd1_w3 --ground-truth data/qsd1_w3/gt_corresps.pkl --table --method all --distance all --denoise 3
+python src/paintings_w3.py --museum data/BBDD --queries data/qsd1_w3 --ground-truth data/qsd1_w3/gt_corresps.pkl --table --method all --distance all --denoise 5
+python src/paintings_w3.py --museum data/BBDD --queries data/qsd1_w3 --ground-truth data/qsd1_w3/gt_corresps.pkl --table --method all --distance all --filter average --kernel 5
+python src/paintings_w3.py --museum data/BBDD --queries data/qsd1_w3 --ground-truth data/qsd1_w3/gt_corresps.pkl --table --method all --distance all --filter gaussian --kernel 7
+python src/paintings_w3.py --museum data/BBDD --queries data/qsd1_w3 --ground-truth data/qsd1_w3/gt_corresps.pkl --table --method all --distance all --filter wavelet_lowpass
+python src/paintings_w3.py --museum data/BBDD --queries data/qsd1_w3 --ground-truth data/qsd1_w3/gt_corresps.pkl --table --method all --distance all --filter open+close --kernel 7
 ```
 
 mAP@1, best distance per descriptor and filter:
@@ -559,7 +560,7 @@ which is acceptable for 287 museum images and 30 to 50 queries.
 ### Task 3: Background Removal for Multiple Paintings
 
 ```powershell
-python src/week3/paintings_w3.py --segment data/qsd2_w3 --out results/week3/QSD2/masks --viz results/week3/QSD2/viz
+python src/paintings_w3.py --segment data/qsd2_w3 --out results/week3/QSD2/masks --viz results/week3/QSD2/viz
 ```
 
 The method follows the W2 Lab wall model and Mahalanobis distance. The wall
@@ -575,7 +576,7 @@ metrics. The overlays use the W2 convention: red prediction, green ground
 truth. Evaluate saved masks with the same W2 metrics:
 
 ```powershell
-python src/week3/paintings_w3.py --segmentation results/week3/QSD2/masks data/qsd2_w3 --save results/week3/QSD2/mask_metrics.txt
+python src/paintings_w3.py --segmentation results/week3/QSD2/masks data/qsd2_w3 --save results/week3/QSD2/mask_metrics.txt
 ```
 
 To evaluate several method outputs stored below one directory (for example
@@ -583,7 +584,7 @@ To evaluate several method outputs stored below one directory (for example
 parent directory. The saved report contains one labeled section per method:
 
 ```powershell
-python src/week3/paintings_w3.py --segmentation results/week3/QSD2/all_methods data/qsd2_w3 --save results/week3/QSD2/mask_metrics_all.txt
+python src/paintings_w3.py --segmentation results/week3/QSD2/all_methods data/qsd2_w3 --save results/week3/QSD2/mask_metrics_all.txt
 ```
 
 Results on the 30 augmented QSD2-W3 queries (segmentation does not depend on
@@ -605,7 +606,7 @@ Final command: `Texture fusion`, L1, queries filtered with a 3x3 median
 filter (Task 1 filter, chosen on QSD2-W3):
 
 ```powershell
-python src/week3/paintings_w3.py --museum data/BBDD --queries data/qsd2_w3 --background-removal --ground-truth data/qsd2_w3/gt_corresps.pkl --method "Texture fusion" --distance L1 --filter median --kernel 3 --top-k 10 --output-dir results/week3/QSD2/texture_fusion
+python src/paintings_w3.py --museum data/BBDD --queries data/qsd2_w3 --background-removal --ground-truth data/qsd2_w3/gt_corresps.pkl --method "Texture fusion" --distance L1 --filter median --kernel 3 --top-k 10 --output-dir results/week3/QSD2/texture_fusion
 ```
 
 Each painting is cropped separately, then compared with the museum images.
@@ -645,10 +646,10 @@ segmentation is the same in every run (F1 0.9526, painting count correct in
 | Open+Close 7x7 | query | 0.7436 | 0.7607 | 0.7675 |
 
 ```powershell
-python src/week3/paintings_w3.py --museum data/BBDD --queries data/qsd2_w3 --background-removal --ground-truth data/qsd2_w3/gt_corresps.pkl --method "Texture fusion" --distance L1 --top-k 10 --filter none --output-dir results/week3/QSD2/tests/none
-python src/week3/paintings_w3.py --museum data/BBDD --queries data/qsd2_w3 --background-removal --ground-truth data/qsd2_w3/gt_corresps.pkl --method "Texture fusion" --distance L1 --top-k 10 --filter median --kernel 3 --output-dir results/week3/QSD2/tests/median3
-python src/week3/paintings_w3.py --museum data/BBDD --queries data/qsd2_w3 --background-removal --ground-truth data/qsd2_w3/gt_corresps.pkl --method "Texture fusion" --distance L1 --top-k 10 --filter wavelet_lowpass --filter-scope both --output-dir results/week3/QSD2/tests/wavelet_both
-python src/week3/paintings_w3.py --museum data/BBDD --queries data/qsd2_w3 --background-removal --ground-truth data/qsd2_w3/gt_corresps.pkl --method "Texture fusion" --distance L1 --top-k 10 --filter open+close --kernel 7 --output-dir results/week3/QSD2/tests/openclose7
+python src/paintings_w3.py --museum data/BBDD --queries data/qsd2_w3 --background-removal --ground-truth data/qsd2_w3/gt_corresps.pkl --method "Texture fusion" --distance L1 --top-k 10 --filter none --output-dir results/week3/QSD2/tests/none
+python src/paintings_w3.py --museum data/BBDD --queries data/qsd2_w3 --background-removal --ground-truth data/qsd2_w3/gt_corresps.pkl --method "Texture fusion" --distance L1 --top-k 10 --filter median --kernel 3 --output-dir results/week3/QSD2/tests/median3
+python src/paintings_w3.py --museum data/BBDD --queries data/qsd2_w3 --background-removal --ground-truth data/qsd2_w3/gt_corresps.pkl --method "Texture fusion" --distance L1 --top-k 10 --filter wavelet_lowpass --filter-scope both --output-dir results/week3/QSD2/tests/wavelet_both
+python src/paintings_w3.py --museum data/BBDD --queries data/qsd2_w3 --background-removal --ground-truth data/qsd2_w3/gt_corresps.pkl --method "Texture fusion" --distance L1 --top-k 10 --filter open+close --kernel 7 --output-dir results/week3/QSD2/tests/openclose7
 ```
 
 Per descriptor, L1, 3x3 median on the queries (`--method all`):
@@ -761,8 +762,8 @@ the whole image is the painting. QST2-W3 has pictures with background and up to
 two paintings, so segmentation is used and the masks are submitted.
 
 ```powershell
-python src/week3/paintings_w3.py --museum data/BBDD --queries data/qst1_w3 --method "Texture fusion" --distance L1 --filter median --kernel 3 --top-k 10 --output-dir results/week3/QST1/method1
-python src/week3/paintings_w3.py --museum data/BBDD --queries data/qst2_w3 --background-removal --method "Texture fusion" --distance L1 --filter median --kernel 3 --top-k 10 --output-dir results/week3/QST2/method1
+python src/paintings_w3.py --museum data/BBDD --queries data/qst1_w3 --method "Texture fusion" --distance L1 --filter median --kernel 3 --top-k 10 --output-dir results/week3/QST1/method1
+python src/paintings_w3.py --museum data/BBDD --queries data/qst2_w3 --background-removal --method "Texture fusion" --distance L1 --filter median --kernel 3 --top-k 10 --output-dir results/week3/QST2/method1
 ```
 
 | Output | Content |
@@ -1417,7 +1418,6 @@ python src/extract_features_orb.py --queries data/qst1_w4 --output results/week4
 python src/batch_matching_orb.py match --museum-features results/week4/orb_v2/museum --query-features results/week4/orb_v2/qst1_w4 --output results/week4/orb_v2/scores_qst1_w4.json
 python src/batch_matching_orb.py predict --scores results/week4/orb_v2/scores_qst1_w4.json --calibration evaluations/orb/orb_v2/calibration.json --output Team1/week4/QST1/method1/result.pkl
 ```
-
 ---
 ### PRESENTATION
 
