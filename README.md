@@ -27,47 +27,6 @@ Create a virtual environment to encapsulate the required installations.
 > ```
 
 ---
-
-## Project structure
-
-Run every script **from the project root** (the folder that contains `src/`,
-`data/` and `results/`), giving the script's path, for example
-`python src/week3/paintings_w3.py ...`. The code is split by week; the modules
-still import each other by plain name, because every script imports
-`src/_srcpaths.py`, which adds the folders below `src/` to the import path.
-
-```
-src/
-  _srcpaths.py            adds every folder below to the import path
-  common/
-    k_similarity.py
-    utils.py
-  week1/
-    methods_w1.py
-  week2/
-    methods_w2.py
-  week3/
-    color_reference/
-    methods_w3.py
-    paintings_w3.py
-  week4/
-    batch_matching_sp.py
-    batch_matching_w4.py
-    batch_matching_w4_orb.py
-    check_segmentation_w4.py
-    evaluate_sp.py
-    evaluate_w4.py
-    extract_features_sp.py
-    extract_features_w4.py
-    extract_features_w4_orb.py
-    keypoints_superpoint.py
-    keypoints_w4.py
-    keypoints_w4_orb.py
-    matching_w4.py
-    matching_w4_orb.py
-```
-
----
 ## Week 1
 
 ### Task 1: Image Descriptors
